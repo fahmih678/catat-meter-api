@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MeterRequest;
+use App\Http\Traits\HasPamFiltering;
 use App\Services\MeterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MeterController extends Controller
 {
+    use HasPamFiltering;
     private MeterService $meterService;
 
     public function __construct(MeterService $meterService)
@@ -28,6 +30,9 @@ class MeterController extends Controller
                 'per_page' => $request->get('per_page', 15)
             ];
 
+            // Apply PAM filtering using trait
+            $filters = $this->getPamFilteredParams($filters);
+
             $meters = $this->meterService->getAllMeters($filters);
             return $this->successResponse($meters, 'Meters retrieved successfully');
         } catch (\Exception $e) {
@@ -38,7 +43,15 @@ class MeterController extends Controller
     public function store(MeterRequest $request): JsonResponse
     {
         try {
-            $meter = $this->meterService->createMeter($request->validated());
+            $data = $request->validated();
+
+            // Validate PAM access for creation using trait
+            $validationError = $this->validatePamAccess($data);
+            if ($validationError) {
+                return $validationError;
+            }
+
+            $meter = $this->meterService->createMeter($data);
             return $this->successResponse($meter, 'Meter created successfully', 201);
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to create meter: ' . $e->getMessage());
@@ -54,6 +67,12 @@ class MeterController extends Controller
                 return $this->notFoundResponse('Meter not found');
             }
 
+            // Check PAM access permission using trait
+            $accessError = $this->checkEntityPamAccess($meter);
+            if ($accessError) {
+                return $accessError;
+            }
+
             return $this->successResponse($meter, 'Meter retrieved successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve meter: ' . $e->getMessage());
@@ -63,13 +82,20 @@ class MeterController extends Controller
     public function update(MeterRequest $request, int $id): JsonResponse
     {
         try {
-            $meter = $this->meterService->updateMeter($id, $request->validated());
+            $meter = $this->meterService->getMeterById($id);
 
             if (!$meter) {
                 return $this->notFoundResponse('Meter not found');
             }
 
-            return $this->successResponse($meter, 'Meter updated successfully');
+            // Check PAM access permission using trait
+            $accessError = $this->checkEntityPamAccess($meter);
+            if ($accessError) {
+                return $accessError;
+            }
+
+            $updatedMeter = $this->meterService->updateMeter($id, $request->validated());
+            return $this->successResponse($updatedMeter, 'Meter updated successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to update meter: ' . $e->getMessage());
         }
@@ -78,12 +104,19 @@ class MeterController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $result = $this->meterService->deleteMeter($id);
+            $meter = $this->meterService->getMeterById($id);
 
-            if (!$result) {
+            if (!$meter) {
                 return $this->notFoundResponse('Meter not found');
             }
 
+            // Check PAM access permission using trait
+            $accessError = $this->checkEntityPamAccess($meter);
+            if ($accessError) {
+                return $accessError;
+            }
+
+            $result = $this->meterService->deleteMeter($id);
             return $this->successResponse(null, 'Meter deleted successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to delete meter: ' . $e->getMessage());

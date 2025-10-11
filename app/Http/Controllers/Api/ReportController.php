@@ -3,16 +3,24 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\HasPamFiltering;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
+    use HasPamFiltering;
 
     public function monthly(int $pamId, string $month): JsonResponse
     {
         try {
-            // Placeholder implementation
+            // Check PAM access permission using trait
+            $accessError = $this->checkPamAccess($pamId);
+            if ($accessError) {
+                return $accessError;
+            }
+
+            // Placeholder implementation with PAM validation
             $report = [
                 'pam_id' => $pamId,
                 'month' => $month,
@@ -22,10 +30,11 @@ class ReportController extends Controller
                     'total_readings' => 0,
                     'total_usage' => 0,
                     'message' => 'Monthly report generation is under development'
-                ]
+                ],
+                'pam_access_validated' => true
             ];
 
-            return $this->successResponse($report, 'Monthly report retrieved successfully (placeholder)');
+            return $this->successResponse($report, 'Monthly report retrieved successfully (placeholder with PAM validation)');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to generate monthly report: ' . $e->getMessage());
         }

@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MeterRecordRequest;
+use App\Http\Traits\HasPamFiltering;
 use App\Services\MeterRecordService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MeterRecordController extends Controller
 {
+    use HasPamFiltering;
     private MeterRecordService $meterRecordService;
 
     public function __construct(MeterRecordService $meterRecordService)
@@ -28,6 +30,9 @@ class MeterRecordController extends Controller
                 'reading_date_to' => $request->get('reading_date_to'),
                 'per_page' => $request->get('per_page', 15)
             ];
+
+            // Apply PAM filtering using trait
+            $filters = $this->getPamFilteredParams($filters);
 
             $records = $this->meterRecordService->getAllRecords($filters);
             return $this->successResponse($records, 'Meter records retrieved successfully');
@@ -53,6 +58,12 @@ class MeterRecordController extends Controller
 
             if (!$record) {
                 return $this->notFoundResponse('Meter record not found');
+            }
+
+            // Check PAM access permission using trait
+            $accessError = $this->checkEntityPamAccess($record);
+            if ($accessError) {
+                return $accessError;
             }
 
             return $this->successResponse($record, 'Meter record retrieved successfully');
