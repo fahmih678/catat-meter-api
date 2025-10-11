@@ -3,6 +3,11 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PamController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\MeterController;
+use App\Http\Controllers\Api\MeterRecordController;
+use App\Http\Controllers\Api\BillController;
+use App\Http\Controllers\Api\ReportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -47,194 +52,228 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     /*
-|--------------------------------------------------------------------------
-| PAM Management Routes
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | SUPERADMIN ONLY ROUTES
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['role:superadmin'])->group(function () {
 
-    Route::prefix('pams')->name('pams.')->group(function () {
-        // Additional PAM routes (MUST come before apiResource to avoid conflicts)
+        // PAM MANAGEMENT (SuperAdmin Only)
+        Route::prefix('pams')->name('pams.')->group(function () {
+            Route::post('/', [PamController::class, 'store'])->name('store');
+            Route::delete('/{id}', [PamController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/restore', [PamController::class, 'restore'])->name('restore');
+        });
+
+        // USER MANAGEMENT (SuperAdmin Only) - TODO: Create UserController
+        Route::prefix('users')->name('users.')->group(function () {
+            // Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
+            // Route::post('/{id}/restore', [UserController::class, 'restore'])->name('restore');
+            Route::delete('/{id}', function () {
+                return response()->json(['message' => 'User deletion - SuperAdmin only']);
+            })->name('destroy');
+            Route::post('/{id}/restore', function () {
+                return response()->json(['message' => 'User restoration - SuperAdmin only']);
+            })->name('restore');
+        });
+
+        // SYSTEM MANAGEMENT (SuperAdmin Only)
+        Route::prefix('system')->name('system.')->group(function () {
+            Route::post('/backup', function () {
+                return response()->json(['message' => 'Backup initiated']);
+            })->name('backup');
+            Route::get('/logs', function () {
+                return response()->json(['message' => 'System logs']);
+            })->name('logs');
+            Route::post('/settings', function () {
+                return response()->json(['message' => 'Settings updated']);
+            })->name('settings');
+        });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | MANAGEMENT LEVEL ROUTES (SuperAdmin + Admin PAM)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['role:superadmin,admin_pam', 'pam.scope'])->group(function () {
+
+        // PAM MANAGEMENT (Read & Update)
+        Route::prefix('pams')->name('pams.')->group(function () {
+            Route::get('/', [PamController::class, 'index'])->name('index');
+            Route::get('/{id}', [PamController::class, 'show'])->name('show');
+            Route::put('/{id}', [PamController::class, 'update'])->name('update');
+            Route::get('/{id}/statistics', [PamController::class, 'statistics'])->name('statistics');
+            Route::post('/{id}/activate', [PamController::class, 'activate'])->name('activate');
+            Route::post('/{id}/deactivate', [PamController::class, 'deactivate'])->name('deactivate');
+        });
+
+        // USER MANAGEMENT (CRUD except delete) - TODO: Create UserController
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/', function () {
+                return response()->json(['message' => 'User list - Management level']);
+            })->name('index');
+            Route::post('/', function () {
+                return response()->json(['message' => 'User creation - Management level']);
+            })->name('store');
+            Route::get('/{id}', function ($id) {
+                return response()->json(['message' => "User details: $id"]);
+            })->name('show');
+            Route::put('/{id}', function ($id) {
+                return response()->json(['message' => "User update: $id"]);
+            })->name('update');
+            Route::post('/{id}/assign-role', function ($id) {
+                return response()->json(['message' => "Role assignment: $id"]);
+            })->name('assign-role');
+        });
+
+        // CUSTOMER MANAGEMENT (Full CRUD)
+        Route::prefix('customers')->name('customers.')->group(function () {
+            Route::get('/search', [CustomerController::class, 'search'])->name('search');
+            Route::get('/pam/{pamId}', [CustomerController::class, 'byPam'])->name('by-pam');
+            Route::get('/area/{areaId}', [CustomerController::class, 'byArea'])->name('by-area');
+            Route::get('/pam/{pamId}/unpaid-bills', [CustomerController::class, 'unpaidBills'])->name('unpaid-bills');
+            Route::get('/pam/{pamId}/without-meters', [CustomerController::class, 'withoutMeters'])->name('without-meters');
+            Route::post('/{id}/activate', [CustomerController::class, 'activate'])->name('activate');
+            Route::post('/{id}/deactivate', [CustomerController::class, 'deactivate'])->name('deactivate');
+            Route::post('/{id}/restore', [CustomerController::class, 'restore'])->name('restore');
+            Route::post('/{id}/transfer-area', [CustomerController::class, 'transferArea'])->name('transfer-area');
+            Route::post('/{id}/change-tariff', [CustomerController::class, 'changeTariff'])->name('change-tariff');
+            Route::apiResource('/', CustomerController::class)->parameter('', 'id');
+        });
+
+        // METER MANAGEMENT (Full CRUD) - Using existing controllers
+        Route::prefix('meters')->name('meters.')->group(function () {
+            Route::get('/search', [MeterController::class, 'search'])->name('search');
+            Route::get('/customer/{customerId}', [MeterController::class, 'byCustomer'])->name('by-customer');
+            Route::get('/area/{areaId}', [MeterController::class, 'byArea'])->name('by-area');
+            Route::get('/{id}/statistics', [MeterController::class, 'statistics'])->name('statistics');
+            Route::post('/{id}/activate', [MeterController::class, 'activate'])->name('activate');
+            Route::post('/{id}/deactivate', [MeterController::class, 'deactivate'])->name('deactivate');
+            Route::post('/{id}/restore', [MeterController::class, 'restore'])->name('restore');
+            Route::apiResource('/', MeterController::class)->parameter('', 'id');
+        });
+
+        // METER RECORD MANAGEMENT (View & Approve) - Using existing controllers
+        Route::prefix('meter-records')->name('meter-records.')->group(function () {
+            Route::get('/', [MeterRecordController::class, 'index'])->name('index');
+            Route::get('/{id}', [MeterRecordController::class, 'show'])->name('show');
+            Route::put('/{id}', [MeterRecordController::class, 'update'])->name('update');
+            Route::post('/{id}/approve', [MeterRecordController::class, 'approve'])->name('approve');
+            Route::post('/{id}/reject', [MeterRecordController::class, 'reject'])->name('reject');
+            Route::get('/meter/{meterId}', [MeterRecordController::class, 'byMeter'])->name('by-meter');
+            Route::get('/period/{period}', [MeterRecordController::class, 'byPeriod'])->name('by-period');
+            Route::get('/meter/{meterId}/usage', [MeterRecordController::class, 'usage'])->name('usage');
+            Route::get('/statistics', [MeterRecordController::class, 'statistics'])->name('statistics');
+            Route::get('/missing-readings', [MeterRecordController::class, 'missingReadings'])->name('missing-readings');
+        });
+
+        // BILL MANAGEMENT (Full CRUD) - Using existing controllers
+        Route::prefix('bills')->name('bills.')->group(function () {
+            Route::get('/', [BillController::class, 'index'])->name('index');
+            Route::post('/', [BillController::class, 'store'])->name('store');
+            Route::get('/{id}', [BillController::class, 'show'])->name('show');
+            Route::put('/{id}', [BillController::class, 'update'])->name('update');
+            Route::delete('/{id}', [BillController::class, 'destroy'])->name('destroy');
+            Route::get('/customer/{customerId}', [BillController::class, 'byCustomer'])->name('by-customer');
+            Route::get('/pending', [BillController::class, 'pending'])->name('pending');
+            Route::post('/{id}/pay', [BillController::class, 'markAsPaid'])->name('mark-paid');
+            Route::post('/generate/{pamId}/{period}', [BillController::class, 'generateBills'])->name('generate');
+        });
+
+        // REPORTS (Full Access) - Using existing controllers
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/dashboard', [ReportController::class, 'dashboard'])->name('dashboard');
+            Route::get('/monthly/{pamId}/{month}', [ReportController::class, 'monthly'])->name('monthly');
+            Route::get('/volume-usage/{pamId}/{period}', [ReportController::class, 'volumeUsage'])->name('volume-usage');
+            Route::get('/customer-statistics/{pamId}', [ReportController::class, 'customerStatistics'])->name('customer-statistics');
+            Route::post('/generate-monthly/{pamId}/{month}', [ReportController::class, 'generateMonthly'])->name('generate-monthly');
+        });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | OPERATIONAL LEVEL ROUTES (SuperAdmin + Admin PAM + Catat Meter)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['role:superadmin,admin_pam,catat_meter', 'pam.scope'])->group(function () {
+
+        // CUSTOMER READ ACCESS
+        Route::prefix('customers')->name('customers.')->group(function () {
+            Route::get('/', [CustomerController::class, 'index'])->name('index');
+            Route::get('/{id}', [CustomerController::class, 'show'])->name('show');
+        });
+
+        // METER READ ACCESS  
+        Route::prefix('meters')->name('meters.')->group(function () {
+            Route::get('/', [MeterController::class, 'index'])->name('index');
+            Route::get('/{id}', [MeterController::class, 'show'])->name('show');
+            Route::put('/{id}', [MeterController::class, 'update'])->name('update'); // For meter assignment
+        });
+
+        // METER RECORD OPERATIONS (Full CRUD except delete)
+        Route::prefix('meter-records')->name('meter-records.')->group(function () {
+            Route::post('/', [MeterRecordController::class, 'store'])->name('store');
+            Route::post('/bulk-create', [MeterRecordController::class, 'bulkCreate'])->name('bulk-create');
+        });
+
+        // BASIC REPORTS
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/meter-readings', [ReportController::class, 'meterReadings'])->name('meter-readings');
+        });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | BILLING LEVEL ROUTES (SuperAdmin + Admin PAM + Pembayaran)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(['role:superadmin,admin_pam,pembayaran', 'pam.scope'])->group(function () {
+
+        // CUSTOMER READ ACCESS (for billing info)
+        Route::prefix('customers')->name('customers.billing.')->group(function () {
+            Route::get('/billing-info', [CustomerController::class, 'billingInfo'])->name('billing-info');
+        });
+
+        // METER READ ACCESS (for billing calculation)
+        Route::prefix('meters')->name('meters.billing.')->group(function () {
+            Route::get('/for-billing', [MeterController::class, 'forBilling'])->name('for-billing');
+        });
+
+        // METER RECORD READ ACCESS (for billing)
+        Route::prefix('meter-records')->name('meter-records.billing.')->group(function () {
+            Route::get('/for-billing', [MeterRecordController::class, 'forBilling'])->name('for-billing');
+        });
+
+        // BILL READ AND PAYMENT ACCESS
+        Route::prefix('bills')->name('bills.payment.')->group(function () {
+            Route::get('/payment-pending', [BillController::class, 'paymentPending'])->name('payment-pending');
+            Route::post('/{id}/mark-paid', [BillController::class, 'markPaid'])->name('mark-paid');
+        });
+
+        // PAYMENT REPORTS
+        Route::prefix('reports')->name('reports.payment.')->group(function () {
+            Route::get('/payment-summary', [ReportController::class, 'paymentSummary'])->name('payment-summary');
+        });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | COMMON ROUTES (All Authenticated Users)
+    |--------------------------------------------------------------------------
+    */
+
+    // PAM INFO (Read-only for all)
+    Route::prefix('pams')->name('pams.common.')->group(function () {
         Route::get('/active', [PamController::class, 'active'])->name('active');
         Route::get('/search', [PamController::class, 'search'])->name('search');
-
-        // Standard CRUD routes
-        Route::apiResource('/', PamController::class)->parameter('', 'id');
-
-        // PAM statistics and management routes
-        Route::get('/{id}/statistics', [PamController::class, 'statistics'])->name('statistics');
-
-        // PAM status management
-        Route::post('/{id}/activate', [PamController::class, 'activate'])->name('activate');
-        Route::post('/{id}/deactivate', [PamController::class, 'deactivate'])->name('deactivate');
-        Route::post('/{id}/restore', [PamController::class, 'restore'])->name('restore');
     });
 
     /*
-|--------------------------------------------------------------------------
-| Customer Management Routes
-|--------------------------------------------------------------------------
-*/
-
-    Route::prefix('customers')->name('customers.')->group(function () {
-        // Search route MUST come before apiResource to avoid conflicts
-        Route::get('/search', [CustomerController::class, 'search'])->name('search');
-
-        // Customer filtering routes
-        Route::get('/pam/{pamId}', [CustomerController::class, 'byPam'])->name('by-pam');
-        Route::get('/area/{areaId}', [CustomerController::class, 'byArea'])->name('by-area');
-
-        // Customer analytics routes
-        Route::get('/pam/{pamId}/unpaid-bills', [CustomerController::class, 'unpaidBills'])->name('unpaid-bills');
-        Route::get('/pam/{pamId}/without-meters', [CustomerController::class, 'withoutMeters'])->name('without-meters');
-
-        // Customer status management
-        Route::post('/{id}/activate', [CustomerController::class, 'activate'])->name('activate');
-        Route::post('/{id}/deactivate', [CustomerController::class, 'deactivate'])->name('deactivate');
-        Route::post('/{id}/restore', [CustomerController::class, 'restore'])->name('restore');
-
-        // Customer transfer and changes
-        Route::post('/{id}/transfer-area', [CustomerController::class, 'transferArea'])->name('transfer-area');
-        Route::post('/{id}/change-tariff', [CustomerController::class, 'changeTariff'])->name('change-tariff');
-
-        // Standard CRUD routes
-        Route::apiResource('/', CustomerController::class)->parameter('', 'id');
-    });
-
-    /*
-|--------------------------------------------------------------------------
-| Future Routes (Prepared for next modules)
-|--------------------------------------------------------------------------
-*/
-
-    /*
-|--------------------------------------------------------------------------
-| Meter Management Routes
-|--------------------------------------------------------------------------
-*/
-
-    Route::prefix('meters')->name('meters.')->group(function () {
-        // Search route MUST come before apiResource to avoid conflicts
-        Route::get('/search', [\App\Http\Controllers\Api\MeterController::class, 'search'])->name('search');
-
-        // Meter filtering routes
-        Route::get('/customer/{customerId}', [\App\Http\Controllers\Api\MeterController::class, 'byCustomer'])->name('by-customer');
-        Route::get('/area/{areaId}', [\App\Http\Controllers\Api\MeterController::class, 'byArea'])->name('by-area');
-
-        // Meter analytics routes
-        Route::get('/{id}/statistics', [\App\Http\Controllers\Api\MeterController::class, 'statistics'])->name('statistics');
-
-        // Meter status management
-        Route::post('/{id}/activate', [\App\Http\Controllers\Api\MeterController::class, 'activate'])->name('activate');
-        Route::post('/{id}/deactivate', [\App\Http\Controllers\Api\MeterController::class, 'deactivate'])->name('deactivate');
-        Route::post('/{id}/restore', [\App\Http\Controllers\Api\MeterController::class, 'restore'])->name('restore');
-
-        // Standard CRUD routes
-        Route::apiResource('/', \App\Http\Controllers\Api\MeterController::class)->parameter('', 'id');
-    });
-
-    /*
-|--------------------------------------------------------------------------
-| Meter Record Management Routes
-|--------------------------------------------------------------------------
-*/
-
-    Route::prefix('meter-records')->name('meter-records.')->group(function () {
-        // Meter record filtering routes
-        Route::get('/meter/{meterId}', [\App\Http\Controllers\Api\MeterRecordController::class, 'byMeter'])->name('by-meter');
-        Route::get('/period/{period}', [\App\Http\Controllers\Api\MeterRecordController::class, 'byPeriod'])->name('by-period');
-
-        // Meter record analytics routes
-        Route::get('/meter/{meterId}/usage', [\App\Http\Controllers\Api\MeterRecordController::class, 'usage'])->name('usage');
-        Route::get('/statistics', [\App\Http\Controllers\Api\MeterRecordController::class, 'statistics'])->name('statistics');
-        Route::get('/missing-readings', [\App\Http\Controllers\Api\MeterRecordController::class, 'missingReadings'])->name('missing-readings');
-
-        // Bulk operations
-        Route::post('/bulk-create', [\App\Http\Controllers\Api\MeterRecordController::class, 'bulkCreate'])->name('bulk-create');
-
-        // Standard CRUD routes
-        Route::apiResource('/', \App\Http\Controllers\Api\MeterRecordController::class)->parameter('', 'id');
-    });
-
-    /*
-|--------------------------------------------------------------------------
-| Bill Management Routes (Placeholder Implementation)
-|--------------------------------------------------------------------------
-*/
-
-    Route::prefix('bills')->name('bills.')->group(function () {
-        // Bill filtering routes
-        Route::get('/customer/{customerId}', [\App\Http\Controllers\Api\BillController::class, 'byCustomer'])->name('by-customer');
-        Route::get('/pending', [\App\Http\Controllers\Api\BillController::class, 'pending'])->name('pending');
-
-        // Bill operations
-        Route::post('/{id}/pay', [\App\Http\Controllers\Api\BillController::class, 'markAsPaid'])->name('mark-paid');
-        Route::post('/generate/{pamId}/{period}', [\App\Http\Controllers\Api\BillController::class, 'generateBills'])->name('generate');
-
-        // Standard CRUD routes
-        Route::apiResource('/', \App\Http\Controllers\Api\BillController::class)->parameter('', 'id');
-    });
-
-    /*
-|--------------------------------------------------------------------------
-| Report Routes (Placeholder Implementation)
-|--------------------------------------------------------------------------
-*/
-
-    Route::prefix('reports')->name('reports.')->group(function () {
-        // Dashboard and overview
-        Route::get('/dashboard', [\App\Http\Controllers\Api\ReportController::class, 'dashboard'])->name('dashboard');
-
-        // Report generation
-        Route::get('/monthly/{pamId}/{month}', [\App\Http\Controllers\Api\ReportController::class, 'monthly'])->name('monthly');
-        Route::get('/volume-usage/{pamId}/{period}', [\App\Http\Controllers\Api\ReportController::class, 'volumeUsage'])->name('volume-usage');
-        Route::get('/customer-statistics/{pamId}', [\App\Http\Controllers\Api\ReportController::class, 'customerStatistics'])->name('customer-statistics');
-
-        // Report generation endpoints
-        Route::post('/generate-monthly/{pamId}/{month}', [\App\Http\Controllers\Api\ReportController::class, 'generateMonthly'])->name('generate-monthly');
-    });
-
-    // Meter Management Routes (placeholder)
-    // Route::prefix('meters')->name('meters.')->group(function () {
-    //     Route::apiResource('/', MeterController::class);
-    //     Route::get('/customer/{customerId}', [MeterController::class, 'byCustomer']);
-    //     Route::get('/pam/{pamId}/needing-reading', [MeterController::class, 'needingReading']);
-    //     Route::get('/pam/{pamId}/not-recorded', [MeterController::class, 'notRecorded']);
-    //     Route::post('/{id}/activate', [MeterController::class, 'activate']);
-    //     Route::post('/{id}/deactivate', [MeterController::class, 'deactivate']);
-    // });
-
-    // Meter Record Management Routes (placeholder)
-    // Route::prefix('meter-records')->name('meter-records.')->group(function () {
-    //     Route::apiResource('/', MeterRecordController::class);
-    //     Route::get('/pam/{pamId}/period/{period}', [MeterRecordController::class, 'byPamAndPeriod']);
-    //     Route::get('/pam/{pamId}/pending', [MeterRecordController::class, 'pending']);
-    //     Route::get('/pam/{pamId}/for-billing', [MeterRecordController::class, 'forBilling']);
-    //     Route::post('/{id}/approve', [MeterRecordController::class, 'approve']);
-    //     Route::post('/{id}/reject', [MeterRecordController::class, 'reject']);
-    // });
-
-    // Bill Management Routes (placeholder)
-    // Route::prefix('bills')->name('bills.')->group(function () {
-    //     Route::apiResource('/', BillController::class);
-    //     Route::get('/customer/{customerId}', [BillController::class, 'byCustomer']);
-    //     Route::get('/pam/{pamId}/pending', [BillController::class, 'pending']);
-    //     Route::post('/{id}/pay', [BillController::class, 'markAsPaid']);
-    //     Route::post('/generate/{pamId}/{period}', [BillController::class, 'generateBills']);
-    // });
-
-    // Report Routes (placeholder)
-    // Route::prefix('reports')->name('reports.')->group(function () {
-    //     Route::get('/monthly/{pamId}/{month}', [ReportController::class, 'monthly']);
-    //     Route::get('/volume-usage/{pamId}/{period}', [ReportController::class, 'volumeUsage']);
-    //     Route::get('/customer-statistics/{pamId}', [ReportController::class, 'customerStatistics']);
-    //     Route::post('/generate-monthly/{pamId}/{month}', [ReportController::class, 'generateMonthly']);
-    // });
-
-    /*
-|--------------------------------------------------------------------------
-| System Routes
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | SYSTEM HEALTH & INFO ROUTES (All Authenticated Users)
+    |--------------------------------------------------------------------------
+    */
 
     // Health check route
     Route::get('/health', function () {
