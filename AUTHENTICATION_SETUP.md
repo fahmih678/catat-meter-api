@@ -33,13 +33,13 @@
 ```
 
 ### **2. Admin PAM**
-**Role:** `admin_pam`  
+**Role:** `admin`  
 **Scope:** Management of specific PAM  
 **Permissions:** 29 permissions (management focus)
 
 ```json
 {
-  "role": "admin_pam", 
+  "role": "admin", 
   "description": "PAM branch administrator",
   "permissions": [
     "pam.view", "pam.edit", "pam.statistics",
@@ -177,7 +177,7 @@ Permissions: All (45+ permissions)
 ```
 Email: admin.{PAM_CODE}@example.com
 Password: password  
-Role: admin_pam
+Role: admin
 Example: admin.PAMJAKPUR@example.com
 ```
 

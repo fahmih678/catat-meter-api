@@ -58,7 +58,7 @@ composer require laravel/sanctum spatie/laravel-permission
 1. SuperAdmin (superadmin)
    └── Complete system access (45+ permissions)
 
-2. Admin PAM (admin_pam) 
+2. Admin PAM (admin) 
    └── PAM management access (29 permissions)
 
 3. Catat Meter (catat_meter)

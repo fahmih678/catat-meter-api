@@ -36,7 +36,7 @@ class UserRoleSeeder extends Seeder
                 'phone' => '0812345678' . sprintf('%02d', $index + 10),
                 'pam_id' => $pam->id,
             ]);
-            $adminPam->assignRole('admin_pam');
+            $adminPam->assignRole('admin');
             $this->command->info("Admin PAM created: admin.{$pam->code}@example.com");
 
             // Create 2-3 Catat Meter users per PAM

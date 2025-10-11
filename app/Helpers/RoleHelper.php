@@ -19,7 +19,7 @@ class RoleHelper
      */
     public static function isAdminPam(): bool
     {
-        return Auth::check() && Auth::user()->hasRole('admin_pam');
+        return Auth::check() && Auth::user()->hasRole('admin');
     }
 
     /**
@@ -99,7 +99,7 @@ class RoleHelper
             return false;
         }
 
-        return Auth::user()->hasAnyRole(['superadmin', 'admin_pam']);
+        return Auth::user()->hasAnyRole(['superadmin', 'admin']);
     }
 
     /**
@@ -111,7 +111,7 @@ class RoleHelper
             return false;
         }
 
-        return Auth::user()->hasAnyRole(['superadmin', 'admin_pam', 'catat_meter']);
+        return Auth::user()->hasAnyRole(['superadmin', 'admin', 'catat_meter']);
     }
 
     /**
@@ -123,7 +123,7 @@ class RoleHelper
             return false;
         }
 
-        return Auth::user()->hasAnyRole(['superadmin', 'admin_pam', 'pembayaran']);
+        return Auth::user()->hasAnyRole(['superadmin', 'admin', 'pembayaran']);
     }
 
     /**
@@ -138,7 +138,7 @@ class RoleHelper
         $user = Auth::user();
 
         if ($user->hasRole('superadmin')) return 4;
-        if ($user->hasRole('admin_pam')) return 3;
+        if ($user->hasRole('admin')) return 3;
         if ($user->hasRole('catat_meter')) return 2;
         if ($user->hasRole('pembayaran')) return 1;
 

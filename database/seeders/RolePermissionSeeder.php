@@ -100,7 +100,7 @@ class RolePermissionSeeder extends Seeder
 
     private function createAdminPamRole(): void
     {
-        $role = Role::create(['name' => 'admin_pam']);
+        $role = Role::create(['name' => 'admin']);
 
         // Admin PAM permissions - full access to their PAM's data
         $permissions = [

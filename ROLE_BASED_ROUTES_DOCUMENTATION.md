@@ -54,13 +54,13 @@
 Route::middleware(['role:superadmin'])
 
 // Management Level (SuperAdmin + Admin PAM)
-Route::middleware(['role:superadmin,admin_pam', 'pam.scope'])
+Route::middleware(['role:superadmin,admin', 'pam.scope'])
 
 // Operational Level (+ Catat Meter)  
-Route::middleware(['role:superadmin,admin_pam,catat_meter', 'pam.scope'])
+Route::middleware(['role:superadmin,admin,catat_meter', 'pam.scope'])
 
 // Billing Level (+ Pembayaran)
-Route::middleware(['role:superadmin,admin_pam,pembayaran', 'pam.scope'])
+Route::middleware(['role:superadmin,admin,pembayaran', 'pam.scope'])
 
 // All Authenticated
 Route::middleware(['auth:sanctum'])
@@ -155,7 +155,7 @@ Route::middleware(['auth:sanctum'])
 ### **Middleware Tests:**
 ```bash
 ✅ role:superadmin → Correctly blocks non-superadmin
-✅ role:superadmin,admin_pam → Allows both roles
+✅ role:superadmin,admin → Allows both roles
 ✅ pam.scope → Adds PAM filtering (implemented)
 ✅ auth:sanctum → Requires valid token
 ```

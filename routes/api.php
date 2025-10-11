@@ -96,7 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
     | MANAGEMENT LEVEL ROUTES (SuperAdmin + Admin PAM)
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:superadmin,admin_pam', 'pam.scope'])->group(function () {
+    Route::middleware(['role:superadmin,admin', 'pam.scope'])->group(function () {
 
         // PAM MANAGEMENT (Read & Update)
         Route::prefix('pams')->name('pams.')->group(function () {
@@ -196,7 +196,7 @@ Route::middleware('auth:sanctum')->group(function () {
     | OPERATIONAL LEVEL ROUTES (SuperAdmin + Admin PAM + Catat Meter)
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:superadmin,admin_pam,catat_meter', 'pam.scope'])->group(function () {
+    Route::middleware(['role:superadmin,admin,catat_meter', 'pam.scope'])->group(function () {
 
         // CUSTOMER READ ACCESS
         Route::prefix('customers')->name('customers.')->group(function () {
@@ -228,7 +228,7 @@ Route::middleware('auth:sanctum')->group(function () {
     | BILLING LEVEL ROUTES (SuperAdmin + Admin PAM + Pembayaran)
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:superadmin,admin_pam,pembayaran', 'pam.scope'])->group(function () {
+    Route::middleware(['role:superadmin,admin,pembayaran', 'pam.scope'])->group(function () {
 
         // CUSTOMER READ ACCESS (for billing info)
         Route::prefix('customers')->name('customers.billing.')->group(function () {

@@ -48,7 +48,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Fixed Fees: 3 types per tariff group (Beban, Admin, Meteran)');
         $this->command->info('- Customers: 15-25 customers per PAM with realistic Indonesian data');
         $this->command->info('- Meters: 85% of active customers have meters installed');
-        $this->command->info('- Roles: 4 roles (superadmin, admin_pam, catat_meter, pembayaran)');
+        $this->command->info('- Roles: 4 roles (superadmin, admin, catat_meter, pembayaran)');
         $this->command->info('- Users: Multiple users per PAM with different roles');
         $this->command->info('');
         $this->command->info('🔐 Authentication enabled with role-based access control!');
