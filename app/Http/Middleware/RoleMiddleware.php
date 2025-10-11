@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
+
+class RoleMiddleware
+{
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next, ...$roles): Response
+    {
+        // Check if user is authenticated
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated. Please login first.',
+                'error_code' => 'UNAUTHENTICATED'
+            ], 401);
+        }
+
+        $user = Auth::user();
+
+        // Check if user account is active
+        if ($user->deleted_at !== null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Account has been deactivated. Please contact administrator.',
+                'error_code' => 'ACCOUNT_DEACTIVATED'
+            ], 403);
+        }
+
+        // SuperAdmin has access to everything
+        if ($user->hasRole('superadmin')) {
+            return $next($request);
+        }
+
+        // Check if user has any of the required roles
+        foreach ($roles as $role) {
+            if ($user->hasRole($role)) {
+                return $next($request);
+            }
+        }
+
+        // Log unauthorized access attempt
+        Log::warning('Unauthorized role access attempt', [
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'user_roles' => $user->getRoleNames()->toArray(),
+            'required_roles' => $roles,
+            'route' => $request->route()->getName() ?? $request->path(),
+            'method' => $request->method(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Access denied. You do not have the required role.',
+            'error_code' => 'INSUFFICIENT_ROLE',
+            'required_roles' => $roles,
+            'user_roles' => $user->getRoleNames()->toArray()
+        ], 403);
+    }
+}
