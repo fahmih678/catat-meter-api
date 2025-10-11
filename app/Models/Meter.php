@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Meter extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'pam_id',
+        'customer_id',
+        'serial_number',
+        'status',
+        'installed_at',
+        'initial_installed_meter',
+        'notes',
+        'last_recorded_at',
+    ];
+
+    protected $casts = [
+        'installed_at' => 'datetime',
+        'last_recorded_at' => 'datetime',
+        'initial_installed_meter' => 'decimal:2',
+    ];
+
+    public function pam(): BelongsTo
+    {
+        return $this->belongsTo(Pam::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function meterRecords(): HasMany
+    {
+        return $this->hasMany(MeterRecord::class);
+    }
+}
