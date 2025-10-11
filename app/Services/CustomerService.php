@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\RoleHelper;
 use App\Models\Customer;
 use App\Repositories\CustomerRepository;
 use Illuminate\Database\Eloquent\Collection;
@@ -35,7 +36,36 @@ class CustomerService extends BaseService
 
     public function searchCustomers(int $pamId, array $filters = []): LengthAwarePaginator
     {
+        // Apply PAM filtering based on user role
+        if (!RoleHelper::isSuperAdmin()) {
+            $userPamId = RoleHelper::getUserPamId();
+            if (!$userPamId || $pamId !== $userPamId) {
+                // Return empty result for unauthorized PAM access
+                return new LengthAwarePaginator([], 0, $filters['per_page'] ?? 15, 1);
+            }
+        }
+
         return $this->customerRepository->searchCustomers($pamId, $filters);
+    }
+
+    /**
+     * Get paginated customers with PAM filtering
+     */
+    public function getPaginatedWithPamFilter(array $filters = []): LengthAwarePaginator
+    {
+        // Apply PAM filter for non-superadmin users
+        if (!RoleHelper::isSuperAdmin()) {
+            $userPamId = RoleHelper::getUserPamId();
+            if (!$userPamId) {
+                // Return empty result for users without PAM association
+                return new LengthAwarePaginator([], 0, $filters['per_page'] ?? 15, 1);
+            }
+            // Use searchCustomers with user's PAM ID
+            return $this->customerRepository->searchCustomers($userPamId, $filters);
+        }
+
+        // SuperAdmin can access all customers - use general pagination
+        return $this->getPaginated($filters['per_page'] ?? 15);
     }
 
     public function getActiveCustomersWithUnpaidBills(int $pamId): Collection

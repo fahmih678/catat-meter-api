@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\RoleHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CustomerRequest;
+use App\Http\Traits\HasPamFiltering;
 use App\Services\CustomerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
+    use HasPamFiltering;
     protected CustomerService $customerService;
 
     public function __construct(CustomerService $customerService)
@@ -24,9 +27,11 @@ class CustomerController extends Controller
             $filters = $request->only(['name', 'customer_number', 'area_id', 'status', 'phone', 'per_page']);
 
             if ($pamId) {
+                // Specific PAM requested - use service with PAM filtering
                 $customers = $this->customerService->searchCustomers($pamId, $filters);
             } else {
-                $customers = $this->customerService->getPaginated($filters['per_page'] ?? 15);
+                // No specific PAM - use general pagination with PAM filtering
+                $customers = $this->customerService->getPaginatedWithPamFilter($filters);
             }
 
             return $this->successResponse($customers, 'Customers retrieved successfully');
@@ -42,6 +47,12 @@ class CustomerController extends Controller
 
             if (!$customer) {
                 return $this->notFoundResponse('Customer not found');
+            }
+
+            // Check PAM access permission using trait
+            $accessError = $this->checkEntityPamAccess($customer);
+            if ($accessError) {
+                return $accessError;
             }
 
             return $this->successResponse($customer, 'Customer retrieved successfully');

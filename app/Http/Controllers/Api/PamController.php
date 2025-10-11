@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\RoleHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PamRequest;
+use App\Http\Traits\HasPamFiltering;
 use App\Services\PamService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PamController extends Controller
 {
+    use HasPamFiltering;
     protected PamService $pamService;
 
     public function __construct(PamService $pamService)
@@ -20,7 +24,20 @@ class PamController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $pams = $this->pamService->getAll();
+            // Apply PAM filtering based on user role
+            if (RoleHelper::isSuperAdmin()) {
+                // SuperAdmin can see all PAMs
+                $pams = $this->pamService->getAll();
+            } else {
+                // Other roles can only see their own PAM
+                $userPamId = RoleHelper::getUserPamId();
+                if (!$userPamId) {
+                    return $this->forbiddenResponse('User is not associated with any PAM');
+                }
+                $pam = $this->pamService->findById($userPamId);
+                $pams = $pam ? [$pam] : [];
+            }
+
             return $this->successResponse($pams, 'PAMs retrieved successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Failed to retrieve PAMs: ' . $e->getMessage());
@@ -30,6 +47,12 @@ class PamController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
+            // Check PAM access permission using trait
+            $accessError = $this->checkPamAccess($id);
+            if ($accessError) {
+                return $accessError;
+            }
+
             $pam = $this->pamService->findById($id);
 
             if (!$pam) {
@@ -55,6 +78,12 @@ class PamController extends Controller
     public function update(PamRequest $request, int $id): JsonResponse
     {
         try {
+            // Check PAM access permission using trait
+            $accessError = $this->checkPamAccess($id);
+            if ($accessError) {
+                return $accessError;
+            }
+
             $pam = $this->pamService->update($id, $request->validated());
             return $this->updatedResponse($pam, 'PAM updated successfully');
         } catch (\Exception $e) {
@@ -96,6 +125,12 @@ class PamController extends Controller
     public function statistics(int $id): JsonResponse
     {
         try {
+            // Check PAM access permission using trait
+            $accessError = $this->checkPamAccess($id);
+            if ($accessError) {
+                return $accessError;
+            }
+
             $statistics = $this->pamService->getStatistics($id);
             return $this->successResponse($statistics, 'PAM statistics retrieved successfully');
         } catch (\Exception $e) {
