@@ -34,7 +34,7 @@ class TariffTierSeeder extends Seeder
                         'effective_from' => Carbon::now()->subYear(),
                         'effective_to' => null,
                         'description' => $tier['description'],
-                        'status' => 'active',
+                        'is_active' => true,
                     ]);
                     $totalCreated++;
                 }

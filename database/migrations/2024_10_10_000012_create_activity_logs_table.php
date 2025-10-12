@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('pam_id')->constrained('pams')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('action');
             $table->string('activity_type');
             $table->text('description');
             $table->string('table_name')->nullable();

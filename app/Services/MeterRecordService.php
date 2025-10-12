@@ -244,9 +244,10 @@ class MeterRecordService
         ActivityLog::create([
             'pam_id' => $model->meter->customer->pam_id,
             'user_id' => Auth::id() ?? 1, // Use default user for testing
-            'activity_type' => 'meter_record_created',
+            'action' => 'create',
+            'activity_type' => 'meter_reading_created',
             'description' => "Reading recorded for meter {$model->meter->meter_number}: {$model->current_reading} ({$model->usage} usage)",
-            'table_name' => 'meter_records',
+            'table_name' => 'meter_readings',
             'record_id' => $model->id,
             'new_values' => $model->toArray(),
         ]);
@@ -259,9 +260,10 @@ class MeterRecordService
             ActivityLog::create([
                 'pam_id' => $model->meter->customer->pam_id,
                 'user_id' => Auth::id() ?? 1, // Use default user for testing
-                'activity_type' => 'meter_record_updated',
+                'action' => 'update',
+                'activity_type' => 'meter_reading_updated',
                 'description' => "Reading updated for meter {$model->meter->meter_number}: {$oldData['current_reading']} → {$data['current_reading']}",
-                'table_name' => 'meter_records',
+                'table_name' => 'meter_readings',
                 'record_id' => $model->id,
                 'old_values' => ['current_reading' => $oldData['current_reading']],
                 'new_values' => ['current_reading' => $data['current_reading']],
@@ -275,9 +277,10 @@ class MeterRecordService
         ActivityLog::create([
             'pam_id' => $model->meter->customer->pam_id,
             'user_id' => Auth::id() ?? 1, // Use default user for testing
-            'activity_type' => 'meter_record_deleted',
+            'action' => 'delete',
+            'activity_type' => 'meter_reading_deleted',
             'description' => "Reading deleted for meter {$model->meter->meter_number}: {$model->current_reading}",
-            'table_name' => 'meter_records',
+            'table_name' => 'meter_readings',
             'record_id' => $model->id,
             'old_values' => $model->toArray(),
         ]);

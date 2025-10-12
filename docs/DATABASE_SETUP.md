@@ -17,7 +17,7 @@ php artisan migrate --path=database/migrations/2024_10_10_000005_create_tariff_t
 php artisan migrate --path=database/migrations/2024_10_10_000006_create_fixed_fees_table.php
 php artisan migrate --path=database/migrations/2024_10_10_000007_create_customers_table.php
 php artisan migrate --path=database/migrations/2024_10_10_000008_create_meters_table.php
-php artisan migrate --path=database/migrations/2024_10_10_000009_create_meter_records_table.php
+php artisan migrate --path=database/migrations/2024_10_10_000009_create_meter_readings_table.php
 php artisan migrate --path=database/migrations/2024_10_10_000010_create_bills_table.php
 php artisan migrate --path=database/migrations/2024_10_10_000011_create_monthly_reports_table.php
 php artisan migrate --path=database/migrations/2024_10_10_000012_create_activity_logs_table.php
@@ -40,7 +40,7 @@ php artisan migrate
 6. **fixed_fees** - Biaya tetap (admin, pemeliharaan, dll)
 7. **customers** - Data Pelanggan
 8. **meters** - Data Meter Air
-9. **meter_records** - Pencatatan Pembacaan Meter
+9. **meter_readings** - Pencatatan Pembacaan Meter
 10. **bills** - Tagihan
 11. **monthly_reports** - Laporan Bulanan
 12. **activity_logs** - Log Aktivitas Sistem

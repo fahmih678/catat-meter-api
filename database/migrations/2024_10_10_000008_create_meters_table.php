@@ -16,11 +16,11 @@ return new class extends Migration
             $table->foreignId('pam_id')->constrained('pams')->onDelete('cascade');
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
             $table->string('serial_number')->unique();
-            $table->enum('status', ['active', 'inactive'])->default('active');
             $table->datetime('installed_at')->nullable();
             $table->decimal('initial_installed_meter', 10, 2)->default(0);
             $table->text('notes')->nullable();
             $table->datetime('last_recorded_at')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->softDeletes();
             $table->timestamps();
 

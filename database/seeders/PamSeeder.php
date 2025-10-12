@@ -18,7 +18,7 @@ class PamSeeder extends Seeder
                 'code' => 'PAMJAKPUR',
                 'phone' => '021-5555-0001',
                 'address' => 'Jl. Sudirman No. 123, Jakarta Pusat, DKI Jakarta 10110',
-                'status' => 'active',
+                'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.2088, 'lng' => 106.8456]),
             ],
             [
@@ -26,7 +26,7 @@ class PamSeeder extends Seeder
                 'code' => 'PAMJAKSEL',
                 'phone' => '021-5555-0002',
                 'address' => 'Jl. Senopati No. 45, Jakarta Selatan, DKI Jakarta 12110',
-                'status' => 'active',
+                'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.2297, 'lng' => 106.8185]),
             ],
             [
@@ -34,7 +34,7 @@ class PamSeeder extends Seeder
                 'code' => 'PAMJAKBAR',
                 'phone' => '021-5555-0003',
                 'address' => 'Jl. Puri Indah No. 78, Jakarta Barat, DKI Jakarta 11610',
-                'status' => 'active',
+                'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.1889, 'lng' => 106.7378]),
             ],
             [
@@ -42,7 +42,7 @@ class PamSeeder extends Seeder
                 'code' => 'PAMJAKTIM',
                 'phone' => '021-5555-0004',
                 'address' => 'Jl. Bekasi Raya No. 234, Jakarta Timur, DKI Jakarta 13220',
-                'status' => 'active',
+                'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.2146, 'lng' => 106.9206]),
             ],
             [
@@ -50,7 +50,7 @@ class PamSeeder extends Seeder
                 'code' => 'PAMJAKUT',
                 'phone' => '021-5555-0005',
                 'address' => 'Jl. Sunter Garden No. 567, Jakarta Utara, DKI Jakarta 14350',
-                'status' => 'active',
+                'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.1388, 'lng' => 106.8650]),
             ],
             [
@@ -58,7 +58,7 @@ class PamSeeder extends Seeder
                 'code' => 'PAMTGR',
                 'phone' => '021-5555-0006',
                 'address' => 'Jl. Sudirman No. 89, Tangerang, Banten 15111',
-                'status' => 'active',
+                'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.1783, 'lng' => 106.6319]),
             ],
             [
@@ -66,7 +66,7 @@ class PamSeeder extends Seeder
                 'code' => 'PAMBKS',
                 'phone' => '021-5555-0007',
                 'address' => 'Jl. Ahmad Yani No. 321, Bekasi, Jawa Barat 17142',
-                'status' => 'active',
+                'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.2383, 'lng' => 106.9756]),
             ],
             [
@@ -74,7 +74,7 @@ class PamSeeder extends Seeder
                 'code' => 'PAMDPK',
                 'phone' => '021-5555-0008',
                 'address' => 'Jl. Margonda Raya No. 654, Depok, Jawa Barat 16424',
-                'status' => 'inactive',
+                'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.4025, 'lng' => 106.7942]),
             ]
         ];

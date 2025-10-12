@@ -17,7 +17,7 @@ class MeterSeeder extends Seeder
     public function run(): void
     {
         $faker = Faker::create();
-        $customers = Customer::where('status', 'active')->get();
+        $customers = Customer::where('is_active', true)->get();
         $totalCreated = 0;
 
         $meterBrands = ['Itron', 'Sensus', 'Elster', 'Kamstrup', 'Badger', 'Neptune', 'Arad'];
@@ -35,9 +35,9 @@ class MeterSeeder extends Seeder
                 $installationDate = Carbon::now()->subDays(rand(180, 1825));
 
                 // 95% of meters are active, 5% inactive
-                $status = (rand(1, 100) <= 95) ? 'active' : 'inactive';
+                $status = (rand(1, 100) <= 95) ? true : false;
 
-                // Initial reading between 0-500 cubic meters
+                // Previous reading between 0-500 cubic meters
                 $initialReading = rand(0, 500);
 
                 // Current reading is initial + some usage (0-100 m³ more)
@@ -50,7 +50,7 @@ class MeterSeeder extends Seeder
                     'pam_id' => $customer->pam_id,
                     'customer_id' => $customer->id,
                     'serial_number' => $serialNumber,
-                    'status' => $status,
+                    'is_active' => $status,
                     'installed_at' => $installationDate,
                     'initial_installed_meter' => $initialReading,
                     'last_recorded_at' => $lastReadingDate,
@@ -91,9 +91,9 @@ class MeterSeeder extends Seeder
         return '20mm'; // Default fallback
     }
 
-    private function generateMeterNotes($faker, string $status): ?string
+    private function generateMeterNotes($faker, bool $status): ?string
     {
-        if ($status === 'inactive') {
+        if ($status === false) {
             $inactiveReasons = [
                 'Meteran rusak, perlu penggantian',
                 'Meteran tidak terbaca dengan jelas',

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('pam_id')->constrained('pams')->onDelete('cascade');
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
-            $table->foreignId('meter_record_id')->constrained('meter_records')->onDelete('cascade');
+            $table->foreignId('meter_reading_id')->constrained('meter_readings')->onDelete('cascade');
             $table->string('bill_number');
             $table->string('reference_number')->nullable();
             $table->decimal('volume_usage', 10, 2);
@@ -24,6 +24,8 @@ return new class extends Migration
             $table->date('due_date');
             $table->string('payment_method')->nullable();
             $table->datetime('paid_at')->nullable();
+            $table->datetime('issued_at')->nullable();
+            $table->string('tariff_snapshot')->nullable();
             $table->softDeletes();
             $table->timestamps();
 

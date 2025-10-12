@@ -32,7 +32,7 @@ class FixedFeeSeeder extends Seeder
                     'effective_from' => Carbon::now()->subYear(),
                     'effective_to' => null,
                     'description' => 'Biaya tetap bulanan untuk golongan ' . $tariffGroup->name,
-                    'status' => 'active',
+                    'is_active' => true,
                 ]);
 
                 // Biaya Administrasi (same for all groups)
@@ -44,7 +44,7 @@ class FixedFeeSeeder extends Seeder
                     'effective_from' => Carbon::now()->subYear(),
                     'effective_to' => null,
                     'description' => 'Biaya administrasi bulanan',
-                    'status' => 'active',
+                    'is_active' => true,
                 ]);
 
                 // Biaya Meteran (based on tariff group)
@@ -57,7 +57,7 @@ class FixedFeeSeeder extends Seeder
                     'effective_from' => Carbon::now()->subYear(),
                     'effective_to' => null,
                     'description' => 'Biaya pemeliharaan meteran untuk golongan ' . $tariffGroup->name,
-                    'status' => 'active',
+                    'is_active' => true,
                 ]);
 
                 $totalCreated += 3;

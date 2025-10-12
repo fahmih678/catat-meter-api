@@ -40,7 +40,7 @@ class MeterRequest extends FormRequest
             'installation_date' => ['required', 'date'],
             'last_calibration_date' => ['nullable', 'date'],
             'next_calibration_date' => ['nullable', 'date', 'after:last_calibration_date'],
-            'initial_reading' => ['required', 'numeric', 'min:0'],
+            'previous_reading' => ['required', 'numeric', 'min:0'],
             'coordinate' => ['nullable', 'string'],
             'notes' => ['nullable', 'string'],
             'status' => ['nullable', 'in:active,inactive,maintenance,damaged'],
@@ -68,9 +68,9 @@ class MeterRequest extends FormRequest
             'last_calibration_date.date' => 'Last calibration date must be a valid date',
             'next_calibration_date.date' => 'Next calibration date must be a valid date',
             'next_calibration_date.after' => 'Next calibration date must be after last calibration date',
-            'initial_reading.required' => 'Initial reading is required',
-            'initial_reading.numeric' => 'Initial reading must be a number',
-            'initial_reading.min' => 'Initial reading must be at least 0',
+            'previous_reading.required' => 'Previous reading is required',
+            'previous_reading.numeric' => 'Previous reading must be a number',
+            'previous_reading.min' => 'Previous reading must be at least 0',
             'status.in' => 'Status must be: active, inactive, maintenance, or damaged',
         ];
     }

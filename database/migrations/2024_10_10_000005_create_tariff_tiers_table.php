@@ -21,11 +21,11 @@ return new class extends Migration
             $table->date('effective_from');
             $table->date('effective_to')->nullable();
             $table->text('description')->nullable();
-            $table->enum('status', ['active', 'expired'])->default('active');
+            $table->boolean('is_active')->default(true);
             $table->softDeletes();
             $table->timestamps();
 
-            $table->index(['pam_id', 'tariff_group_id', 'status']);
+            $table->index(['pam_id', 'tariff_group_id']);
         });
     }
 

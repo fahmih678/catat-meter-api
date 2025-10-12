@@ -163,7 +163,7 @@ Seeder ini dirancang untuk membuat data testing yang realistis untuk semua modul
 
 **Fitur Realistis:**
 - 📅 **Tanggal instalasi**: 6 bulan - 5 tahun lalu
-- 📊 **Initial reading**: 0-500 m³
+- 📊 **Previous reading**: 0-500 m³
 - 📈 **Current reading**: Initial + pemakaian
 - 🔧 **95% meter aktif**, 5% butuh perbaikan
 - 📝 **Notes** untuk meter bermasalah

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('pam_id')->constrained('pams')->onDelete('cascade');
             $table->string('name');
             $table->text('description')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->softDeletes();
             $table->timestamps();
 

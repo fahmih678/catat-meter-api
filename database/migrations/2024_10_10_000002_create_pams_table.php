@@ -13,12 +13,13 @@ return new class extends Migration
     {
         Schema::create('pams', function (Blueprint $table) {
             $table->id();
+            $table->string('code')->unique();
             $table->string('name')->index();
+            $table->string('email')->unique()->nullable();
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
-            $table->string('code')->unique();
             $table->string('logo_url')->nullable();
-            $table->enum('status', ['active', 'inactive'])->default('inactive');
+            $table->boolean('is_active')->default(true);
             $table->json('coordinate')->nullable();
             $table->softDeletes();
             $table->timestamps();

@@ -43,7 +43,7 @@
   - `meters.serial_number` (unique)
   - `customers[pam_id, customer_number]` (composite unique)
   - `bills[pam_id, bill_number]` (composite unique)
-  - `meter_records[meter_id, period]` (composite unique)
+  - `meter_readings[meter_id, period]` (composite unique)
 
 ### Indexing:
 - ✅ Index sudah ditambahkan pada kolom yang sering diquery

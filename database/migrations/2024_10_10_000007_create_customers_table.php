@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('name')->index();
             $table->text('address');
             $table->string('phone')->nullable();
-            $table->enum('status', ['active', 'inactive'])->default('active')->index();
+            $table->boolean('is_active')->default(true);
             $table->softDeletes();
             $table->timestamps();
 

@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('areas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('pam_id')->constrained('pams')->onDelete('cascade');
-            $table->string('name');
             $table->string('code');
+            $table->string('name');
             $table->text('description')->nullable();
             $table->softDeletes();
             $table->timestamps();

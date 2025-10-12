@@ -244,6 +244,7 @@ class MeterService
         ActivityLog::create([
             'pam_id' => $model->customer->pam_id,
             'user_id' => Auth::id() ?? 1, // Use default user for testing
+            'action' => 'create',
             'activity_type' => 'meter_created',
             'description' => "Meter {$model->meter_number} created for customer {$model->customer->name}",
             'table_name' => 'meters',
@@ -259,6 +260,7 @@ class MeterService
             ActivityLog::create([
                 'pam_id' => $model->customer->pam_id,
                 'user_id' => Auth::id() ?? 1, // Use default user for testing
+                'action' => 'update',
                 'activity_type' => 'meter_status_changed',
                 'description' => "Meter {$model->meter_number} status changed from {$oldData['status']} to {$data['status']}",
                 'table_name' => 'meters',
@@ -275,6 +277,7 @@ class MeterService
         ActivityLog::create([
             'pam_id' => $model->customer->pam_id,
             'user_id' => Auth::id() ?? 1, // Use default user for testing
+            'action' => 'delete',
             'activity_type' => 'meter_deleted',
             'description' => "Meter {$model->meter_number} deleted",
             'table_name' => 'meters',

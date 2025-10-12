@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Helpers\RoleHelper;
 use App\Models\Customer;
+use App\Models\ActivityLog;
 use App\Repositories\CustomerRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -144,9 +145,10 @@ class CustomerService extends BaseService
     protected function afterCreate($model, array $data): void
     {
         // Create activity log
-        \App\Models\ActivityLog::create([
+        ActivityLog::create([
             'pam_id' => $model->pam_id,
             'user_id' => Auth::id() ?? 1, // Use default user for testing
+            'action' => 'create',
             'activity_type' => 'customer_created',
             'description' => "Customer {$model->name} ({$model->customer_number}) created",
             'table_name' => 'customers',
@@ -159,9 +161,10 @@ class CustomerService extends BaseService
     {
         // Log status changes
         if (isset($data['status']) && $data['status'] !== $oldData['status']) {
-            \App\Models\ActivityLog::create([
+            ActivityLog::create([
                 'pam_id' => $model->pam_id,
                 'user_id' => Auth::id() ?? 1, // Use default user for testing
+                'action' => 'update',
                 'activity_type' => 'customer_status_changed',
                 'description' => "Customer {$model->name} status changed from {$oldData['status']} to {$data['status']}",
                 'table_name' => 'customers',

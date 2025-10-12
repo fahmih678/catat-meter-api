@@ -14,7 +14,7 @@ class Bill extends Model
     protected $fillable = [
         'pam_id',
         'customer_id',
-        'meter_record_id',
+        'meter_reading_id',
         'bill_number',
         'reference_number',
         'volume_usage',

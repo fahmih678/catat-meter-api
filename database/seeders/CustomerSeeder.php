@@ -17,7 +17,7 @@ class CustomerSeeder extends Seeder
     public function run(): void
     {
         $faker = Faker::create('id_ID'); // Indonesian locale
-        $pams = Pam::where('status', 'active')->get();
+        $pams = Pam::where('is_active', true)->get();
         $totalCreated = 0;
 
         foreach ($pams as $pam) {
@@ -40,7 +40,7 @@ class CustomerSeeder extends Seeder
                 $phone = $this->generateIndonesianPhone($faker);
 
                 // 90% customers are active, 10% inactive
-                $status = (rand(1, 100) <= 90) ? 'active' : 'inactive';
+                $status = (rand(1, 100) <= 90) ? true : false;
 
                 Customer::create([
                     'pam_id' => $pam->id,
@@ -50,7 +50,7 @@ class CustomerSeeder extends Seeder
                     'name' => $name,
                     'address' => $address,
                     'phone' => $phone,
-                    'status' => $status,
+                    'is_active' => $status,
                 ]);
 
                 $totalCreated++;

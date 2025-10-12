@@ -16,8 +16,8 @@ class MeterRecord extends Model
         'pam_id',
         'meter_id',
         'period',
-        'initial_meter',
-        'final_meter',
+        'previous_reading',
+        'current_reading',
         'volume_usage',
         'photo_url',
         'status',
@@ -26,8 +26,8 @@ class MeterRecord extends Model
 
     protected $casts = [
         'period' => 'date',
-        'initial_meter' => 'decimal:2',
-        'final_meter' => 'decimal:2',
+        'previous_reading' => 'decimal:2',
+        'current_reading' => 'decimal:2',
         'volume_usage' => 'decimal:2',
     ];
 
