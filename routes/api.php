@@ -8,6 +8,15 @@ use App\Http\Controllers\Api\MeterController;
 use App\Http\Controllers\Api\MeterRecordController;
 use App\Http\Controllers\Api\BillController;
 use App\Http\Controllers\Api\ReportController;
+
+// V1 API Controllers
+use App\Http\Controllers\Api\V1\AuthController as V1AuthController;
+use App\Http\Controllers\Api\V1\MeterController as V1MeterController;
+use App\Http\Controllers\Api\V1\CustomerController as V1CustomerController;
+use App\Http\Controllers\Api\V1\PaymentController as V1PaymentController;
+use App\Http\Controllers\Api\V1\DashboardController as V1DashboardController;
+use App\Http\Controllers\Api\V1\ReportController as V1ReportController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -24,7 +33,37 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Authentication Routes (Public)
+| API V1 Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('v1')->name('v1.')->group(function () {
+
+    // Authentication Routes (Public)
+    Route::prefix('auth')->name('auth.')->group(function () {
+        Route::post('/login', [V1AuthController::class, 'login'])->name('login');
+
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::get('/profile', [V1AuthController::class, 'profile'])->name('profile');
+            Route::put('/profile', [V1AuthController::class, 'updateProfile'])->name('update-profile');
+            Route::post('/logout', [V1AuthController::class, 'logout'])->name('logout');
+            // Route::post('/logout-all', [V1AuthController::class, 'logoutAll'])->name('logout-all');
+            // Route::post('/refresh-token', [V1AuthController::class, 'refreshToken'])->name('refresh-token');
+            // Route::get('/check-token', [V1AuthController::class, 'checkToken'])->name('check-token');
+        });
+    });
+
+    // Protected Routes
+    Route::middleware('auth:sanctum')->group(function () {
+        // Catat Meter Operations
+        Route::get('/dashboard', [V1DashboardController::class, 'index'])->name('dashboard');
+        Route::post('/create-bill', [V1PaymentController::class, 'store'])->name('create-bill');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Legacy Authentication Routes (Public)
 |--------------------------------------------------------------------------
 */
 
@@ -40,7 +79,7 @@ Route::prefix('auth')->name('auth.')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Protected Routes (Require Authentication)
+| Legacy Protected Routes (Require Authentication)
 |--------------------------------------------------------------------------
 */
 
