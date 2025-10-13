@@ -7,22 +7,22 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class MonthlyReport extends Model
+class RegisteredMonth extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'pam_id',
-        'month',
+        'period',
         'total_customers',
-        'total_volume',
-        'total_income',
-        'generated_by',
+        'total_usage',
+        'total_bills',
+        'registered_by',
     ];
 
     protected $casts = [
-        'total_volume' => 'decimal:2',
-        'total_income' => 'decimal:2',
+        'total_usage' => 'decimal:2',
+        'total_bills' => 'decimal:2',
     ];
 
     public function pam(): BelongsTo
@@ -30,8 +30,8 @@ class MonthlyReport extends Model
         return $this->belongsTo(Pam::class);
     }
 
-    public function generatedBy(): BelongsTo
+    public function registeredBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'generated_by');
+        return $this->belongsTo(User::class, 'registered_by');
     }
 }

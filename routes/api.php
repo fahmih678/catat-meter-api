@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\CustomerController as V1CustomerController;
 use App\Http\Controllers\Api\V1\PaymentController as V1PaymentController;
 use App\Http\Controllers\Api\V1\DashboardController as V1DashboardController;
 use App\Http\Controllers\Api\V1\ReportController as V1ReportController;
+use App\Http\Controllers\Api\V1\CatatMeterController as V1CatatMeterController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +58,10 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         // Catat Meter Operations
         Route::get('/dashboard', [V1DashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/month-list/{year}', [V1CatatMeterController::class, 'monthList'])->name('month-list');
+        Route::post('/create-month', [V1CatatMeterController::class, 'createMonth'])->name('create-month');
+
         Route::post('/create-bill', [V1PaymentController::class, 'store'])->name('create-bill');
     });
 });

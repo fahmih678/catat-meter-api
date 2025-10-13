@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class MeterRecord extends Model
+class MeterReading extends Model
 {
     use HasFactory, SoftDeletes;
 
@@ -21,7 +21,7 @@ class MeterRecord extends Model
         'volume_usage',
         'photo_url',
         'status',
-        'recorded_by',
+        'reading_by',
     ];
 
     protected $casts = [
@@ -41,9 +41,9 @@ class MeterRecord extends Model
         return $this->belongsTo(Meter::class);
     }
 
-    public function recordedBy(): BelongsTo
+    public function readingBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'recorded_by');
+        return $this->belongsTo(User::class, 'reading_by');
     }
 
     public function bills(): HasMany

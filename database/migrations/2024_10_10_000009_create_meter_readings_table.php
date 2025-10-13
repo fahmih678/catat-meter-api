@@ -22,7 +22,8 @@ return new class extends Migration
             $table->string('photo_url')->nullable();
             $table->enum('status', ['draft', 'pending', 'paid'])->default('draft');
             $table->text('notes')->nullable();
-            $table->foreignId('recorded_by')->constrained('users')->onDelete('cascade');
+            $table->foreignId('reading_by')->constrained('users')->onDelete('cascade');
+            $table->date('reading_at');
             $table->softDeletes();
             $table->timestamps();
 
