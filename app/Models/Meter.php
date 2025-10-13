@@ -39,8 +39,8 @@ class Meter extends Model
         return $this->belongsTo(Customer::class);
     }
 
-    public function meterRecords(): HasMany
+    public function meterReadings(): HasMany
     {
-        return $this->hasMany(MeterRecord::class);
+        return $this->hasMany(MeterReading::class);
     }
 }

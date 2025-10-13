@@ -9,7 +9,7 @@ Menambahkan binding untuk:
 - `PamRepository::class`
 - `CustomerRepository::class`  
 - `MeterRepository::class`
-- `MeterRecordRepository::class`
+- `MeterReadingRepository::class`
 
 #### **Service Bindings:**
 - `PamService::class` (with dependency injection)

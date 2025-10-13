@@ -60,9 +60,9 @@ class Pam extends Model
         return $this->hasMany(FixedFee::class);
     }
 
-    public function meterRecords(): HasMany
+    public function meterReadings(): HasMany
     {
-        return $this->hasMany(MeterRecord::class);
+        return $this->hasMany(MeterReading::class);
     }
 
     public function bills(): HasMany

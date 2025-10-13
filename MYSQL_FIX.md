@@ -30,7 +30,7 @@ $q->where('customers.name', 'LIKE', "%{$search}%")
 ```
 
 ### Additional Fixes
-✅ **Updated MeterRecordRepository** to use `MeterReading` model instead of non-existent `MeterRecord`  
+✅ **Updated MeterReadingRepository** to use `MeterReading` model instead of non-existent `MeterReading`  
 ✅ **Updated API documentation** to reflect MySQL compatibility  
 ✅ **Verified API endpoints** are responding correctly  
 

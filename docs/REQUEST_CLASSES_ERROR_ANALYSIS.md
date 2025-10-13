@@ -72,7 +72,7 @@ class CustomerRequest extends FormRequest
  * @property mixed $previous_reading
  * @property mixed $reading_date
  */
-class MeterRecordRequest extends FormRequest
+class MeterReadingRequest extends FormRequest
 ```
 
 ---
@@ -106,7 +106,7 @@ class MeterRecordRequest extends FormRequest
 **Fixed Methods:** `route()`, `input()`, `has()`, `merge()`  
 **Fixed Properties:** `$current_reading`, `$previous_reading`, `$reading_date`
 
-### **3. MeterRecordRequest.php**
+### **3. MeterReadingRequest.php**
 ```php
 /**
  * @method bool has(string $key)
@@ -126,13 +126,13 @@ class MeterRecordRequest extends FormRequest
 ### **Before Fix:**
 - ❌ 10 errors in CustomerRequest.php
 - ❌ 5 errors in MeterRequest.php  
-- ❌ 8 errors in MeterRecordRequest.php
+- ❌ 8 errors in MeterReadingRequest.php
 - ❌ Total: 23 IDE errors
 
 ### **After Fix:**
 - ✅ 0 errors in CustomerRequest.php
 - ✅ 0 errors in MeterRequest.php
-- ✅ 0 errors in MeterRecordRequest.php
+- ✅ 0 errors in MeterReadingRequest.php
 - ✅ All 70 routes still registered correctly
 
 ---
@@ -208,7 +208,7 @@ protected function prepareForValidation(): void
 ### **Error Status:**
 - ✅ **CustomerRequest.php** - No more IDE errors
 - ✅ **MeterRequest.php** - No more IDE errors  
-- ✅ **MeterRecordRequest.php** - No more IDE errors
+- ✅ **MeterReadingRequest.php** - No more IDE errors
 
 ### **Functionality Status:**
 - ✅ **All validation rules working** correctly

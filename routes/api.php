@@ -5,7 +5,7 @@ use App\Http\Controllers\Api\PamController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\MeterController;
-use App\Http\Controllers\Api\MeterRecordController;
+use App\Http\Controllers\Api\MeterReadingController;
 use App\Http\Controllers\Api\BillController;
 use App\Http\Controllers\Api\ReportController;
 
@@ -61,6 +61,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
         Route::get('/month-list/{year}', [V1CatatMeterController::class, 'monthList'])->name('month-list');
         Route::get('/customer-list', [V1CustomerController::class, 'customerList'])->name('customer-list');
+        Route::get('/unrecorded-customers', [V1CustomerController::class, 'unrecordedList'])->name('unrecorded-customers');
         Route::post('/create-month', [V1CatatMeterController::class, 'createMonth'])->name('create-month');
 
         Route::get('/meter-reading-list', [V1CatatMeterController::class, 'meterReadingList'])->name('meter-reading-list');
@@ -203,16 +204,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // METER RECORD MANAGEMENT (View & Approve) - Using existing controllers
         Route::prefix('meter-records')->name('meter-records.')->group(function () {
-            Route::get('/', [MeterRecordController::class, 'index'])->name('index');
-            Route::get('/{id}', [MeterRecordController::class, 'show'])->name('show');
-            Route::put('/{id}', [MeterRecordController::class, 'update'])->name('update');
-            Route::post('/{id}/approve', [MeterRecordController::class, 'approve'])->name('approve');
-            Route::post('/{id}/reject', [MeterRecordController::class, 'reject'])->name('reject');
-            Route::get('/meter/{meterId}', [MeterRecordController::class, 'byMeter'])->name('by-meter');
-            Route::get('/period/{period}', [MeterRecordController::class, 'byPeriod'])->name('by-period');
-            Route::get('/meter/{meterId}/usage', [MeterRecordController::class, 'usage'])->name('usage');
-            Route::get('/statistics', [MeterRecordController::class, 'statistics'])->name('statistics');
-            Route::get('/missing-readings', [MeterRecordController::class, 'missingReadings'])->name('missing-readings');
+            Route::get('/', [MeterReadingController::class, 'index'])->name('index');
+            Route::get('/{id}', [MeterReadingController::class, 'show'])->name('show');
+            Route::put('/{id}', [MeterReadingController::class, 'update'])->name('update');
+            Route::post('/{id}/approve', [MeterReadingController::class, 'approve'])->name('approve');
+            Route::post('/{id}/reject', [MeterReadingController::class, 'reject'])->name('reject');
+            Route::get('/meter/{meterId}', [MeterReadingController::class, 'byMeter'])->name('by-meter');
+            Route::get('/period/{period}', [MeterReadingController::class, 'byPeriod'])->name('by-period');
+            Route::get('/meter/{meterId}/usage', [MeterReadingController::class, 'usage'])->name('usage');
+            Route::get('/statistics', [MeterReadingController::class, 'statistics'])->name('statistics');
+            Route::get('/missing-readings', [MeterReadingController::class, 'missingReadings'])->name('missing-readings');
         });
 
         // BILL MANAGEMENT (Full CRUD) - Using existing controllers
@@ -260,8 +261,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // METER RECORD OPERATIONS (Full CRUD except delete)
         Route::prefix('meter-records')->name('meter-records.')->group(function () {
-            Route::post('/', [MeterRecordController::class, 'store'])->name('store');
-            Route::post('/bulk-create', [MeterRecordController::class, 'bulkCreate'])->name('bulk-create');
+            Route::post('/', [MeterReadingController::class, 'store'])->name('store');
+            Route::post('/bulk-create', [MeterReadingController::class, 'bulkCreate'])->name('bulk-create');
         });
 
         // BASIC REPORTS
@@ -289,7 +290,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // METER RECORD READ ACCESS (for billing)
         Route::prefix('meter-records')->name('meter-records.billing.')->group(function () {
-            Route::get('/for-billing', [MeterRecordController::class, 'forBilling'])->name('for-billing');
+            Route::get('/for-billing', [MeterReadingController::class, 'forBilling'])->name('for-billing');
         });
 
         // BILL READ AND PAYMENT ACCESS

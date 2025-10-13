@@ -22,14 +22,14 @@ class MeterRepository extends BaseRepository
     public function getByCustomer(int $customerId): Collection
     {
         return $this->model->where('customer_id', $customerId)
-            ->with(['customer', 'meterRecords'])
+            ->with(['customer', 'meterReadings'])
             ->get();
     }
 
     public function getByPam(int $pamId): Collection
     {
         return $this->model->where('pam_id', $pamId)
-            ->with(['customer', 'meterRecords'])
+            ->with(['customer', 'meterReadings'])
             ->get();
     }
 
@@ -37,7 +37,7 @@ class MeterRepository extends BaseRepository
     {
         return $this->model->where('pam_id', $pamId)
             ->where('status', 'active')
-            ->whereDoesntHave('meterRecords', function ($query) use ($period) {
+            ->whereDoesntHave('meterReadings', function ($query) use ($period) {
                 $query->where('period', $period);
             })
             ->with(['customer', 'customer.area'])
@@ -49,7 +49,7 @@ class MeterRepository extends BaseRepository
         return $this->model->where('pam_id', $pamId)
             ->with([
                 'customer',
-                'meterRecords' => function ($query) {
+                'meterReadings' => function ($query) {
                     $query->latest('period')->limit(1);
                 }
             ])
@@ -107,7 +107,7 @@ class MeterRepository extends BaseRepository
     public function findByCustomer(int $customerId): array
     {
         return $this->model->where('customer_id', $customerId)
-            ->with(['customer', 'meterRecords' => function ($query) {
+            ->with(['customer', 'meterReadings' => function ($query) {
                 $query->latest('reading_date')->limit(5);
             }])
             ->get()

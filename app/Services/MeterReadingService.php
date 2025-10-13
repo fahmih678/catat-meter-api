@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
-use App\Models\MeterRecord;
+use App\Models\MeterReading;
 use App\Repositories\MeterReadingRepository;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class MeterRecordService
+class MeterReadingService
 {
     private MeterReadingRepository $meterReadingRepository;
 
@@ -23,12 +23,12 @@ class MeterRecordService
         return $this->meterReadingRepository->getAllWithFilters($filters);
     }
 
-    public function getRecordById(int $id): ?MeterRecord
+    public function getRecordById(int $id): ?MeterReading
     {
         return $this->meterReadingRepository->find($id);
     }
 
-    public function createRecord(array $data): MeterRecord
+    public function createRecord(array $data): MeterReading
     {
         return DB::transaction(function () use ($data) {
             // Get previous reading if not provided
@@ -49,7 +49,7 @@ class MeterRecordService
         });
     }
 
-    public function updateRecord(int $id, array $data): ?MeterRecord
+    public function updateRecord(int $id, array $data): ?MeterReading
     {
         return DB::transaction(function () use ($id, $data) {
             $record = $this->meterReadingRepository->find($id);

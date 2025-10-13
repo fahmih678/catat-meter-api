@@ -6,7 +6,7 @@
 ## 📊 **OVERVIEW STATISTICS:**
 
 - 🎯 **Total API Endpoints:** 66 endpoints
-- 📦 **Modules Implemented:** 6 modules (PAM, Customer, Meter, MeterRecord, Bill, Report)
+- 📦 **Modules Implemented:** 6 modules (PAM, Customer, Meter, MeterReading, Bill, Report)
 - 🗂️ **Database Tables:** 13 tables with relationships
 - 🌱 **Test Data:** 8 PAMs, 143 customers, 107 meters, 216 tariff tiers
 - ✅ **Testing Status:** All endpoints tested and working
@@ -137,7 +137,7 @@ PAMs (8) → Areas (40) → Customers (143)
          ↓
 TariffGroups (64) → TariffTiers (216) + FixedFees (192)
          ↓
-Customers → Meters (107) → MeterRecords → Bills → Reports
+Customers → Meters (107) → MeterReadings → Bills → Reports
 ```
 
 ### **Key Features Implemented:**

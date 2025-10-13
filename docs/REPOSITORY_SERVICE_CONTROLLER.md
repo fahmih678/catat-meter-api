@@ -55,7 +55,7 @@
 - `getMetersNotRecordedForDays(int $pamId, int $days)`
 - `updateLastRecorded(int $meterId)`
 
-#### ✅ `MeterRecordRepository`
+#### ✅ `MeterReadingRepository`
 **Methods:**
 - `findByMeterAndPeriod(int $meterId, string $period)`
 - `getByPamAndPeriod(int $pamId, string $period)`
@@ -219,7 +219,7 @@ $pam = $pamService->create([
 ## 📋 **Masih Perlu Dibuat:**
 
 ### Additional Repositories & Services:
-- ✅ MeterRepository ✅ MeterRecordRepository
+- ✅ MeterRepository ✅ MeterReadingRepository
 - ❌ BillRepository
 - ❌ TariffGroupRepository  
 - ❌ TariffTierRepository
@@ -229,7 +229,7 @@ $pam = $pamService->create([
 
 ### Additional Controllers:
 - ❌ MeterController
-- ❌ MeterRecordController
+- ❌ MeterReadingController
 - ❌ BillController
 - ❌ TariffController
 - ❌ AreaController
@@ -237,7 +237,7 @@ $pam = $pamService->create([
 
 ### Additional Request Validations:
 - ❌ MeterRequest
-- ❌ MeterRecordRequest
+- ❌ MeterReadingRequest
 - ❌ BillRequest
 - ❌ TariffGroupRequest
 - ❌ AreaRequest

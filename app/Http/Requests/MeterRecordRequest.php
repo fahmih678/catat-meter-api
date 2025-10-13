@@ -11,7 +11,7 @@ use Illuminate\Foundation\Http\FormRequest;
  * @property mixed $previous_reading
  * @property mixed $reading_date
  */
-class MeterRecordRequest extends FormRequest
+class MeterReadingRequest extends FormRequest
 {
     public function authorize(): bool
     {

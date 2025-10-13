@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Meter;
-use App\Models\MeterRecord;
+use App\Models\MeterReading;
 use App\Models\Bill;
 use App\Http\Traits\HasPamFiltering;
 use Illuminate\Http\JsonResponse;
@@ -57,11 +57,11 @@ class DashboardController extends Controller
     private function getCatatMeterDashboard($pamId): array
     {
         $totalActiveMeters = Meter::where('pam_id', $pamId)->where('status', 'active')->count();
-        $totalReadingsThisMonth = MeterRecord::where('pam_id', $pamId)
+        $totalReadingsThisMonth = MeterReading::where('pam_id', $pamId)
             ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->count();
-        $totalPendingPayments = MeterRecord::where('pam_id', $pamId)
+        $totalPendingPayments = MeterReading::where('pam_id', $pamId)
             ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->where('status', 'pending')
@@ -71,7 +71,7 @@ class DashboardController extends Controller
             ->whereMonth('created_at', now()->month)
             ->where('status', 'paid')
             ->count();
-        $allPendingPaymentsInPam = MeterRecord::where('pam_id', $pamId)
+        $allPendingPaymentsInPam = MeterReading::where('pam_id', $pamId)
             ->whereYear('created_at', '<', now()->year)
             ->whereMonth('created_at', '<', now()->month)
             ->whereNot('status', 'paid')

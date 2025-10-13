@@ -54,9 +54,9 @@ class User extends Authenticatable
         return $this->belongsTo(Pam::class);
     }
 
-    public function recordedMeterRecords(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function recordedMeterReadings(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(MeterRecord::class, 'recorded_by');
+        return $this->hasMany(MeterReading::class, 'recorded_by');
     }
 
     public function generatedReports(): \Illuminate\Database\Eloquent\Relations\HasMany

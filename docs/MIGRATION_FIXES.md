@@ -11,7 +11,7 @@
 - ✅ TariffGroup Model: Ditambahkan `use SoftDeletes`
 - ✅ TariffTier Model: Ditambahkan `use SoftDeletes`
 - ✅ Meter Model: Ditambahkan `use SoftDeletes`
-- ✅ MeterRecord Model: Ditambahkan `use SoftDeletes`
+- ✅ MeterReading Model: Ditambahkan `use SoftDeletes`
 - ✅ Bill Model: Ditambahkan `use SoftDeletes`
 - ✅ MonthlyReport Model: Ditambahkan `use SoftDeletes`
 - ✅ ActivityLog Model: Ditambahkan `use SoftDeletes`

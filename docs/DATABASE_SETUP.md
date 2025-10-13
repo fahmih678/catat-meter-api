@@ -55,9 +55,9 @@ php artisan migrate
 - TariffGroup → TariffTiers (1:N)
 - TariffGroup → FixedFees (1:N)
 - Customer → Meters (1:N)
-- Meter → MeterRecords (1:N)
-- MeterRecord → Bills (1:N)
-- User → MeterRecords (recorded_by)
+- Meter → MeterReadings (1:N)
+- MeterReading → Bills (1:N)
+- User → MeterReadings (recorded_by)
 - User → MonthlyReports (generated_by)
 
 ## Model yang Telah Dibuat:
@@ -91,13 +91,13 @@ php artisan migrate
 - Has many: meter records
 - Features: installation tracking
 
-### 8. MeterRecord Model
+### 8. MeterReading Model
 - Belongs to: PAM, Meter, User (recorded_by)
 - Has many: bills
 - Features: period-based readings
 
 ### 9. Bill Model
-- Belongs to: PAM, Customer, MeterRecord
+- Belongs to: PAM, Customer, MeterReading
 - Features: billing and payment tracking
 
 ### 10. MonthlyReport Model
