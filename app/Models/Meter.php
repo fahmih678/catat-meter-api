@@ -15,7 +15,7 @@ class Meter extends Model
     protected $fillable = [
         'pam_id',
         'customer_id',
-        'serial_number',
+        'meter_number',
         'status',
         'installed_at',
         'initial_installed_meter',

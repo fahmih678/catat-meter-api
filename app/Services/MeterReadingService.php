@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\MeterRecord;
-use App\Repositories\MeterRecordRepository;
+use App\Repositories\MeterReadingRepository;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -11,21 +11,21 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class MeterRecordService
 {
-    private MeterRecordRepository $meterRecordRepository;
+    private MeterReadingRepository $meterReadingRepository;
 
-    public function __construct(MeterRecordRepository $meterRecordRepository)
+    public function __construct(MeterReadingRepository $meterReadingRepository)
     {
-        $this->meterRecordRepository = $meterRecordRepository;
+        $this->meterReadingRepository = $meterReadingRepository;
     }
 
     public function getAllRecords(array $filters = []): LengthAwarePaginator
     {
-        return $this->meterRecordRepository->getAllWithFilters($filters);
+        return $this->meterReadingRepository->getAllWithFilters($filters);
     }
 
     public function getRecordById(int $id): ?MeterRecord
     {
-        return $this->meterRecordRepository->find($id);
+        return $this->meterReadingRepository->find($id);
     }
 
     public function createRecord(array $data): MeterRecord
@@ -33,7 +33,7 @@ class MeterRecordService
         return DB::transaction(function () use ($data) {
             // Get previous reading if not provided
             if (!isset($data['previous_reading'])) {
-                $previousRecord = $this->meterRecordRepository->getLastRecordByMeter($data['meter_id']);
+                $previousRecord = $this->meterReadingRepository->getLastRecordByMeter($data['meter_id']);
                 $data['previous_reading'] = $previousRecord ? $previousRecord->current_reading : 0;
             }
 
@@ -42,7 +42,7 @@ class MeterRecordService
                 $data['usage'] = max(0, $data['current_reading'] - $data['previous_reading']);
             }
 
-            $record = $this->meterRecordRepository->create($data);
+            $record = $this->meterReadingRepository->create($data);
             $this->afterCreate($record, $data);
 
             return $record;
@@ -52,7 +52,7 @@ class MeterRecordService
     public function updateRecord(int $id, array $data): ?MeterRecord
     {
         return DB::transaction(function () use ($id, $data) {
-            $record = $this->meterRecordRepository->find($id);
+            $record = $this->meterReadingRepository->find($id);
 
             if (!$record) {
                 return null;
@@ -66,7 +66,7 @@ class MeterRecordService
             }
 
             $oldData = $record->toArray();
-            $updated = $this->meterRecordRepository->update($record, $data);
+            $updated = $this->meterReadingRepository->update($record, $data);
 
             if ($updated) {
                 $record->refresh(); // Refresh to get updated data
@@ -80,13 +80,13 @@ class MeterRecordService
     public function deleteRecord(int $id): bool
     {
         return DB::transaction(function () use ($id) {
-            $record = $this->meterRecordRepository->find($id);
+            $record = $this->meterReadingRepository->find($id);
 
             if (!$record) {
                 return false;
             }
 
-            $result = $this->meterRecordRepository->delete($record);
+            $result = $this->meterReadingRepository->delete($record);
 
             if ($result) {
                 $this->afterDelete($record);
@@ -99,14 +99,14 @@ class MeterRecordService
     public function getRecordsByMeter(int $meterId, array $filters = []): LengthAwarePaginator
     {
         $filters['meter_id'] = $meterId;
-        return $this->meterRecordRepository->getAllWithFilters($filters);
+        return $this->meterReadingRepository->getAllWithFilters($filters);
     }
 
     public function getRecordsByPeriod(int $pamId, string $period, array $filters = []): LengthAwarePaginator
     {
         $filters['pam_id'] = $pamId;
         $filters['period'] = $period;
-        return $this->meterRecordRepository->getAllWithFilters($filters);
+        return $this->meterReadingRepository->getAllWithFilters($filters);
     }
 
     public function bulkCreateRecords(array $records): array
@@ -153,7 +153,7 @@ class MeterRecordService
             return null;
         }
 
-        $records = $this->meterRecordRepository->getUsageByPeriod($meterId, $period, $months);
+        $records = $this->meterReadingRepository->getUsageByPeriod($meterId, $period, $months);
 
         return [
             'meter' => $meter,
@@ -167,18 +167,18 @@ class MeterRecordService
     public function getReadingStatistics(int $pamId, ?string $period = null): array
     {
         return [
-            'total_readings' => $this->meterRecordRepository->countByPam($pamId, $period),
-            'meters_read' => $this->meterRecordRepository->countMetersRead($pamId, $period),
-            'total_meters' => $this->meterRecordRepository->countTotalMeters($pamId),
-            'average_usage' => $this->meterRecordRepository->getAverageUsage($pamId, $period),
-            'total_usage' => $this->meterRecordRepository->getTotalUsage($pamId, $period),
+            'total_readings' => $this->meterReadingRepository->countByPam($pamId, $period),
+            'meters_read' => $this->meterReadingRepository->countMetersRead($pamId, $period),
+            'total_meters' => $this->meterReadingRepository->countTotalMeters($pamId),
+            'average_usage' => $this->meterReadingRepository->getAverageUsage($pamId, $period),
+            'total_usage' => $this->meterReadingRepository->getTotalUsage($pamId, $period),
             'reading_coverage' => $this->calculateReadingCoverage($pamId, $period)
         ];
     }
 
     public function getMissingReadings(int $pamId, string $period): array
     {
-        return $this->meterRecordRepository->getMissingReadings($pamId, $period);
+        return $this->meterReadingRepository->getMissingReadings($pamId, $period);
     }
 
     private function calculateUsageStatistics(array $records): array
@@ -232,8 +232,8 @@ class MeterRecordService
 
     private function calculateReadingCoverage(int $pamId, ?string $period): float
     {
-        $totalMeters = $this->meterRecordRepository->countTotalMeters($pamId);
-        $metersRead = $this->meterRecordRepository->countMetersRead($pamId, $period);
+        $totalMeters = $this->meterReadingRepository->countTotalMeters($pamId);
+        $metersRead = $this->meterReadingRepository->countMetersRead($pamId, $period);
 
         return $totalMeters > 0 ? round(($metersRead / $totalMeters) * 100, 2) : 0;
     }

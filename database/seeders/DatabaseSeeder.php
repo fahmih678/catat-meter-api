@@ -34,8 +34,10 @@ class DatabaseSeeder extends Seeder
             FixedFeeSeeder::class,           // 5. Fixed Fees (depends on PAMs and Tariff Groups)
             CustomerSeeder::class,           // 6. Customers (depends on PAMs, Areas, Tariff Groups)
             MeterSeeder::class,              // 7. Meters (depends on Customers)
-            RolePermissionSeeder::class,     // 8. Roles & Permissions (independent)
-            UserRoleSeeder::class,           // 9. Users with Roles (depends on PAMs and Roles)
+            RegisteredMonthSeeder::class,    // 8. Registered Months (depends on PAMs)
+            MeterReadingSeeder::class,       // 9. Meter Readings (depends on Meters, RegisteredMonths, Users)
+            RolePermissionSeeder::class,     // 10. Roles & Permissions (independent)
+            UserRoleSeeder::class,           // 11. Users with Roles (depends on PAMs and Roles)
         ]);
 
         $this->command->info('🎉 Database seeding completed successfully!');
@@ -48,10 +50,13 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Fixed Fees: 3 types per tariff group (Beban, Admin, Meteran)');
         $this->command->info('- Customers: 15-25 customers per PAM with realistic Indonesian data');
         $this->command->info('- Meters: 85% of active customers have meters installed');
+        $this->command->info('- Registered Months: 15 months of data (12 past + 3 future)');
+        $this->command->info('- Meter Readings: Realistic usage data with different statuses');
         $this->command->info('- Roles: 4 roles (superadmin, admin, catat_meter, pembayaran)');
         $this->command->info('- Users: Multiple users per PAM with different roles');
         $this->command->info('');
         $this->command->info('🔐 Authentication enabled with role-based access control!');
+        $this->command->info('📱 MeterReading API ready for mobile app testing!');
         $this->command->info('🔗 You can now test all API endpoints with authentication!');
     }
 }

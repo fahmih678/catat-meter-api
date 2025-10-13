@@ -25,7 +25,7 @@ class CustomerSeeder extends Seeder
             $tariffGroups = TariffGroup::where('pam_id', $pam->id)->get();
 
             // Generate 15-25 customers per PAM
-            $customerCount = rand(15, 25);
+            $customerCount = rand(200, 250);
 
             for ($i = 1; $i <= $customerCount; $i++) {
                 $area = $areas->random();

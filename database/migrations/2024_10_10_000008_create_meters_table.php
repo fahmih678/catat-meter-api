@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('pam_id')->constrained('pams')->onDelete('cascade');
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
-            $table->string('serial_number')->unique();
+            $table->string('meter_number')->unique();
             $table->datetime('installed_at')->nullable();
             $table->decimal('initial_installed_meter', 10, 2)->default(0);
             $table->text('notes')->nullable();

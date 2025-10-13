@@ -40,7 +40,7 @@
 - ✅ Semua foreign key menggunakan `cascade` delete
 - ✅ Unique constraints sudah sesuai:
   - `pams.code` (unique)
-  - `meters.serial_number` (unique)
+  - `meters.meter_number` (unique)
   - `customers[pam_id, customer_number]` (composite unique)
   - `bills[pam_id, bill_number]` (composite unique)
   - `meter_readings[meter_id, period]` (composite unique)

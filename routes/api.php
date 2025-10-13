@@ -60,7 +60,10 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('/dashboard', [V1DashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/month-list/{year}', [V1CatatMeterController::class, 'monthList'])->name('month-list');
+        Route::get('/customer-list', [V1CustomerController::class, 'customerList'])->name('customer-list');
         Route::post('/create-month', [V1CatatMeterController::class, 'createMonth'])->name('create-month');
+
+        Route::get('/meter-reading-list', [V1CatatMeterController::class, 'meterReadingList'])->name('meter-reading-list');
 
         Route::post('/create-bill', [V1PaymentController::class, 'store'])->name('create-bill');
     });

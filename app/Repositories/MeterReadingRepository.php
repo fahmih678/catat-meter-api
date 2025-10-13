@@ -2,22 +2,22 @@
 
 namespace App\Repositories;
 
-use App\Models\MeterRecord;
+use App\Models\MeterReading;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class MeterRecordRepository extends BaseRepository
+class MeterReadingRepository extends BaseRepository
 {
     protected function getModel(): Model
     {
-        return new MeterRecord();
+        return new MeterReading();
     }
 
-    public function findByMeterAndPeriod(int $meterId, string $period): ?MeterRecord
+    public function findByMeterAndRegisteredMonth(int $meterId, int $registeredMonthId): ?MeterReading
     {
         return $this->model->where('meter_id', $meterId)
-            ->where('period', $period)
+            ->where('registered_month_id', $registeredMonthId)
             ->first();
     }
 
@@ -25,7 +25,7 @@ class MeterRecordRepository extends BaseRepository
     {
         return $this->model->where('pam_id', $pamId)
             ->where('period', $period)
-            ->with(['meter', 'meter.customer', 'recordedBy'])
+            ->with(['meter', 'meter.customer', 'readingBy'])
             ->get();
     }
 
@@ -136,7 +136,7 @@ class MeterRecordRepository extends BaseRepository
         return $query->orderBy('reading_date', 'desc')->paginate($perPage);
     }
 
-    public function getLastRecordByMeter(int $meterId): ?MeterRecord
+    public function getLastRecordByMeter(int $meterId): ?MeterReading
     {
         return $this->model->where('meter_id', $meterId)
             ->orderBy('reading_date', 'desc')

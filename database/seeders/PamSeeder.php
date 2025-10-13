@@ -14,69 +14,29 @@ class PamSeeder extends Seeder
     {
         $pams = [
             [
-                'name' => 'PAM Jakarta Pusat',
-                'code' => 'PAMJAKPUR',
+                'name' => 'Sumber Waras Tuban Kulon',
+                'code' => 'SWTBK',
                 'phone' => '021-5555-0001',
-                'address' => 'Jl. Sudirman No. 123, Jakarta Pusat, DKI Jakarta 10110',
+                'address' => 'Tuban Kulon, Kec. Tuban, Kabupaten Tuban, Jawa Timur 62315',
                 'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.2088, 'lng' => 106.8456]),
             ],
             [
-                'name' => 'PAM Jakarta Selatan',
-                'code' => 'PAMJAKSEL',
+                'name' => 'Sri Rejeki',
+                'code' => 'SR',
                 'phone' => '021-5555-0002',
-                'address' => 'Jl. Senopati No. 45, Jakarta Selatan, DKI Jakarta 12110',
+                'address' => 'Tuban Kidul, Kec. Tuban, Kabupaten Tuban, Jawa Timur 62315',
                 'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.2297, 'lng' => 106.8185]),
             ],
             [
-                'name' => 'PAM Jakarta Barat',
-                'code' => 'PAMJAKBAR',
+                'name' => 'Air Minum Legi',
+                'code' => 'AML',
                 'phone' => '021-5555-0003',
-                'address' => 'Jl. Puri Indah No. 78, Jakarta Barat, DKI Jakarta 11610',
+                'address' => 'Jl. Merdeka No. 90, Jakarta Barat, DKI Jakarta 11610',
                 'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.1889, 'lng' => 106.7378]),
             ],
-            [
-                'name' => 'PAM Jakarta Timur',
-                'code' => 'PAMJAKTIM',
-                'phone' => '021-5555-0004',
-                'address' => 'Jl. Bekasi Raya No. 234, Jakarta Timur, DKI Jakarta 13220',
-                'is_active' => true,
-                'coordinate' => json_encode(['lat' => -6.2146, 'lng' => 106.9206]),
-            ],
-            [
-                'name' => 'PAM Jakarta Utara',
-                'code' => 'PAMJAKUT',
-                'phone' => '021-5555-0005',
-                'address' => 'Jl. Sunter Garden No. 567, Jakarta Utara, DKI Jakarta 14350',
-                'is_active' => true,
-                'coordinate' => json_encode(['lat' => -6.1388, 'lng' => 106.8650]),
-            ],
-            [
-                'name' => 'PAM Tangerang',
-                'code' => 'PAMTGR',
-                'phone' => '021-5555-0006',
-                'address' => 'Jl. Sudirman No. 89, Tangerang, Banten 15111',
-                'is_active' => true,
-                'coordinate' => json_encode(['lat' => -6.1783, 'lng' => 106.6319]),
-            ],
-            [
-                'name' => 'PAM Bekasi',
-                'code' => 'PAMBKS',
-                'phone' => '021-5555-0007',
-                'address' => 'Jl. Ahmad Yani No. 321, Bekasi, Jawa Barat 17142',
-                'is_active' => true,
-                'coordinate' => json_encode(['lat' => -6.2383, 'lng' => 106.9756]),
-            ],
-            [
-                'name' => 'PAM Depok',
-                'code' => 'PAMDPK',
-                'phone' => '021-5555-0008',
-                'address' => 'Jl. Margonda Raya No. 654, Depok, Jawa Barat 16424',
-                'is_active' => true,
-                'coordinate' => json_encode(['lat' => -6.4025, 'lng' => 106.7942]),
-            ]
         ];
 
         foreach ($pams as $pamData) {

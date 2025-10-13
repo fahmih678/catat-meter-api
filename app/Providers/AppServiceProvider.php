@@ -7,7 +7,7 @@ use App\Repositories\BaseRepository;
 use App\Repositories\PamRepository;
 use App\Repositories\CustomerRepository;
 use App\Repositories\MeterRepository;
-use App\Repositories\MeterRecordRepository;
+use App\Repositories\MeterReadingRepository;
 use App\Services\PamService;
 use App\Services\CustomerService;
 use App\Services\MeterService;
@@ -34,8 +34,8 @@ class AppServiceProvider extends ServiceProvider
             return new MeterRepository();
         });
 
-        $this->app->bind(MeterRecordRepository::class, function ($app) {
-            return new MeterRecordRepository();
+        $this->app->bind(MeterReadingRepository::class, function ($app) {
+            return new MeterReadingRepository();
         });
 
         // Service Bindings
@@ -52,7 +52,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(MeterRecordService::class, function ($app) {
-            return new MeterRecordService($app->make(MeterRecordRepository::class));
+            return new MeterRecordService($app->make(MeterReadingRepository::class));
         });
 
         // Singleton bindings for frequently used services

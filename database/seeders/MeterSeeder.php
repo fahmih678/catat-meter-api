@@ -49,7 +49,7 @@ class MeterSeeder extends Seeder
                 Meter::create([
                     'pam_id' => $customer->pam_id,
                     'customer_id' => $customer->id,
-                    'serial_number' => $serialNumber,
+                    'meter_number' => $serialNumber,
                     'is_active' => $status,
                     'installed_at' => $installationDate,
                     'initial_installed_meter' => $initialReading,

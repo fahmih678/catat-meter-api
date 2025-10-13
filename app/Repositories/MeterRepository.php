@@ -16,7 +16,7 @@ class MeterRepository extends BaseRepository
 
     public function findBySerialNumber(string $serialNumber): ?Meter
     {
-        return $this->model->where('serial_number', $serialNumber)->first();
+        return $this->model->where('meter_number', $serialNumber)->first();
     }
 
     public function getByCustomer(int $customerId): Collection
