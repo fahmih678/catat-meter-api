@@ -126,14 +126,14 @@ class MeterService
         $stats = [
             'meter_info' => $meter,
             'total_readings' => $meter->meterReadings()->count(),
-            'latest_reading' => $meter->meterReadings()->latest('reading_date')->first(),
+            'latest_reading' => $meter->meterReadings()->latest('reading_at')->first(),
             'average_monthly_usage' => $this->calculateAverageMonthlyUsage($meter),
             'last_6_months_usage' => $this->getLast6MonthsUsage($meter),
             'calibration_status' => $this->getCalibrationStatus($meter),
             'maintenance_history' => $meter->meterReadings()
                 ->where('notes', 'like', '%maintenance%')
                 ->orWhere('notes', 'like', '%repair%')
-                ->latest('reading_date')
+                ->latest('reading_at')
                 ->limit(5)
                 ->get()
         ];
@@ -158,8 +158,8 @@ class MeterService
     {
         // Get all readings for the last 12 months
         $readings = $meter->meterReadings()
-            ->where('reading_date', '>=', now()->subMonths(12))
-            ->orderBy('reading_date')
+            ->where('reading_at', '>=', now()->subMonths(12))
+            ->orderBy('reading_at')
             ->get();
 
         if ($readings->count() < 2) {
@@ -190,13 +190,13 @@ class MeterService
             $monthEnd = $month->copy()->endOfMonth();
 
             $startReading = $meter->meterReadings()
-                ->where('reading_date', '<=', $monthStart)
-                ->orderBy('reading_date', 'desc')
+                ->where('reading_at', '<=', $monthStart)
+                ->orderBy('reading_at', 'desc')
                 ->first();
 
             $endReading = $meter->meterReadings()
-                ->where('reading_date', '<=', $monthEnd)
-                ->orderBy('reading_date', 'desc')
+                ->where('reading_at', '<=', $monthEnd)
+                ->orderBy('reading_at', 'desc')
                 ->first();
 
             $monthUsage = 0;

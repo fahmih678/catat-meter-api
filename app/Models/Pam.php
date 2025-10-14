@@ -70,9 +70,9 @@ class Pam extends Model
         return $this->hasMany(Bill::class);
     }
 
-    public function monthlyReports(): HasMany
+    public function registeredMonths(): HasMany
     {
-        return $this->hasMany(MonthlyReport::class);
+        return $this->hasMany(RegisteredMonth::class);
     }
 
     public function activityLogs(): HasMany

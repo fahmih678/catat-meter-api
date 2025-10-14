@@ -38,8 +38,8 @@ class MeterReadingService
             }
 
             // Calculate usage if not provided
-            if (!isset($data['usage'])) {
-                $data['usage'] = max(0, $data['current_reading'] - $data['previous_reading']);
+            if (!isset($data['volume_usage'])) {
+                $data['volume_usage'] = max(0, $data['current_reading'] - $data['previous_reading']);
             }
 
             $record = $this->meterReadingRepository->create($data);

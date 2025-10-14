@@ -108,7 +108,7 @@ class MeterRepository extends BaseRepository
     {
         return $this->model->where('customer_id', $customerId)
             ->with(['customer', 'meterReadings' => function ($query) {
-                $query->latest('reading_date')->limit(5);
+                $query->latest('reading_at')->limit(5);
             }])
             ->get()
             ->toArray();

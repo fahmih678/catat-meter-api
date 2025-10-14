@@ -125,29 +125,29 @@ class MeterReadingRepository extends BaseRepository
         }
 
         if (!empty($filters['reading_date_from'])) {
-            $query->where('reading_date', '>=', $filters['reading_date_from']);
+            $query->where('reading_at', '>=', $filters['reading_date_from']);
         }
 
         if (!empty($filters['reading_date_to'])) {
-            $query->where('reading_date', '<=', $filters['reading_date_to']);
+            $query->where('reading_at', '<=', $filters['reading_date_to']);
         }
 
         $perPage = $filters['per_page'] ?? 15;
-        return $query->orderBy('reading_date', 'desc')->paginate($perPage);
+        return $query->orderBy('reading_at', 'desc')->paginate($perPage);
     }
 
     public function getLastRecordByMeter(int $meterId): ?MeterReading
     {
         return $this->model->where('meter_id', $meterId)
-            ->orderBy('reading_date', 'desc')
+            ->orderBy('reading_at', 'desc')
             ->first();
     }
 
     public function getUsageByPeriod(int $meterId, string $period, int $months): array
     {
         $records = $this->model->where('meter_id', $meterId)
-            ->where('reading_date', '>=', now()->subMonths($months))
-            ->orderBy('reading_date')
+            ->where('reading_at', '>=', now()->subMonths($months))
+            ->orderBy('reading_at')
             ->get();
 
         $usage = [];

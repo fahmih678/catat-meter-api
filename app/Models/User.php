@@ -59,9 +59,9 @@ class User extends Authenticatable
         return $this->hasMany(MeterReading::class, 'recorded_by');
     }
 
-    public function generatedReports(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function registeredMonths(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(MonthlyReport::class, 'generated_by');
+        return $this->hasMany(RegisteredMonth::class, 'generated_by');
     }
 
     public function activityLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
