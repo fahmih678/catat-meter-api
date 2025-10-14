@@ -43,8 +43,14 @@ class CustomerController extends Controller
 
             if (!$registeredMonth) {
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Registered month tidak ditemukan atau tidak sesuai dengan PAM Anda',
+                    'data' => [],
+                    'pagination' => [
+                        'total' => 0,
+                        'hasNextPage' => false,
+                    ],
+                    'summary' => [
+                        'unrecorded' => 0,
+                    ],
                 ], 404);
             }
 
@@ -125,45 +131,14 @@ class CustomerController extends Controller
             // Execute paginated query
             $customers = $query->paginate($perPage);
 
-            // Format response for mobile UI
-            $formattedData = $customers->getCollection()->map(function ($customer) use ($registeredMonth) {
-                $periodDate = Carbon::createFromFormat('Y-m-d', $registeredMonth->period);
-                
+            // Format response for frontend (simplified)
+            $formattedData = $customers->getCollection()->map(function ($customer) {
                 return [
-                    'id' => $customer->id,
                     'name' => $customer->customer_name,
                     'number' => $customer->customer_number,
                     'address' => $customer->address,
-                    'phone' => $customer->phone,
-                    'area' => [
-                        'id' => $customer->area_id,
-                        'name' => $customer->area_name,
-                    ],
                     'meter' => [
-                        'id' => $customer->meter_id,
                         'number' => $customer->meter_number,
-                        'initial_reading' => [
-                            'value' => $customer->initial_installed_meter,
-                            'formatted' => number_format($customer->initial_installed_meter, 0, ',', '.') . ' m³',
-                        ],
-                        'installed_at' => [
-                            'datetime' => $customer->installed_at,
-                            'formatted' => $customer->installed_at ? 
-                                Carbon::parse($customer->installed_at)->copy()->locale('id')->isoFormat('DD MMMM YYYY') : 
-                                null,
-                        ],
-                    ],
-                    'tariff_group' => $customer->tariff_group_name,
-                    'period' => [
-                        'id' => $registeredMonth->id,
-                        'month' => $periodDate->month,
-                        'year' => $periodDate->year,
-                        'formatted' => $periodDate->copy()->locale('id')->isoFormat('MMMM YYYY'),
-                    ],
-                    'status' => [
-                        'value' => 'unrecorded',
-                        'label' => 'Belum Tercatat',
-                        'color' => '#FF5722', // Deep Orange
                     ],
                 ];
             });
@@ -172,33 +147,15 @@ class CustomerController extends Controller
             $summary = $this->getUnrecordedSummary($pamId, $validated['registered_month_id'], $validated['area_id'] ?? null);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Data customer belum tercatat berhasil diambil',
                 'data' => $formattedData,
                 'pagination' => [
-                    'current_page' => $customers->currentPage(),
-                    'per_page' => $customers->perPage(),
                     'total' => $customers->total(),
-                    'last_page' => $customers->lastPage(),
-                    'from' => $customers->firstItem(),
-                    'to' => $customers->lastItem(),
+                    'hasNextPage' => $customers->hasMorePages(),
                 ],
-                'summary' => $summary,
-                'period' => [
-                    'id' => $registeredMonth->id,
-                    'formatted' => Carbon::createFromFormat('Y-m-d', $registeredMonth->period)
-                        ->copy()->locale('id')->isoFormat('MMMM YYYY'),
-                    'status' => $registeredMonth->status,
-                ],
-                'filters' => [
-                    'registered_month_id' => $validated['registered_month_id'],
-                    'area_id' => $validated['area_id'] ?? null,
-                    'search' => $validated['search'] ?? null,
-                    'sort_by' => $sortBy,
-                    'sort_order' => $sortOrder,
+                'summary' => [
+                    'unrecorded' => $summary['unrecorded'],
                 ],
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error fetching unrecorded customer list: ' . $e->getMessage(), [
                 'pam_id' => $user->pam_id ?? null,
@@ -207,9 +164,14 @@ class CustomerController extends Controller
             ]);
 
             return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengambil data customer belum tercatat',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                'data' => [],
+                'pagination' => [
+                    'total' => 0,
+                    'hasNextPage' => false,
+                ],
+                'summary' => [
+                    'unrecorded' => 0,
+                ],
             ], 500);
         }
     }

@@ -255,6 +255,7 @@ class CatatMeterController extends Controller
                     'status' => [
                         'value' => $reading->status,
                         'label' => $this->getStatusLabel($reading->status),
+                        'color' => ""
                     ],
                     'notes' => $reading->notes,
                 ];
@@ -364,6 +365,7 @@ class CatatMeterController extends Controller
             ],
             'total_volume' => [
                 'value' => (float) $summary->total_volume,
+                'formatted' => number_format($summary->total_volume, 1, ',', '.') . ' m³'
             ],
         ];
     }
