@@ -206,7 +206,7 @@ class MeterService
 
             $usage[] = [
                 'month' => $month->format('Y-m'),
-                'usage' => $monthUsage
+                'volume_usage' => $monthUsage
             ];
         }
 

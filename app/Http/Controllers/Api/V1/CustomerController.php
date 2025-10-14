@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\HasPamFiltering;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +13,7 @@ use Carbon\Carbon;
 
 class CustomerController extends Controller
 {
+    use HasPamFiltering;
     /**
      * Get list of customers that haven't been recorded in meter reading
      * for specific PAM and area in a registered month
@@ -32,7 +34,7 @@ class CustomerController extends Controller
                 'search' => 'nullable|string|max:255',
                 'per_page' => 'nullable|integer|min:10|max:100',
                 'page' => 'nullable|integer|min:1',
-                'sort_by' => 'nullable|in:customer_name,customer_number,area_name,meter_number',
+                'sort_by' => 'nullable|in:customer_name,customer_number,area_name,meter_number,created_at',
                 'sort_order' => 'nullable|in:asc,desc'
             ]);
 
@@ -119,6 +121,9 @@ class CustomerController extends Controller
                 case 'meter_number':
                     $query->orderBy('meters.meter_number', $sortOrder);
                     break;
+                case 'created_at':
+                    $query->orderBy('meter_readings.created_at', $sortOrder);
+                    break;
                 default:
                     $query->orderBy('customers.name', 'asc');
             }
@@ -148,6 +153,8 @@ class CustomerController extends Controller
 
             return response()->json([
                 'data' => $formattedData,
+                'registered_month_id' => $registeredMonth->id,
+                'month' => $registeredMonth->period,
                 'pagination' => [
                     'total' => $customers->total(),
                     'hasNextPage' => $customers->hasMorePages(),

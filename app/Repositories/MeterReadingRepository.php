@@ -161,7 +161,7 @@ class MeterReadingRepository extends BaseRepository
 
             $usage[] = [
                 'period' => $monthStr,
-                'usage' => $monthRecords->sum('usage'),
+                'volume_usage' => $monthRecords->sum('volume_usage'),
                 'records_count' => $monthRecords->count()
             ];
         }
@@ -212,7 +212,7 @@ class MeterReadingRepository extends BaseRepository
             $query->where('period', $period);
         }
 
-        return round($query->avg('usage') ?? 0, 2);
+        return round($query->avg('volume_usage') ?? 0, 2);
     }
 
     public function getTotalUsage(int $pamId, ?string $period = null): float
@@ -225,7 +225,7 @@ class MeterReadingRepository extends BaseRepository
             $query->where('period', $period);
         }
 
-        return round($query->sum('usage') ?? 0, 2);
+        return round($query->sum('volume_usage') ?? 0, 2);
     }
 
     public function getMissingReadings(int $pamId, string $period): array

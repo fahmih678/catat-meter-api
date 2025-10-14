@@ -11,7 +11,7 @@ use App\Repositories\MeterReadingRepository;
 use App\Services\PamService;
 use App\Services\CustomerService;
 use App\Services\MeterService;
-// use App\Services\MeterReadingService;
+use App\Services\MeterReadingService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -51,9 +51,9 @@ class AppServiceProvider extends ServiceProvider
             return new MeterService($app->make(MeterRepository::class));
         });
 
-        // $this->app->bind(MeterReadingService::class, function ($app) {
-        //     return new MeterReadingService($app->make(MeterReadingRepository::class));
-        // });
+        $this->app->bind(MeterReadingService::class, function ($app) {
+            return new MeterReadingService($app->make(MeterReadingRepository::class));
+        });
 
         // Singleton bindings for frequently used services
         $this->app->singleton('pam.service', function ($app) {

@@ -61,14 +61,16 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('/dashboard', [V1DashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/month-list/{year}', [V1CatatMeterController::class, 'monthList'])->name('month-list');
+        Route::post('/create-month', [V1CatatMeterController::class, 'createMonth'])->name('create-month');
+
         Route::get('/customer-list', [V1CustomerController::class, 'customerList'])->name('customer-list');
         Route::get('/unrecorded-customers', [V1CustomerController::class, 'unrecordedList'])->name('unrecorded-customers');
-        Route::post('/create-month', [V1CatatMeterController::class, 'createMonth'])->name('create-month');
 
         Route::get('/meter-reading-list', [V1CatatMeterController::class, 'meterReadingList'])->name('meter-reading-list');
 
         // Meter Reading Operations
         Route::get('/customers/{id}/meter-input-data', [V1MeterReadingController::class, 'getMeterInputData'])->name('customer-meter-input-data');
+        Route::post('/store-meter-reading', [V1MeterReadingController::class, 'store'])->name('submit-meter-reading');
 
         Route::post('/create-bill', [V1PaymentController::class, 'store'])->name('create-bill');
     });
@@ -215,7 +217,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/{id}/reject', [MeterReadingController::class, 'reject'])->name('reject');
             Route::get('/meter/{meterId}', [MeterReadingController::class, 'byMeter'])->name('by-meter');
             Route::get('/period/{period}', [MeterReadingController::class, 'byPeriod'])->name('by-period');
-            Route::get('/meter/{meterId}/usage', [MeterReadingController::class, 'usage'])->name('usage');
+            Route::get('/meter/{meterId}/usage', [MeterReadingController::class, 'volume_usage'])->name('volume_usage');
             Route::get('/statistics', [MeterReadingController::class, 'statistics'])->name('statistics');
             Route::get('/missing-readings', [MeterReadingController::class, 'missingReadings'])->name('missing-readings');
         });

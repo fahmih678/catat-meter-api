@@ -62,7 +62,7 @@ class MeterReadingService
             if (isset($data['current_reading']) || isset($data['previous_reading'])) {
                 $currentReading = $data['current_reading'] ?? $record->current_reading;
                 $previousReading = $data['previous_reading'] ?? $record->previous_reading;
-                $data['usage'] = max(0, $currentReading - $previousReading);
+                $data['volume_usage'] = max(0, $currentReading - $previousReading);
             }
 
             $oldData = $record->toArray();
@@ -193,7 +193,7 @@ class MeterReadingService
             ];
         }
 
-        $usages = array_column($records, 'usage');
+        $usages = array_column($records, 'volume_usage');
         $total = array_sum($usages);
         $count = count($usages);
 
