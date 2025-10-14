@@ -23,7 +23,7 @@ class MeterReadingRequest extends FormRequest
         return [
             'meter_id' => ['required', 'exists:meters,id'],
             'period' => ['required', 'string', 'max:10'],
-            'reading_date' => ['required', 'date'],
+            'reading_at' => ['required', 'date'],
             'current_reading' => ['required', 'numeric', 'min:0'],
             'previous_reading' => ['nullable', 'numeric', 'min:0'],
             'usage' => ['nullable', 'numeric', 'min:0'],
@@ -63,7 +63,7 @@ class MeterReadingRequest extends FormRequest
         }
 
         // Set period format if not provided
-        if (!$this->has('period') && $this->has('reading_date')) {
+        if (!$this->has('period') && $this->has('reading_at')) {
             $date = \Carbon\Carbon::parse($this->reading_date);
             $this->merge(['period' => $date->format('Y-m')]);
         }

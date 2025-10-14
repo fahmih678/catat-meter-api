@@ -134,12 +134,12 @@ class CustomerController extends Controller
             // Format response for frontend (simplified)
             $formattedData = $customers->getCollection()->map(function ($customer) {
                 return [
+                    'customer_id' => $customer->id,
                     'name' => $customer->customer_name,
                     'number' => $customer->customer_number,
                     'address' => $customer->address,
-                    'meter' => [
-                        'number' => $customer->meter_number,
-                    ],
+                    'area_name' => $customer->area_name,
+                    'meter_number' => $customer->meter_number,
                 ];
             });
 

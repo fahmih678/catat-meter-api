@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\PaymentController as V1PaymentController;
 use App\Http\Controllers\Api\V1\DashboardController as V1DashboardController;
 use App\Http\Controllers\Api\V1\ReportController as V1ReportController;
 use App\Http\Controllers\Api\V1\CatatMeterController as V1CatatMeterController;
+use App\Http\Controllers\Api\V1\MeterReadingController as V1MeterReadingController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -65,6 +66,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::post('/create-month', [V1CatatMeterController::class, 'createMonth'])->name('create-month');
 
         Route::get('/meter-reading-list', [V1CatatMeterController::class, 'meterReadingList'])->name('meter-reading-list');
+
+        // Meter Reading Operations
+        Route::get('/customers/{id}/meter-input-data', [V1MeterReadingController::class, 'getMeterInputData'])->name('customer-meter-input-data');
 
         Route::post('/create-bill', [V1PaymentController::class, 'store'])->name('create-bill');
     });
@@ -144,7 +148,7 @@ Route::middleware('auth:sanctum')->group(function () {
     | MANAGEMENT LEVEL ROUTES (SuperAdmin + Admin PAM)
     |--------------------------------------------------------------------------
     */
-    Route::middleware(['role:superadmin,admin', 'pam.scope'])->group(function () {
+    Route::middleware(['role:superadmin,admin,catat_meter', 'pam.scope'])->group(function () {
 
         // PAM MANAGEMENT (Read & Update)
         Route::prefix('pams')->name('pams.')->group(function () {
