@@ -23,6 +23,8 @@ class Bill extends Model
         'due_date',
         'payment_method',
         'paid_at',
+        'issued_at',
+        'tariff_snapshot',
     ];
 
     protected $casts = [

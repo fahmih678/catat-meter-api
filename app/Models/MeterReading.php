@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class MeterReading extends Model
 {
@@ -95,5 +96,17 @@ class MeterReading extends Model
                     ->from('meters')
                     ->whereColumn('meters.id', 'meter_readings.meter_id');
             });
+    }
+
+    /**
+     * Get the photo URL attribute
+     * Convert relative path to full URL
+     */
+    public function getPhotoAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+        return url(Storage::url($value));
     }
 }

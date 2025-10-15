@@ -10,6 +10,7 @@ use App\Http\Traits\HasPamFiltering;
 use App\Models\RegisteredMonth;
 use App\Models\MeterReading;
 use App\Models\Area;
+use App\Models\Customer;
 use Carbon\Carbon;
 
 class CatatMeterController extends Controller
@@ -105,6 +106,18 @@ class CatatMeterController extends Controller
     public function createMonth(Request $request)
     {
         $user = $request->user();
+        $totalCustomers = Customer::where(['pam_id' => $user->pam_id, 'is_active' => true])->count();
+        // Validate request data
+        $request->merge([
+            'pam_id' => $user->pam_id,
+            'total_customers' => $totalCustomers,
+            'total_usage' => 0,
+            'total_bills' => 0,
+            'status' => 'open',
+            'registered_by' => $user->id
+        ]);
+
+
         $validateData = $request->validate([
             'pam_id' => 'exists:pams,id',
             'period' => 'required|date_format:Y-m-d|unique:registered_months,period,NULL,id,pam_id,' . $user->pam_id,
@@ -155,6 +168,7 @@ class CatatMeterController extends Controller
                     'meter_readings.previous_reading',
                     'meter_readings.current_reading',
                     'meter_readings.volume_usage',
+                    'meter_readings.photo_url',
                     'meter_readings.status',
                     'meter_readings.notes',
                     'meter_readings.updated_at',
@@ -258,6 +272,7 @@ class CatatMeterController extends Controller
                         'color' => ""
                     ],
                     'notes' => $reading->notes,
+                    'photo_url' => $reading->photo_url, // This will use the accessor to get full URL
                 ];
             });
 

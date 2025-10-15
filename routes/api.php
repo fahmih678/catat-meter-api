@@ -63,7 +63,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('/month-list/{year}', [V1CatatMeterController::class, 'monthList'])->name('month-list');
         Route::post('/create-month', [V1CatatMeterController::class, 'createMonth'])->name('create-month');
 
-        Route::get('/customer-list', [V1CustomerController::class, 'customerList'])->name('customer-list');
         Route::get('/unrecorded-customers', [V1CustomerController::class, 'unrecordedList'])->name('unrecorded-customers');
 
         Route::get('/meter-reading-list', [V1CatatMeterController::class, 'meterReadingList'])->name('meter-reading-list');
@@ -71,6 +70,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
         // Meter Reading Operations
         Route::get('/customers/{id}/meter-input-data', [V1MeterReadingController::class, 'getMeterInputData'])->name('customer-meter-input-data');
         Route::post('/store-meter-reading', [V1MeterReadingController::class, 'store'])->name('submit-meter-reading');
+        Route::put('/meter-readings/{meterReadingId}/submit-to-pending', [V1MeterReadingController::class, 'submitToPending'])->name('submit-meter-reading-to-pending');
+        Route::get('/get-billings/{customerId}', [V1PaymentController::class, 'getBilling'])->name('get-billing');
+
 
         Route::post('/create-bill', [V1PaymentController::class, 'store'])->name('create-bill');
     });

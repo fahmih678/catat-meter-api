@@ -37,50 +37,58 @@ class MeterReadingController extends Controller
     {
         try {
             $user = $request->user();
-            $pamId = $user->pam_id;
 
-            // Get customer with meter and area data
-            $customer = Customer::with(['area', 'meter' => function ($query) {
-                $query->where('is_active', true);
-            }])
+            // Single optimized query with all required relationships
+            $customer = Customer::with([
+                'area:id,name',
+                'pam:id,name',
+                'meter' => function ($query) {
+                    $query->select('id', 'customer_id', 'meter_number', 'initial_installed_meter')
+                        ->where('is_active', true);
+                },
+                'meter.meterReadings' => function ($query) {
+                    $query->select('id', 'meter_id', 'current_reading', 'photo_url', 'created_at')
+                        ->orderBy('created_at', 'desc')
+                        ->limit(1);
+                }
+            ])
+                ->select('id', 'name', 'customer_number', 'pam_id', 'area_id', 'is_active')
                 ->where('id', $customerId)
-                ->where('pam_id', $pamId)
+                ->where('pam_id', $user->pam_id)
                 ->where('is_active', true)
                 ->first();
 
+            // Validate customer exists
             if (!$customer) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Customer tidak ditemukan atau tidak sesuai dengan PAM Anda'
-                ], 404);
+                return $this->jsonErrorResponse('Customer tidak ditemukan atau tidak sesuai dengan PAM Anda', 404);
             }
 
+            // Validate meter exists
             if (!$customer->meter) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Customer tidak memiliki meter aktif'
-                ], 404);
+                return $this->jsonErrorResponse('Customer tidak memiliki meter aktif', 404);
             }
 
-            // Get last meter reading
-            $lastReading = MeterReading::where('meter_id', $customer->meter->id)
-                ->orderBy('created_at', 'desc')
-                ->first();
+            // Get last reading (from eager loaded relationship)
+            $lastReading = $customer->meter->meterReadings->first();
 
-            // Format response
+            // Determine last reading value
+            $lastReadingValue = $lastReading
+                ? (float) $lastReading->current_reading
+                : (float) $customer->meter->initial_installed_meter;
+
+            // Build response data
             $responseData = [
                 'customer_id' => $customer->id,
                 'name' => $customer->name,
                 'number' => $customer->customer_number,
                 'area_name' => $customer->area->name,
+                'pam_name' => $customer->pam->name,
                 'meter' => [
                     'id' => $customer->meter->id,
                     'number' => $customer->meter->meter_number,
-                    'last_reading' => $lastReading ?
-                        (float) $lastReading->current_reading :
-                        (float) $customer->meter->initial_installed_meter,
+                    'last_reading' => $lastReadingValue,
                 ],
-                'pam_name' => $customer->pam->name,
+                'photo_url' => $lastReading?->photo_url ?? null,
             ];
 
             return response()->json([
@@ -94,11 +102,23 @@ class MeterReadingController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Terjadi kesalahan saat mengambil data meter input'
-            ], 500);
+            return $this->jsonErrorResponse('Terjadi kesalahan saat mengambil data meter input');
         }
+    }
+
+    /**
+     * Helper method for consistent error responses
+     *
+     * @param string $message
+     * @param int $statusCode
+     * @return JsonResponse
+     */
+    private function jsonErrorResponse(string $message, int $statusCode = 500): JsonResponse
+    {
+        return response()->json([
+            'status' => 'error',
+            'message' => $message
+        ], $statusCode);
     }
 
     public function store(Request $request): JsonResponse
@@ -173,7 +193,7 @@ class MeterReadingController extends Controller
                     'id' => $record->id,
                     'current_reading' => $record->current_reading,
                     'volume_usage' => $record->volume_usage,
-                    'photo_url' => $record->photo_url,
+                    'photo_url' => $record->photo_url, // This will use the accessor to get full URL
                     'reading_at' => $record->reading_at,
                 ]
             ], 201);
@@ -240,6 +260,59 @@ class MeterReadingController extends Controller
             ]);
 
             return null;
+        }
+    }
+
+    /**
+     * Submit meter reading from draft to pending status and create billing
+     *
+     * @param Request $request
+     * @param int $meterReadingId
+     * @return JsonResponse
+     */
+    public function submitToPending(Request $request, int $meterReadingId): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            // Validate request data (optional fields only)
+            $validated = $request->validate([
+                'notes' => 'nullable|string|max:1000',
+            ]);
+
+            // Prepare request data for service
+            $requestData = [
+                'user_id' => $user->id,
+                'pam_id' => $user->pam_id,
+                'notes' => $validated['notes'] ?? null,
+            ];
+
+            // Submit meter reading (draft -> pending) and create billing
+            $result = $this->meterReadingService->submitMeterReadingToPending($meterReadingId, $requestData);
+
+            if (!$result) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Meter reading tidak ditemukan'
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => $result['message'],
+                'data' => $result['data']
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error submitting meter reading to pending: ' . $e->getMessage(), [
+                'meter_reading_id' => $meterReadingId,
+                'user_id' => $user->id ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 400);
         }
     }
 }
