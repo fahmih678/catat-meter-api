@@ -296,7 +296,7 @@ class MeterReadingSubmission {
 
 ### Directory Structure
 ```
-storage/app/public/meter_readings/
+storage/app/public_html/meter_readings/
 ├── 2024/
 │   ├── 10/
 │   │   ├── meter_reading_138_1760434957_QI6oRJiigH.png
