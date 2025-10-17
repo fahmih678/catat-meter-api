@@ -16,11 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \App\Http\Middleware\ForceJsonResponse::class,
+            \App\Http\Middleware\OptimizeResponse::class,
         ]);
 
         // Register middleware aliases
         $middleware->alias([
             'force.json' => \App\Http\Middleware\ForceJsonResponse::class,
+            'optimize.response' => \App\Http\Middleware\OptimizeResponse::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'permission' => \App\Http\Middleware\PermissionMiddleware::class,
             'pam.scope' => \App\Http\Middleware\PamScopeMiddleware::class,

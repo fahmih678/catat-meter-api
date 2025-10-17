@@ -88,4 +88,66 @@ class PaymentController extends Controller
             ], 500);
         }
     }
+
+    public function payBilling(Request $request, int $customerId): JsonResponse
+    {
+
+        $billValidate = $request->validate([
+            'bill_ids' => 'required|array|min:1',
+            'bill_ids.*' => 'integer|exists:bills,id',
+        ]);
+
+        foreach ($billValidate as $key => $value) {
+            $bill = Bill::where('id', $value)->first();
+            if (!$bill) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Bill not found with ID: ' . $value
+                ], 404);
+            }
+            $bill->status = 'paid';
+            $bill->paid_at = Carbon::now()->format('Y-m-d H:i:s');
+            $bill->save();
+
+            $bill->meterReading->update([
+                'status' => 'paid',
+            ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Bill updated successfully',
+                'data' => $bill->meterReading
+            ], 200);
+            $bill->meterReading->update([
+                'status' => 'paid',
+            ]);
+        }
+
+        $bill = Bill::where('customer_id', $customerId)
+            ->whereIn('id', $request->bill_ids)
+            ->get();
+        // $meterReading = $bill->meterReading;
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Bill retrieved successfully',
+            'data' => $bill,
+        ], 200);
+
+        if (!$bill) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Bill not found'
+            ], 404);
+        }
+        $bill->status = 'paid';
+        $bill->paid_at = Carbon::now()->format('Y-m-d H:i:s');
+        $bill->save();
+        $meterReading->status = 'paid';
+        $meterReading->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Bill updated successfully',
+            'data' => $bill
+        ], 200);
+    }
 }

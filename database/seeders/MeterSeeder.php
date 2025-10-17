@@ -53,7 +53,7 @@ class MeterSeeder extends Seeder
                     'is_active' => $status,
                     'installed_at' => $installationDate,
                     'initial_installed_meter' => $initialReading,
-                    'last_recorded_at' => $lastReadingDate,
+                    'last_reading_at' => $lastReadingDate,
                     'notes' => $this->generateMeterNotes($faker, $status),
                 ]);
 

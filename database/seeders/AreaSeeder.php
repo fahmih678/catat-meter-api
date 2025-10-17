@@ -16,11 +16,9 @@ class AreaSeeder extends Seeder
         $pams = Pam::all();
 
         $areasTemplate = [
-            ['name' => 'Zona A - Perumahan Elite', 'code' => 'ZNA', 'description' => 'Wilayah perumahan elite dan apartemen mewah'],
-            ['name' => 'Zona B - Perumahan Menengah', 'code' => 'ZNB', 'description' => 'Wilayah perumahan menengah dan cluster'],
-            ['name' => 'Zona C - Pemukiman Padat', 'code' => 'ZNC', 'description' => 'Wilayah pemukiman padat penduduk'],
-            ['name' => 'Zona D - Industri', 'code' => 'ZND', 'description' => 'Wilayah industri dan pabrik'],
-            ['name' => 'Zona E - Komersial', 'code' => 'ZNE', 'description' => 'Wilayah komersial, pertokoan, dan perkantoran'],
+            ['name' => 'RT 01', 'code' => 'RT1', 'description' => 'Wilayah RT 01'],
+            ['name' => 'RT 02', 'code' => 'RT2', 'description' => 'Wilayah RT 02'],
+            ['name' => 'RT 03', 'code' => 'RT3', 'description' => 'Wilayah RT 03'],
         ];
 
         $totalCreated = 0;
@@ -30,7 +28,7 @@ class AreaSeeder extends Seeder
                 Area::create([
                     'pam_id' => $pam->id,
                     'name' => $areaTemplate['name'],
-                    'code' => $pam->code . '-' . $areaTemplate['code'],
+                    'code' => $areaTemplate['code'],
                     'description' => $areaTemplate['description'],
                 ]);
                 $totalCreated++;

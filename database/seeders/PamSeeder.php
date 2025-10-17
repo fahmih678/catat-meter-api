@@ -21,22 +21,6 @@ class PamSeeder extends Seeder
                 'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.2088, 'lng' => 106.8456]),
             ],
-            [
-                'name' => 'Sri Rejeki',
-                'code' => 'SR',
-                'phone' => '021-5555-0002',
-                'address' => 'Tuban Kidul, Kec. Tuban, Kabupaten Tuban, Jawa Timur 62315',
-                'is_active' => true,
-                'coordinate' => json_encode(['lat' => -6.2297, 'lng' => 106.8185]),
-            ],
-            [
-                'name' => 'Air Minum Legi',
-                'code' => 'AML',
-                'phone' => '021-5555-0003',
-                'address' => 'Jl. Merdeka No. 90, Jakarta Barat, DKI Jakarta 11610',
-                'is_active' => true,
-                'coordinate' => json_encode(['lat' => -6.1889, 'lng' => 106.7378]),
-            ],
         ];
 
         foreach ($pams as $pamData) {

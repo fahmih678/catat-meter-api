@@ -72,6 +72,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::post('/store-meter-reading', [V1MeterReadingController::class, 'store'])->name('submit-meter-reading');
         Route::put('/meter-readings/{meterReadingId}/submit-to-pending', [V1MeterReadingController::class, 'submitToPending'])->name('submit-meter-reading-to-pending');
         Route::get('/get-billings/{customerId}', [V1PaymentController::class, 'getBilling'])->name('get-billing');
+        Route::post('/pay-billing/{customerId}', [V1PaymentController::class, 'payBilling'])->name('pay-billing');
 
 
         Route::post('/create-bill', [V1PaymentController::class, 'store'])->name('create-bill');

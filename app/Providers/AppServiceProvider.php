@@ -70,11 +70,71 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Configure response optimization
+        $this->configureResponseOptimization();
+
         // Register macros for easier access
         $this->registerMacros();
 
         // Register custom validation rules if needed
         $this->registerValidationRules();
+    }
+
+    /**
+     * Configure response optimization to prevent broken pipe errors
+     */
+    private function configureResponseOptimization(): void
+    {
+        // Set output buffering to prevent broken pipe issues
+        if (app()->runningInConsole() === false) {
+            // Enable output buffering for web requests
+            if (ob_get_level() === 0) {
+                ob_start();
+            }
+
+            // Set reasonable memory and time limits
+            ini_set('memory_limit', '256M');
+            ini_set('max_execution_time', '60');
+
+            // Configure output buffer to flush automatically
+            ini_set('output_buffering', '4096');
+            ini_set('implicit_flush', '1');
+        }
+
+        // Register response macro for consistent JSON responses
+        \Illuminate\Http\Response::macro('apiSuccess', function ($data = null, $message = 'Success', $statusCode = 200) {
+            $response = [
+                'status' => 'success',
+                'message' => $message
+            ];
+
+            if ($data !== null) {
+                $response['data'] = $data;
+            }
+
+            return response()->json($response, $statusCode, [
+                'Content-Type' => 'application/json; charset=UTF-8',
+                'Cache-Control' => 'no-cache, private',
+                'X-Content-Type-Options' => 'nosniff'
+            ]);
+        });
+
+        \Illuminate\Http\Response::macro('apiError', function ($message = 'Error', $statusCode = 500, $errors = null) {
+            $response = [
+                'status' => 'error',
+                'message' => $message
+            ];
+
+            if ($errors !== null) {
+                $response['errors'] = $errors;
+            }
+
+            return response()->json($response, $statusCode, [
+                'Content-Type' => 'application/json; charset=UTF-8',
+                'Cache-Control' => 'no-cache, private',
+                'X-Content-Type-Options' => 'nosniff'
+            ]);
+        });
     }
 
     /**

@@ -56,7 +56,7 @@ class DashboardController extends Controller
      */
     private function getCatatMeterDashboard($pamId): array
     {
-        $totalActiveMeters = Meter::where('pam_id', $pamId)->where('status', 'active')->count();
+        $totalActiveMeters = Meter::where('pam_id', $pamId)->where('is_active', true)->count();
         $totalReadingsThisMonth = MeterReading::where('pam_id', $pamId)
             ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
@@ -72,9 +72,11 @@ class DashboardController extends Controller
             ->where('status', 'paid')
             ->count();
         $allPendingPaymentsInPam = MeterReading::where('pam_id', $pamId)
-            ->whereYear('created_at', '<', now()->year)
-            ->whereMonth('created_at', '<', now()->month)
-            ->whereNot('status', 'paid')
+
+            ->where('status', '!=', 'paid')
+            ->whereHas('registeredMonth', function ($query) {
+                $query->where('period', '<', now()->startOfMonth());
+            })
             ->count();
 
 

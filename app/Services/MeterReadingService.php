@@ -300,6 +300,7 @@ class MeterReadingService
         return DB::transaction(function () use ($meterReadingId, $requestData) {
             // Find meter reading with required relationships
             $meterReading = $this->meterReadingRepository->find($meterReadingId);
+            $registeredMonth = $meterReading->registeredMonth;
 
             if (!$meterReading) {
                 throw new \Exception('Meter reading tidak ditemukan.');
@@ -405,6 +406,17 @@ class MeterReadingService
                 'issued_at' => now(),
                 'tariff_snapshot' => json_encode($tariffSnapshot),
             ]);
+
+            $totalUsageInMonth =  MeterReading::where('registered_month_id', $registeredMonth->id)->sum('volume_usage');
+            $totalBillInMonth = Bill::whereHas('meterReading', function ($q) use ($registeredMonth) {
+                $q->where('registered_month_id', $registeredMonth->id);
+            })->sum('total_bill');
+
+            $registeredMonth->update([
+                'total_usage' => $totalUsageInMonth,
+                'total_bills' => $totalBillInMonth,
+            ]);
+
 
             // Create activity log for status change
             $this->logMeterReadingStatusChange($meterReading, $oldData, $bill, $requestData);

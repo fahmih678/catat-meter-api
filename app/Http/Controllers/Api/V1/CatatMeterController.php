@@ -10,15 +10,14 @@ use App\Http\Traits\HasPamFiltering;
 use App\Models\RegisteredMonth;
 use App\Models\MeterReading;
 use App\Models\Area;
+use App\Models\Bill;
 use App\Models\Customer;
 use Carbon\Carbon;
 
 class CatatMeterController extends Controller
 {
     use HasPamFiltering;
-    /**
-     * Get list of months with recorded meter readings
-     */
+
     public function monthList(Request $request, int $year)
     {
         try {
@@ -171,12 +170,15 @@ class CatatMeterController extends Controller
                     'meter_readings.photo_url',
                     'meter_readings.status',
                     'meter_readings.notes',
+                    'meter_readings.reading_by',
+                    'meter_readings.reading_at',
                     'meter_readings.updated_at',
                     'meter_readings.created_at',
                     'customers.id as customer_id',
                     'customers.name as customer_name',
                     'customers.customer_number',
                     'customers.address as customer_address',
+                    'customers.phone as customer_phone',
                     'meters.meter_number',
                     'areas.id as area_id',
                     'areas.name as area_name',
@@ -242,16 +244,18 @@ class CatatMeterController extends Controller
             // Format response for mobile UI
             $formattedData = $meterReadings->getCollection()->map(function ($reading) {
                 $periodDate = Carbon::createFromFormat('Y-m-d', $reading->period);
+                $bill = Bill::where('meter_reading_id', $reading->id)->first();
 
                 return [
                     'id' => $reading->id,
                     'meter_id' => $reading->meter_id,
                     'meter_number' => $reading->meter_number,
+                    'reading_by' => $reading->readingBy->name,
                     'customer' => [
                         'id' => $reading->customer_id,
                         'name' => $reading->customer_name,
                         'number' => $reading->customer_number,
-                        'address' => $reading->customer_address,
+                        'phone' => $reading->customer_phone ?? null,
                     ],
                     'area' => [
                         'id' => $reading->area_id,
@@ -265,6 +269,7 @@ class CatatMeterController extends Controller
                         'previous' => $reading->previous_reading,
                         'current' => $reading->current_reading,
                         'volume_usage' => $reading->volume_usage,
+                        'bill_amount' => $bill ? $bill->total_bill : null,
                     ],
                     'status' => [
                         'value' => $reading->status,
@@ -273,6 +278,7 @@ class CatatMeterController extends Controller
                     ],
                     'notes' => $reading->notes,
                     'photo_url' => $reading->photo_url, // This will use the accessor to get full URL
+                    'created_at' => $reading->created_at,
                 ];
             });
 

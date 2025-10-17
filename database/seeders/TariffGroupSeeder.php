@@ -17,35 +17,11 @@ class TariffGroupSeeder extends Seeder
 
         $tariffGroupsTemplate = [
             [
-                'name' => 'Rumah Tangga Kecil',
-                'description' => 'Untuk pelanggan rumah tangga dengan pemakaian rendah (0-10 m³)'
+                'name' => 'rumah tangga',
+                'description' => 'Untuk pelanggan rumah tangga'
             ],
             [
-                'name' => 'Rumah Tangga Sedang',
-                'description' => 'Untuk pelanggan rumah tangga dengan pemakaian sedang (11-20 m³)'
-            ],
-            [
-                'name' => 'Rumah Tangga Besar',
-                'description' => 'Untuk pelanggan rumah tangga dengan pemakaian tinggi (>20 m³)'
-            ],
-            [
-                'name' => 'Niaga Kecil',
-                'description' => 'Untuk usaha niaga skala kecil seperti warung, toko kecil'
-            ],
-            [
-                'name' => 'Niaga Menengah',
-                'description' => 'Untuk usaha niaga skala menengah seperti restoran, hotel kecil'
-            ],
-            [
-                'name' => 'Niaga Besar',
-                'description' => 'Untuk usaha niaga skala besar seperti mall, hotel besar'
-            ],
-            [
-                'name' => 'Industri',
-                'description' => 'Untuk kebutuhan industri dan pabrik'
-            ],
-            [
-                'name' => 'Sosial',
+                'name' => 'sosial',
                 'description' => 'Untuk fasilitas sosial seperti sekolah, rumah sakit, masjid'
             ]
         ];

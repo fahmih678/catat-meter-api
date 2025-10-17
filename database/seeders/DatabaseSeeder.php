@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
             CustomerSeeder::class,           // 6. Customers (depends on PAMs, Areas, Tariff Groups)
             MeterSeeder::class,              // 7. Meters (depends on Customers)
             RegisteredMonthSeeder::class,    // 8. Registered Months (depends on PAMs)
-            MeterReadingSeeder::class,       // 9. Meter Readings (depends on Meters, RegisteredMonths, Users)
+            // MeterReadingSeeder::class,       // 9. Meter Readings (depends on Meters, RegisteredMonths, Users)
             RolePermissionSeeder::class,     // 10. Roles & Permissions (independent)
             UserRoleSeeder::class,           // 11. Users with Roles (depends on PAMs and Roles)
         ]);
