@@ -22,20 +22,7 @@ class FixedFeeSeeder extends Seeder
             $tariffGroups = TariffGroup::where('pam_id', $pam->id)->get();
 
             foreach ($tariffGroups as $tariffGroup) {
-                // Biaya Beban (fixed cost based on tariff group)
-                $bebanFee = $this->getBebanFeeByTariff($tariffGroup->name);
-                FixedFee::create([
-                    'pam_id' => $pam->id,
-                    'tariff_group_id' => $tariffGroup->id,
-                    'name' => 'Biaya Beban',
-                    'amount' => $bebanFee,
-                    'effective_from' => Carbon::now()->subYear(),
-                    'effective_to' => null,
-                    'description' => 'Biaya tetap bulanan untuk golongan ' . $tariffGroup->name,
-                    'is_active' => true,
-                ]);
-
-                // Biaya Administrasi (same for all groups)
+                // Biaya Beban (same for all groups)
                 FixedFee::create([
                     'pam_id' => $pam->id,
                     'tariff_group_id' => $tariffGroup->id,
@@ -46,21 +33,7 @@ class FixedFeeSeeder extends Seeder
                     'description' => 'Biaya administrasi bulanan',
                     'is_active' => true,
                 ]);
-
-                // Biaya Meteran (based on tariff group)
-                $meteranFee = $this->getMeteranFeeByTariff($tariffGroup->name);
-                FixedFee::create([
-                    'pam_id' => $pam->id,
-                    'tariff_group_id' => $tariffGroup->id,
-                    'name' => 'Biaya Meteran',
-                    'amount' => $meteranFee,
-                    'effective_from' => Carbon::now()->subYear(),
-                    'effective_to' => null,
-                    'description' => 'Biaya pemeliharaan meteran untuk golongan ' . $tariffGroup->name,
-                    'is_active' => true,
-                ]);
-
-                $totalCreated += 3;
+                $totalCreated += 1;
             }
         }
 

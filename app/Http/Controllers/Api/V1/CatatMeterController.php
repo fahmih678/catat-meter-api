@@ -39,6 +39,8 @@ class CatatMeterController extends Controller
             $monthlyData = $registeredMonths->map(function ($month) {
                 // Parse period (YYYY-MM-dd format)
                 $periodDate = \Carbon\Carbon::createFromFormat('Y-m-d', $month->period);
+                $recordedCustomers = MeterReading::where('pam_id', $month->pam_id)
+                    ->where('registered_month_id', $month->id)->count();
 
                 // Indonesian month names
                 $monthNames = [
@@ -61,6 +63,7 @@ class CatatMeterController extends Controller
                     'month' => $periodDate->month,
                     'month_name' => $monthNames[$periodDate->month],
                     'year' => $periodDate->year,
+                    'recorded_customers' => $recordedCustomers,
                     'total_customers' => $month->total_customers,
                     'total_usage' => round($month->total_usage, 1),
                     'total_bills' => $month->total_bills,

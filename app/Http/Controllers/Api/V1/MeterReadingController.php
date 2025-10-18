@@ -286,7 +286,6 @@ class MeterReadingController extends Controller
                 'pam_id' => $user->pam_id,
                 'notes' => $validated['notes'] ?? null,
             ];
-
             // Submit meter reading (draft -> pending) and create billing
             $result = $this->meterReadingService->submitMeterReadingToPending($meterReadingId, $requestData);
 

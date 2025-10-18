@@ -20,45 +20,26 @@ class MeterSeeder extends Seeder
         $customers = Customer::where('is_active', true)->get();
         $totalCreated = 0;
 
-        $meterBrands = ['Itron', 'Sensus', 'Elster', 'Kamstrup', 'Badger', 'Neptune', 'Arad'];
-        $meterTypes = ['mechanical', 'ultrasonic', 'electromagnetic'];
-
         foreach ($customers as $customer) {
-            // 85% of active customers have meters
-            if (rand(1, 100) <= 85) {
-                $serialNumber = $this->generateSerialNumber($customer->pam->code);
-                $brand = $faker->randomElement($meterBrands);
-                $type = $faker->randomElement($meterTypes);
-                $size = $this->getRandomMeterSize();
 
-                // Installation date between 6 months to 5 years ago
-                $installationDate = Carbon::now()->subDays(rand(180, 1825));
+            $serialNumber = $this->generateSerialNumber($customer->pam->code);
 
-                // 95% of meters are active, 5% inactive
-                $status = (rand(1, 100) <= 95) ? true : false;
+            // Installation date between 6 months to 5 years ago
+            $installationDate = Carbon::now();
 
-                // Previous reading between 0-500 cubic meters
-                $initialReading = rand(0, 500);
+            // Last reading date between 1-60 days ago
+            $lastReadingDate = Carbon::now()->subDays(rand(1, 60));
 
-                // Current reading is initial + some usage (0-100 m³ more)
-                $currentReading = $initialReading + rand(0, 100);
-
-                // Last reading date between 1-60 days ago
-                $lastReadingDate = Carbon::now()->subDays(rand(1, 60));
-
-                Meter::create([
-                    'pam_id' => $customer->pam_id,
-                    'customer_id' => $customer->id,
-                    'meter_number' => $serialNumber,
-                    'is_active' => $status,
-                    'installed_at' => $installationDate,
-                    'initial_installed_meter' => $initialReading,
-                    'last_reading_at' => $lastReadingDate,
-                    'notes' => $this->generateMeterNotes($faker, $status),
-                ]);
-
-                $totalCreated++;
-            }
+            Meter::create([
+                'pam_id' => $customer->pam_id,
+                'customer_id' => $customer->id,
+                'meter_number' => $serialNumber,
+                'is_active' => true,
+                'installed_at' => $installationDate,
+                'initial_installed_meter' => 0,
+                'last_reading_at' => null,
+                'notes' => $this->generateMeterNotes($faker, true),
+            ]);
         }
 
         $this->command->info("Meter seeder completed successfully. Created {$totalCreated} meters for " . $customers->count() . " customers.");

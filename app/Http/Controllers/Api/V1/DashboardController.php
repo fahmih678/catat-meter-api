@@ -72,7 +72,6 @@ class DashboardController extends Controller
             ->where('status', 'paid')
             ->count();
         $allPendingPaymentsInPam = MeterReading::where('pam_id', $pamId)
-
             ->where('status', '!=', 'paid')
             ->whereHas('registeredMonth', function ($query) {
                 $query->where('period', '<', now()->startOfMonth());

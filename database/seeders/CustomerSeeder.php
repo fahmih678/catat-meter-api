@@ -155,8 +155,8 @@ class CustomerSeeder extends Seeder
                 'pam_id' => 1,
                 'customer_number' => $number,
                 'name' => $name,
-                'area_id' => $areaList[$area] ?? null,           // ✅ gunakan null-safe agar tidak error jika RT tidak ditemukan
-                'tariff_group_id' => $tariffGroup[$group] ?? null,
+                'area_id' => $areaList[$area],           // ✅ gunakan null-safe agar tidak error jika RT tidak ditemukan
+                'tariff_group_id' => $tariffGroup[$group],
                 'address' => 'Jl. Contoh Alamat No. ' . $number,
                 'phone' => '0812-3456-78',
                 'is_active' => true,

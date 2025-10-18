@@ -55,10 +55,10 @@ class RegisteredMonthSeeder extends Seeder
                     'pam_id' => $pam->id,
                     'period' => $currentDate->format('Y-m-d'),
                     'total_customers' => $customerCount,
-                    'total_usage' => round($totalUsage, 2),
-                    'total_bills' => $totalBills,
+                    'total_usage' => 0,
+                    'total_bills' => 0,
                     'status' => $status,
-                    'registered_by' => $pamUser->id ?? 1,
+                    'registered_by' => $pamUser->id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];

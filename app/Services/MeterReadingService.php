@@ -322,8 +322,6 @@ class MeterReadingService
             $customer = $meterReading->meter->customer;
             $tariffGroup = $customer->tariffGroup;
 
-
-
             // Update meter reading status to pending
             $oldData = $meterReading->toArray();
             $this->meterReadingRepository->update($meterReading, [
@@ -340,13 +338,14 @@ class MeterReadingService
             ];
 
             // Add tariff tiers if available
-            if ($tariffGroup && $tariffGroup->relationLoaded('tariffTiers')) {
+            if ($tariffGroup && $tariffGroup->relationLoaded('tariffTiers') && $meterReading->volume_usage !== null) {
                 // Filter active tiers (status = 'active' and within effective dates)
-                $activeTiers = $tariffGroup->tariffTiers->filter(function ($tier) {
+                $activeTiers = $tariffGroup->tariffTiers->filter(function ($tier) use ($meterReading) {
                     $isActive = $tier->is_active;
                     $isEffective = (!$tier->effective_to || $tier->effective_to >= now()->toDateString())
                         && ($tier->effective_from <= now()->toDateString());
-                    return $isActive && $isEffective;
+                    $isTierInRange = ($tier->meter_min <= $meterReading->volume_usage) && ($meterReading->volume_usage <= $tier->meter_max);
+                    return $isActive && $isEffective && $isTierInRange;
                 });
 
                 // Get only the latest/newest active tier (limit to 1)
@@ -363,7 +362,6 @@ class MeterReadingService
                         ];
                 }
             }
-
             // Add fixed fees if available
             if ($tariffGroup && $tariffGroup->relationLoaded('fixedFees')) {
                 // Filter active fees (status = 'active' and within effective dates)
