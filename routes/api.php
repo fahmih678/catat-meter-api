@@ -59,6 +59,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         // Catat Meter Operations
         Route::get('/dashboard', [V1DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/profile', [V1AuthController::class, 'profile'])->name('profile');
 
         Route::get('/month-list/{year}', [V1CatatMeterController::class, 'monthList'])->name('month-list');
         Route::post('/create-month', [V1CatatMeterController::class, 'createMonth'])->name('create-month');

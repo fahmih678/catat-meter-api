@@ -45,10 +45,10 @@ class AuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => $user->getRoleNames()->first(),
+                    'roles' => $user->getRoleNames(),
                     'pam_id' => $user->pam_id,
-                    'created_at' => $user->created_at,
-                    'updated_at' => $user->updated_at
+                    // 'created_at' => $user->created_at,
+                    // 'updated_at' => $user->updated_at
                 ],
                 'token' => $token,
                 'token_type' => 'Bearer'
@@ -71,10 +71,8 @@ class AuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => $user->getRoleNames()->first(),
+                    'roles' => $user->getRoleNames(),
                     'pam_id' => $user->pam_id,
-                    'created_at' => $user->created_at,
-                    'updated_at' => $user->updated_at
                 ]
             ]
         ], 200);

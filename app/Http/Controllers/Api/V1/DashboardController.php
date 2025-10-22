@@ -10,6 +10,7 @@ use App\Models\MeterReading;
 use App\Models\Bill;
 use App\Models\Customer;
 use App\Http\Traits\HasPamFiltering;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 
 
@@ -56,27 +57,34 @@ class DashboardController extends Controller
      */
     private function getDashboardData($user): array
     {
+        $dashboard = ['stats' => []];
+
         if ($user->hasRole('superadmin')) {
-            return $this->getSuperAdminDashboard();
+            $dashboard = $this->mergeDashboard($dashboard, $this->getSuperAdminDashboard());
         }
 
         if ($user->hasRole('admin')) {
-            return $this->getPamAdminDashboard($user->pam_id);
+            $dashboard = $this->mergeDashboard($dashboard, $this->getPamAdminDashboard($user->pam_id));
         }
 
         if ($user->hasRole('catat_meter')) {
-            return $this->getCatatMeterDashboard($user->pam_id);
+            $dashboard = $this->mergeDashboard($dashboard, $this->getCatatMeterDashboard($user->pam_id));
         }
 
         if ($user->hasRole('pembayaran')) {
-            return $this->getLoketDashboard($user->pam_id);
+            $dashboard = $this->mergeDashboard($dashboard, $this->getLoketDashboard($user->pam_id));
         }
 
         if ($user->hasRole('pelanggan')) {
-            return $this->getPelangganDashboard($user->id);
+            $dashboard = $this->mergeDashboard($dashboard, $this->getPelangganDashboard($user->id));
         }
 
-        return $this->getDefaultDashboard();
+        // Kalau tidak ada satupun role cocok
+        if (empty($dashboard['stats'])) {
+            $dashboard = $this->mergeDashboard($dashboard, $this->getDefaultDashboard());
+        }
+
+        return $dashboard;
     }
 
     private function getSuperAdminDashboard(): array
@@ -94,21 +102,12 @@ class DashboardController extends Controller
 
     private function getPamAdminDashboard($pamId): array
     {
-        $totalCustomers = Meter::where('pam_id', $pamId)->count();
-        $totalReadingsThisMonth = MeterReading::where('pam_id', $pamId)
-            ->whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
-            ->count();
-        $totalPaidOff = Bill::where('pam_id', $pamId)
-            ->whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
-            ->where('status', 'paid')
-            ->count();
+        $totalUsers = User::where('pam_id', $pamId)->count();
+        $totalActiveMeters = Meter::where('pam_id', $pamId)->where('is_active', true)->count();
         return [
             'stats' => [
-                'total_customers' => $totalCustomers,
-                'this_month_readings' => $totalReadingsThisMonth,
-                'customer_paid_off' => $totalPaidOff,
+                'total_users' => $totalUsers,
+                'total_active_meters' => $totalActiveMeters,
             ],
         ];
     }
@@ -161,16 +160,13 @@ class DashboardController extends Controller
     }
 
     /**
-     * Default dashboard for other roles
+     * Helper untuk menggabungkan dashboard stats
      */
-    private function getDefaultDashboard(): array
+    private function mergeDashboard(array $base, array $additional): array
     {
-        return [
-            'stats' => [
-                'welcome_message' => 'Selamat datang di sistem!',
-            ],
-            'charts' => [],
-            'recent_activities' => [],
-        ];
+        if (isset($additional['stats'])) {
+            $base['stats'] = array_merge($base['stats'], $additional['stats']);
+        }
+        return $base;
     }
 }
