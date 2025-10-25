@@ -31,6 +31,7 @@ class PamRequest extends FormRequest
             'coordinate' => ['nullable', 'array'],
             'coordinate.latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'coordinate.longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'created_by' => ['required', 'integer'],
         ];
     }
 

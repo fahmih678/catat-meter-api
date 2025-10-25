@@ -16,17 +16,6 @@ class UserRoleSeeder extends Seeder
     {
         $pams = Pam::all();
 
-        // Create SuperAdmin
-        $superAdmin = User::create([
-            'name' => 'Super Administrator',
-            'email' => 'superadmin@example.com',
-            'password' => Hash::make('password'),
-            'phone' => '081234567890',
-            'pam_id' => null, // SuperAdmin not tied to specific PAM
-        ]);
-        $superAdmin->assignRole('superadmin');
-        $this->command->info('SuperAdmin created: superadmin@example.com');
-
         // Create Admin PAM for each PAM
         foreach ($pams as $index => $pam) {
             $adminPam = User::create([
@@ -62,6 +51,16 @@ class UserRoleSeeder extends Seeder
             ]);
             $pembayaran->assignRole('pembayaran');
             $this->command->info("Pembayaran created: bayar.{$pam->code}@example.com");
+
+            $customer = User::create([
+                'name' => "customer",
+                'email' => "customer@example.com",
+                'password' => Hash::make('password'),
+                'phone' => '',
+                'pam_id' => $pam->id,
+            ]);
+            $customer->assignRole('customer');
+            $this->command->info("Customer created: customer@example.com");
         }
 
         $this->command->info('');

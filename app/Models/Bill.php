@@ -25,6 +25,7 @@ class Bill extends Model
         'paid_at',
         'issued_at',
         'tariff_snapshot',
+        'paid_by',
     ];
 
     protected $casts = [

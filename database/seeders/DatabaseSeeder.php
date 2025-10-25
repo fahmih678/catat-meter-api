@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,17 +18,13 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🚀 Starting database seeding...');
 
         // Create default user first
-        User::create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password'),
-            'pam_id' => null, // Will be updated after PAMs are created
-            'phone' => '081234567890',
-        ]);
-        $this->command->info('✅ Default user created');
+
+        // $this->command->info("Pembayaran created: bayar.{$pam->code}@example.com");
 
         // Run seeders in correct order (respecting foreign key constraints)
         $this->call([
+            RolePermissionSeeder::class,     // 10. Roles & Permissions (independent)
+            SuperAdminUserSeeder::class,     // 11. Super Admin User (independent)
             PamSeeder::class,                // 1. PAMs first (no dependencies)
             AreaSeeder::class,               // 2. Areas (depends on PAMs)
             TariffGroupSeeder::class,        // 3. Tariff Groups (depends on PAMs)
@@ -36,7 +34,6 @@ class DatabaseSeeder extends Seeder
             MeterSeeder::class,              // 7. Meters (depends on Customers)
             // RegisteredMonthSeeder::class,    // 8. Registered Months (depends on PAMs)
             // MeterReadingSeeder::class,       // 9. Meter Readings (depends on Meters, RegisteredMonths, Users)
-            RolePermissionSeeder::class,     // 10. Roles & Permissions (independent)
             UserRoleSeeder::class,           // 11. Users with Roles (depends on PAMs and Roles)
         ]);
 

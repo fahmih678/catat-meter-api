@@ -402,6 +402,7 @@ class MeterReadingService
                 'payment_method' => null,
                 'paid_at' => null,
                 'issued_at' => now(),
+                'paid_by' => null,
                 'tariff_snapshot' => json_encode($tariffSnapshot),
             ]);
 
@@ -486,7 +487,7 @@ class MeterReadingService
     {
         ActivityLog::create([
             'pam_id' => $meterReading->meter->customer->pam_id,
-            'user_id' => $requestData['user_id'] ?? Auth::id() ?? 1,
+            'user_id' => $requestData['user_id'],
             'action' => 'status_change',
             'activity_type' => 'meter_reading_submitted_to_pending',
             'description' => "Meter reading {$meterReading->meter->meter_number} diubah status dari draft ke pending. Bill {$bill->bill_number} dibuat dengan amount Rp " . number_format($bill->total_bill, 0, ',', '.'),

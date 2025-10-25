@@ -84,6 +84,7 @@ class RolePermissionSeeder extends Seeder
         $this->createAdminPamRole();
         $this->createCatatMeterRole();
         $this->createPembayaranRole();
+        $this->createCustomerRole();
 
         $this->command->info('Roles and permissions created successfully.');
     }
@@ -218,5 +219,37 @@ class RolePermissionSeeder extends Seeder
         $role->givePermissionTo($permissions);
 
         $this->command->info('Pembayaran role created with billing permissions.');
+    }
+
+    private function createCustomerRole(): void
+    {
+        $role = Role::create(['name' => 'customer']);
+
+        // Customer permissions - focused on self-service
+        $permissions = [
+            // Self information
+            'customer.view', // View own profile
+            'customer.edit', // Edit own profile
+
+            // Own meters
+            'meter.view', // View own meters
+
+            // Own meter readings
+            'meter-record.view', // View own meter readings
+
+            // Own bills and payments
+            'bill.view', // View own bills
+            'bill.mark-paid', // Make payments
+
+            // Basic reporting
+            'report.view', // View own reports
+
+            // System health
+            'system.health',
+        ];
+
+        $role->givePermissionTo($permissions);
+
+        $this->command->info('Customer role created with self-service permissions.');
     }
 }

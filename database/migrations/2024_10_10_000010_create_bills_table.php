@@ -26,11 +26,12 @@ return new class extends Migration
             $table->datetime('paid_at')->nullable();
             $table->datetime('issued_at')->nullable();
             $table->string('tariff_snapshot')->nullable();
+            $table->foreignId('paid_by')->nullable()->constrained('users')->nullOnDelete();
             $table->softDeletes();
             $table->timestamps();
 
             $table->unique(['pam_id', 'reference_number']);
-            $table->index(['customer_id', 'status']);
+            $table->index(['customer_id', 'status', 'paid_by']);
         });
     }
 

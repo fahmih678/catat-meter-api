@@ -19,6 +19,7 @@ class Pam extends Model
         'logo_url',
         'status',
         'coordinate',
+        'created_by',
     ];
 
     protected $casts = [

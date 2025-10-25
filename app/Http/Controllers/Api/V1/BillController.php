@@ -8,6 +8,9 @@ use App\Models\Bill;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use Illuminate\Support\Facades\DB;
 
 class BillController extends Controller
 {
@@ -60,7 +63,8 @@ class BillController extends Controller
                 });
 
             // Get payment data for selected period (paid bills only)
-            $paymentDataQuery = Bill::select('bills.*', 'customers.name as customer_name', 'customers.customer_number')
+            $paymentDataQuery = Bill::select('bills.*', 'customers.name as customer_name', 'customers.customer_number', 'users.name as paid_by_name')
+                ->leftJoin('users', 'bills.paid_by', '=', 'users.id')
                 ->leftJoin('customers', 'bills.customer_id', '=', 'customers.id')
                 ->where('bills.status', 'paid')
                 ->when($selectedPeriod, function ($query, $period) {
@@ -85,8 +89,13 @@ class BillController extends Controller
                         'total_bill' => is_numeric($bill->total_bill) ? (float) $bill->total_bill : 0,
                         'status' => $bill->status === 'paid' ? 1 : 0,
                         'payment_method' => $bill->payment_method,
-                        'issued_at' => $bill->issued_at ? date('Y-m-d H:i:s', strtotime($bill->issued_at)) : null,
-                        'paid_at' => $bill->paid_at ? date('Y-m-d H:i:s', strtotime($bill->paid_at)) : null,
+                        'issued_at' => $bill->issued_at
+                            ? Carbon::parse($bill->issued_at)->translatedFormat('d M Y')
+                            : null,
+                        'paid_at' => $bill->paid_at
+                            ? Carbon::parse($bill->paid_at)->translatedFormat('d M Y')
+                            : null,
+                        'paid_by' => $bill->paid_by_name,
                     ];
                 });
 
@@ -119,10 +128,10 @@ class BillController extends Controller
     }
 
     /**
-     * Download payment data for specified period
+     * Download payment data for specified period as PDF
      *
      * @param Request $request
-     * @return JsonResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse
+     * @return JsonResponse|\Illuminate\Http\Response
      */
     public function downloadPaymentReport(Request $request)
     {
@@ -136,22 +145,24 @@ class BillController extends Controller
 
             // Get payment data for selected period (paid bills only)
             $paymentDataQuery = Bill::select(
-                    'bills.id',
-                    'bills.bill_number',
-                    'bills.total_bill',
-                    'bills.payment_method',
-                    'bills.paid_at',
-                    'bills.issued_at',
-                    'customers.name as customer_name',
-                    'customers.customer_number'
-                )
+                'bills.id',
+                'bills.bill_number',
+                'bills.total_bill',
+                'bills.payment_method',
+                'customers.name as customer_name',
+                'customers.customer_number',
+                'users.name as paid_by_name',
+                DB::raw("DATE_FORMAT(bills.paid_at, '%d %b %Y') as paid_at_formatted"),
+                DB::raw("DATE_FORMAT(bills.issued_at, '%b %Y') as issued_at_formatted"),
+            )
                 ->leftJoin('customers', 'bills.customer_id', '=', 'customers.id')
+                ->leftJoin('users', 'bills.paid_by', '=', 'users.id')
                 ->where('bills.status', 'paid')
                 ->when($selectedPeriod, function ($query, $period) {
                     $year = substr($period, 0, 4);
                     $month = substr($period, 5, 2);
                     return $query->whereMonth('bills.paid_at', $month)
-                                 ->whereYear('bills.paid_at', $year);
+                        ->whereYear('bills.paid_at', $year);
                 })
                 ->orderBy('bills.paid_at', 'desc');
 
@@ -169,55 +180,74 @@ class BillController extends Controller
                 ], 404);
             }
 
-            // Prepare CSV data
-            $csvFileName = 'laporan_pembayaran_' . $selectedPeriod . '.csv';
-            $headers = [
-                'Content-Type' => 'text/csv',
-                'Content-Disposition' => 'attachment; filename="' . $csvFileName . '"',
-            ];
+            // Calculate summary
+            $totalPayments = $paymentData->count();
+            $totalAmounts = $paymentData->sum(function ($item) {
+                return is_numeric($item->total_bill) ? (float) $item->total_bill : 0;
+            });
 
-            $callback = function () use ($paymentData) {
-                $file = fopen('php://output', 'w');
+            // Get PAM information
+            $pamName = 'PDAM';
+            if (!$isSuperAdmin && $userPamId) {
+                $pam = \App\Models\Pam::find($userPamId);
+                $pamName = $pam ? $pam->name : 'PDAM';
+            }
 
-                // Add UTF-8 BOM for proper Excel compatibility
-                fwrite($file, "\xEF\xBB\xBF");
+            // Generate PDF
+            $options = new Options();
+            $options->set('defaultFont', 'Arial');
+            $options->set('isRemoteEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
 
-                // CSV Header
-                fputcsv($file, [
-                    'ID',
-                    'Nomor Bill',
-                    'Nama Pelanggan',
-                    'Nomor Pelanggan',
-                    'Total Tagihan',
-                    'Metode Pembayaran',
-                    'Tanggal Diterbitkan',
-                    'Tanggal Dibayar'
-                ]);
+            $dompdf = new Dompdf($options);
 
-                // CSV Data
-                foreach ($paymentData as $payment) {
-                    fputcsv($file, [
-                        $payment->id,
-                        $payment->bill_number,
-                        $payment->customer_name ?? '',
-                        $payment->customer_number ?? '',
-                        number_format($payment->total_bill, 2, ',', '.'),
-                        $payment->payment_method ?? '',
-                        $payment->issued_at ? date('d/m/Y H:i:s', strtotime($payment->issued_at)) : '',
-                        $payment->paid_at ? date('d/m/Y H:i:s', strtotime($payment->paid_at)) : '',
-                    ]);
-                }
+            // Create HTML content
+            $html = $this->generatePaymentReportHtml($paymentData, $selectedPeriod, $totalPayments, $totalAmounts, $pamName);
 
-                fclose($file);
-            };
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
 
-            return response()->stream($callback, 200, $headers);
+            // Generate filename
+            $filename = 'laporan_pembayaran_' . $selectedPeriod . '.pdf';
 
+            // Return PDF response
+            return response($dompdf->output(), 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'private, max-age=0, must-revalidate',
+                'Pragma' => 'public',
+            ]);
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to generate payment report: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Generate HTML content for PDF payment report
+     *
+     * @param \Illuminate\Support\Collection $paymentData
+     * @param string $period
+     * @param int $totalPayments
+     * @param float $totalAmounts
+     * @param string $pamName
+     * @return string
+     */
+    private function generatePaymentReportHtml($paymentData, $period, $totalPayments, $totalAmounts, $pamName)
+    {
+        $periodName = Carbon::createFromFormat('Y-m', $period)->format('F Y');
+
+        $html = view('download_payment_report', [
+            'paymentData' => $paymentData,
+            'periodName' => $periodName,
+            'totalPayments' => $totalPayments,
+            'totalAmounts' => $totalAmounts,
+            'pamName' => $pamName,
+        ])->render();
+
+        return $html;
     }
 }

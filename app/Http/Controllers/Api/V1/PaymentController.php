@@ -107,6 +107,8 @@ class PaymentController extends Controller
             }
             $bill->status = 'paid';
             $bill->paid_at = Carbon::now()->format('Y-m-d H:i:s');
+            $bill->paid_by = $request->user()->id;
+            $bill->payment_method = 'cash';
             $bill->save();
 
             $bill->meterReading->update([

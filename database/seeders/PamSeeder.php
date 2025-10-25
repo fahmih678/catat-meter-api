@@ -20,6 +20,7 @@ class PamSeeder extends Seeder
                 'address' => 'Tuban Kulon, Kec. Tuban, Kabupaten Tuban, Jawa Timur 62315',
                 'is_active' => true,
                 'coordinate' => json_encode(['lat' => -6.2088, 'lng' => 106.8456]),
+                'created_by' => 1,
             ],
         ];
 

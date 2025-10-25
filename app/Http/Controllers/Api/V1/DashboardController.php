@@ -75,13 +75,13 @@ class DashboardController extends Controller
             $dashboard = $this->mergeDashboard($dashboard, $this->getLoketDashboard($user->pam_id));
         }
 
-        if ($user->hasRole('pelanggan')) {
+        if ($user->hasRole('customer')) {
             $dashboard = $this->mergeDashboard($dashboard, $this->getPelangganDashboard($user->id));
         }
 
         // Kalau tidak ada satupun role cocok
         if (empty($dashboard['stats'])) {
-            $dashboard = $this->mergeDashboard($dashboard, $this->getDefaultDashboard());
+            $dashboard = $this->mergeDashboard($dashboard, $this->getPelangganDashboard($user->id));
         }
 
         return $dashboard;
@@ -155,6 +155,15 @@ class DashboardController extends Controller
                 'customer_pending_payment' => $totalPendingPayments,
                 'customer_paid_off' => $totalPaidOff,
                 'customer_overdue' => $allPendingPaymentsInPam,
+            ],
+        ];
+    }
+    private function getPelangganDashboard($userId): array
+    {
+        $totalTagihan = Bill::where('customer_id', $userId)->where('status', 'pending')->count();
+        return [
+            'stats' => [
+                'total_tagihan' => $totalTagihan,
             ],
         ];
     }
