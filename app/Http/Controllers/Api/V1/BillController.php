@@ -63,17 +63,38 @@ class BillController extends Controller
                 });
 
             // Get payment data for selected period (paid bills only)
-            $paymentDataQuery = Bill::select('bills.*', 'customers.name as customer_name', 'customers.customer_number', 'users.name as paid_by_name')
+            $paymentDataQuery = Bill::select(
+                'bills.id',
+                'bills.bill_number',
+                'bills.total_bill',
+                'bills.payment_method',
+                'bills.issued_at',
+                'bills.paid_at',
+                'bills.status',
+                'customers.name as customer_name',
+                'customers.customer_number',
+                'users.name as paid_by_name',
+                'registered_months.period as bill_period',
+            )
+                ->join('customers', 'bills.customer_id', '=', 'customers.id')
+                ->join('meter_readings', 'bills.meter_reading_id', '=', 'meter_readings.id')
+                ->join('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
                 ->leftJoin('users', 'bills.paid_by', '=', 'users.id')
-                ->leftJoin('customers', 'bills.customer_id', '=', 'customers.id')
                 ->where('bills.status', 'paid')
                 ->when($selectedPeriod, function ($query, $period) {
                     $year = substr($period, 0, 4);
                     $month = substr($period, 5, 2);
-                    return $query->whereMonth('bills.paid_at', $month)
-                        ->whereYear('bills.paid_at', $year);
+                    // Filter by payment date (paid_at or updated_at when paid_at is null)
+                    return $query->where(function ($q) use ($month, $year) {
+                        $q->where(function ($subQ) use ($month, $year) {
+                            $subQ->whereMonth('bills.paid_at', $month)
+                                ->whereYear('bills.paid_at', $year)
+                                ->whereNotNull('bills.paid_at');
+                        });
+                    });
                 })
-                ->orderBy('bills.paid_at', 'desc');
+                ->orderByDesc('bills.paid_at');
+
 
             // Apply PAM filtering (non-superadmin only)
             if (!$isSuperAdmin && $userPamId) {
@@ -81,24 +102,25 @@ class BillController extends Controller
             }
             $paymentData = $paymentDataQuery->get()
                 ->map(function ($bill) {
+                    // Use paid_at if available
+                    $paymentDate = $bill->paid_at;
+
                     return [
                         'bill_id' => $bill->id,
                         'bill_number' => $bill->bill_number,
-                        'customer_name' => $bill->customer_name ?? '',
-                        'customer_number' => $bill->customer_number ?? '',
-                        'total_bill' => is_numeric($bill->total_bill) ? (float) $bill->total_bill : 0,
-                        'status' => $bill->status === 'paid' ? 1 : 0,
-                        'payment_method' => $bill->payment_method,
-                        'issued_at' => $bill->issued_at
-                            ? Carbon::parse($bill->issued_at)->translatedFormat('d M Y')
-                            : null,
-                        'paid_at' => $bill->paid_at
-                            ? Carbon::parse($bill->paid_at)->translatedFormat('d M Y')
+                        'customer_name' => $bill->customer_name,
+                        'customer_number' => $bill->customer_number,
+                        'total_bill' => (float) $bill->total_bill,
+                        'status' => $bill->status,
+                        'payment_method' => $bill->payment_method ?? '-',
+                        'period' => Carbon::parse($bill->bill_period)->translatedFormat('M Y'),
+                        'issued_at' =>  Carbon::parse($bill->issued_at)->translatedFormat('d M Y'),
+                        'paid_at' => $paymentDate
+                            ? Carbon::parse($paymentDate)->translatedFormat('d M Y')
                             : null,
                         'paid_by' => $bill->paid_by_name,
                     ];
                 });
-
             // Calculate summary
             $summary = [
                 'total_payments' => $paymentData->count(),
@@ -152,10 +174,13 @@ class BillController extends Controller
                 'customers.name as customer_name',
                 'customers.customer_number',
                 'users.name as paid_by_name',
-                DB::raw("DATE_FORMAT(bills.paid_at, '%d %b %Y') as paid_at_formatted"),
+                DB::raw("DATE_FORMAT(registered_months.period, '%b %Y') as period_formatted"),
                 DB::raw("DATE_FORMAT(bills.issued_at, '%b %Y') as issued_at_formatted"),
+                DB::raw("DATE_FORMAT(bills.paid_at, '%d %b %Y') as paid_at_formatted"),
             )
                 ->leftJoin('customers', 'bills.customer_id', '=', 'customers.id')
+                ->join('meter_readings', 'bills.meter_reading_id', '=', 'meter_readings.id')
+                ->join('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
                 ->leftJoin('users', 'bills.paid_by', '=', 'users.id')
                 ->where('bills.status', 'paid')
                 ->when($selectedPeriod, function ($query, $period) {
