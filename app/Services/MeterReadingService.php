@@ -6,6 +6,7 @@ use App\Models\MeterReading;
 use App\Repositories\MeterReadingRepository;
 use App\Models\ActivityLog;
 use App\Models\Bill;
+use App\Models\Meter;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -300,6 +301,7 @@ class MeterReadingService
         return DB::transaction(function () use ($meterReadingId, $requestData) {
             // Find meter reading with required relationships
             $meterReading = $this->meterReadingRepository->find($meterReadingId);
+            $meter = $meterReading->meter;
             $registeredMonth = $meterReading->registeredMonth;
 
             if (!$meterReading) {
@@ -410,6 +412,8 @@ class MeterReadingService
             $totalBillInMonth = Bill::whereHas('meterReading', function ($q) use ($registeredMonth) {
                 $q->where('registered_month_id', $registeredMonth->id);
             })->sum('total_bill');
+            $meter->total_usage += $totalUsageInMonth;
+            $meter->save();
 
             $registeredMonth->update([
                 'total_usage' => $totalUsageInMonth,

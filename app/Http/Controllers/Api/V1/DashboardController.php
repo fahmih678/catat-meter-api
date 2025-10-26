@@ -38,7 +38,6 @@ class DashboardController extends Controller
                 'code' => $user->pam ? $user->pam->code : null,
                 'name' => $user->pam ? $user->pam->name : null,
                 'logo_url' => $user->pam ? $user->pam->logo_url : null,
-                'is_active' => $user->pam ? $user->pam->is_active : null,
                 'coordinate' => $user->pam ? $user->pam->coordinate : null,
             ],
 
@@ -132,38 +131,59 @@ class DashboardController extends Controller
 
     private function getLoketDashboard($pamId): array
     {
-        $totalPendingPayments = MeterReading::where('pam_id', $pamId)
-            ->whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
-            ->where('status', 'pending')
-            ->count();
-        $totalPaidOff = Bill::where('pam_id', $pamId)
-            ->whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
-            ->where('status', 'paid')
-            ->count();
-        $allPendingPaymentsInPam = MeterReading::where('pam_id', $pamId)
-            ->where('status', '!=', 'paid')
-            ->whereHas('registeredMonth', function ($query) {
-                $query->where('period', '<', now()->startOfMonth());
-            })
-            ->count();
+        $currentMonth = now()->startOfMonth();
 
-        // Implement Payment specific dashboard data retrieval
+        // Get bill statistics with single query using conditional aggregation
+        $billStats = Bill::where('pam_id', $pamId)
+            ->selectRaw('
+                COUNT(CASE WHEN status = "pending" THEN 1 END) as pending_count,
+                COUNT(CASE WHEN status = "paid" THEN 1 END) as paid_count,
+                COUNT(CASE WHEN status = "pending" AND due_date < ? THEN 1 END) as overdue_count,
+                SUM(CASE WHEN status = "pending" THEN total_bill ELSE 0 END) as pending_amount,
+                SUM(CASE WHEN status = "paid" THEN total_bill ELSE 0 END) as paid_amount,
+                SUM(CASE WHEN status = "pending" AND due_date < ? THEN total_bill ELSE 0 END) as overdue_amount
+            ', [$currentMonth, $currentMonth])
+            ->first();
+
         return [
             'stats' => [
-                'customer_pending_payment' => $totalPendingPayments,
-                'customer_paid_off' => $totalPaidOff,
-                'customer_overdue' => $allPendingPaymentsInPam,
+                'customer_pending_payment' => (int) $billStats->pending_count,
+                'customer_paid_off' => (int) $billStats->paid_count,
+                'customer_overdue' => (int) $billStats->overdue_count,
+                'pending_amount' => (float) $billStats->pending_amount,
+                'paid_amount' => (float) $billStats->paid_amount,
+                'overdue_amount' => (float) $billStats->overdue_amount,
             ],
         ];
     }
     private function getPelangganDashboard($userId): array
     {
-        $totalTagihan = Bill::where('customer_id', $userId)->where('status', 'pending')->count();
+        // Single query with eager loading and aggregation
+        $customers = Customer::where('user_id', $userId)
+            ->where('is_active', true)
+            ->with(['meters' => function ($query) {
+                $query->where('is_active', true);
+            }])
+            ->get();
+
+        // Get all customer IDs for efficient bill querying
+        $customerIds = $customers->pluck('id');
+
+        // Single query for all pending bills
+        $totalBills = Bill::whereIn('customer_id', $customerIds)
+            ->where('status', 'pending')
+            ->sum('total_bill');
+
+        // Calculate total usage from loaded meters (no additional queries)
+        $totalUsage = $customers->sum(function ($customer) {
+            return $customer->meters->sum('total_usage');
+        });
+
         return [
             'stats' => [
-                'total_tagihan' => $totalTagihan,
+                'total_customers' => $customers->count(),
+                'current_usage' => (int) $totalUsage,
+                'current_bill' => (float) $totalBills,
             ],
         ];
     }

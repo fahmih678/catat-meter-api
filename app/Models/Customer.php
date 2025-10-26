@@ -21,6 +21,8 @@ class Customer extends Model
         'address',
         'phone',
         'status',
+        'user_id',
+        'is_active',
     ];
 
     public function pam(): BelongsTo

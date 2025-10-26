@@ -19,6 +19,7 @@ return new class extends Migration
             $table->datetime('installed_at')->nullable();
             $table->decimal('initial_installed_meter', 10, 2)->default(0);
             $table->text('notes')->nullable();
+            $table->json('total_usage')->nullable();
             $table->datetime('last_reading_at')->nullable();
             $table->boolean('is_active')->default(true);
             $table->softDeletes();

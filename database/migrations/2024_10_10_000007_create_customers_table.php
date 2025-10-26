@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('pam_id')->constrained('pams')->onDelete('cascade');
             $table->foreignId('area_id')->constrained('areas')->onDelete('cascade');
             $table->foreignId('tariff_group_id')->constrained('tariff_groups')->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('customer_number');
             $table->string('name')->index();
             $table->text('address');

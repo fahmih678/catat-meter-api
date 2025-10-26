@@ -21,6 +21,8 @@ class Meter extends Model
         'initial_installed_meter',
         'notes',
         'last_recorded_at',
+        'total_usage',
+        'is_active',
     ];
 
     protected $casts = [
