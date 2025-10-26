@@ -78,7 +78,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('/customers/{customerId}/billings', [V1PaymentController::class, 'getBilling'])->name('get-billing');
         Route::post('/customers/{customerId}/pay', [V1PaymentController::class, 'payBilling'])->name('pay-billing');
 
-
+        // Customer
+        Route::get('/customers/{userId}/get-bills', [V1CustomerController::class, 'getBillsByUser'])->name('customers.get-bills');
 
         Route::post('/create-bill', [V1PaymentController::class, 'store'])->name('create-bill');
     });

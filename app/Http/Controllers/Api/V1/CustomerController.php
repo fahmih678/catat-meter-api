@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Traits\HasPamFiltering;
+use App\Models\Bill;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -252,5 +253,120 @@ class CustomerController extends Controller
                 ];
             })->toArray(),
         ];
+    }
+
+    /**
+     * Get bills by user ID
+     *
+     * @param Request $request
+     * @param int $userId
+     * @return JsonResponse
+     */
+    public function getBillsByUser(Request $request, int $userId): JsonResponse
+    {
+        try {
+            // Validate query parameters
+            $validated = $request->validate([
+                'customer_id' => 'nullable|integer|exists:customers,id',
+                'status' => 'nullable|in:pending,paid',
+                'per_page' => 'nullable|integer|min:5|max:50',
+                'page' => 'nullable|integer|min:1',
+            ]);
+
+            $perPage = $validated['per_page'] ?? 10;
+
+            // Build query for bills belonging to the user through customers
+            $query = Bill::query()
+                ->select([
+                    'bills.id',
+                    'bills.bill_number',
+                    'bills.volume_usage',
+                    'bills.total_bill',
+                    'bills.status',
+                    'bills.due_date',
+                    'bills.payment_method',
+                    'bills.paid_at',
+                    'bills.issued_at',
+                    'customers.name as customer_name',
+                    'customers.customer_number',
+                    'areas.name as area_name',
+                    'meters.meter_number',
+                    'meter_readings.previous_reading',
+                    'meter_readings.current_reading',
+                    'registered_months.period as bill_period',
+                ])
+                ->join('customers', 'bills.customer_id', '=', 'customers.id')
+                ->join('areas', 'customers.area_id', '=', 'areas.id')
+                ->join('meter_readings', 'bills.meter_reading_id', '=', 'meter_readings.id')
+                ->join('meters', 'meter_readings.meter_id', '=', 'meters.id')
+                ->join('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
+                ->where('customers.user_id', $userId)
+                ->where('customers.is_active', true)
+                ->orderByDesc('bills.created_at');
+
+            // Apply filters
+            if (!empty($validated['customer_id'])) {
+                $query->where('customers.id', $validated['customer_id']);
+            }
+
+            if (!empty($validated['status'])) {
+                $query->where('bills.status', $validated['status']);
+            }
+
+            // Execute paginated query
+            $bills = $query->paginate($perPage);
+
+            // Format response data
+            $formattedData = $bills->getCollection()->map(function ($bill) {
+                return [
+                    'nama_pelanggan' => $bill->customer_name,
+                    'nomor_pelanggan' => $bill->customer_number,
+                    'area' => $bill->area_name,
+                    'periode' => $bill->bill_period,
+                    'jatuh_tempo' => Carbon::parse($bill->due_date)->format('Y-m-d'),
+                    'status' => $bill->status,
+                    'bacaan_awal' => (float) $bill->previous_reading,
+                    'bacaan_akhir' => (float) $bill->current_reading,
+                    'pemakaian' => (float) $bill->volume_usage,
+                    'total_tagihan' => (float) $bill->total_bill,
+                    'bill_number' => $bill->bill_number,
+                    'payment_method' => $bill->payment_method ?: '-',
+                    'paid_at' => $bill->paid_at ? Carbon::parse($bill->paid_at)->format('Y-m-d H:i:s') : null,
+                    'issued_at' => $bill->issued_at ? Carbon::parse($bill->issued_at)->format('Y-m-d H:i:s') : null,
+                ];
+            });
+
+            $userCustomers = Customer::where('user_id', $userId)
+                ->where('is_active', true)
+                ->get(['id', 'name', 'customer_number']);
+
+            return response()->json([
+                'data' => $formattedData,
+                'customers' => $userCustomers,
+                'pagination' => [
+                    'total' => $bills->total(),
+                    'per_page' => $bills->perPage(),
+                    'current_page' => $bills->currentPage(),
+                    'hasNextPage' => $bills->hasMorePages(),
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching bills by user: ' . $e->getMessage(), [
+                'user_id' => $userId,
+                'filters' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'data' => [],
+                'pagination' => [
+                    'total' => 0,
+                    'per_page' => $perPage ?? 10,
+                    'current_page' => 1,
+                    'hasNextPage' => false,
+                ],
+                'message' => 'Failed to retrieve bills data'
+            ], 500);
+        }
     }
 }
