@@ -15,20 +15,6 @@ use Illuminate\Http\JsonResponse;
 class PaymentController extends Controller
 {
     use HasPamFiltering;
-    /**
-     * Get payment dashboard data
-     */
-
-    public function store(Request $request)
-    {
-        // return $request->all();
-        $bill = Bill::create($request->all());
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Bill created successfully',
-            'data' => $bill
-        ], 201);
-    }
 
     public function getBilling($customerId): JsonResponse
     {

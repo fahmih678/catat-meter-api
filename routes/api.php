@@ -62,26 +62,29 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('/dashboard', [V1DashboardController::class, 'index'])->name('dashboard');
         Route::get('/profile', [V1AuthController::class, 'profile'])->name('profile');
 
+        // Month Management
         Route::get('/month-list/{year}', [V1CatatMeterController::class, 'monthList'])->name('month-list');
         Route::post('/create-month', [V1CatatMeterController::class, 'createMonth'])->name('create-month');
 
-        Route::get('/unrecorded-customers', [V1CustomerController::class, 'unrecordedList'])->name('unrecorded-customers');
-
+        // Meter Management
         Route::get('/meter-reading-list', [V1CatatMeterController::class, 'meterReadingList'])->name('meter-reading-list');
 
-        Route::get('/reports/monthly-payment-report', [V1BillController::class, 'monthlyPaymentReport'])->name('monthly-payment-report');
-        Route::get('/reports/download-payment-report', [V1BillController::class, 'downloadPaymentReport'])->name('download-payment-report');
         // Meter Reading Operations
+        Route::get('/unrecorded-customers', [V1CustomerController::class, 'unrecordedList'])->name('unrecorded-customers');
         Route::get('/customers/{id}/meter-input-data', [V1MeterReadingController::class, 'getMeterInputData'])->name('customer-meter-input-data');
         Route::post('/store-meter-reading', [V1MeterReadingController::class, 'store'])->name('submit-meter-reading');
+
+        // Pay Operations
         Route::put('/meter-readings/{meterReadingId}/submit-to-pending', [V1MeterReadingController::class, 'submitToPending'])->name('submit-meter-reading-to-pending');
         Route::get('/customers/{customerId}/billings', [V1PaymentController::class, 'getBilling'])->name('get-billing');
         Route::post('/customers/{customerId}/pay', [V1PaymentController::class, 'payBilling'])->name('pay-billing');
 
-        // Customer
+        // Get Bills for Customer
         Route::get('/customers/{userId}/get-bills', [V1CustomerController::class, 'getBillsByUser'])->name('customers.get-bills');
 
-        Route::post('/create-bill', [V1PaymentController::class, 'store'])->name('create-bill');
+        // Bill Monthly Reports
+        Route::get('/reports/monthly-payment-report', [V1BillController::class, 'monthlyPaymentReport'])->name('monthly-payment-report');
+        Route::get('/reports/download-payment-report', [V1BillController::class, 'downloadPaymentReport'])->name('download-payment-report');
     });
 });
 
