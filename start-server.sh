@@ -26,7 +26,10 @@ export PHP_CLI_SERVER_WORKERS=4
 export MEMORY_LIMIT=512M
 
 # Start server with optimized PHP settings
-echo -e "${GREEN}Starting server on http://127.0.0.1:8000${NC}"
+echo -e "${GREEN}Starting server on http://0.0.0.0:8000${NC}"
+echo -e "${GREEN}Access URLs:${NC}"
+echo -e "${YELLOW}- Local: http://localhost:8000${NC}"
+echo -e "${YELLOW}- Network: http://[IP_ANDA]:8000${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop the server${NC}"
 
 php -d memory_limit=512M \
@@ -34,4 +37,4 @@ php -d memory_limit=512M \
     -d output_buffering=8192 \
     -d zlib.output_compression=On \
     -d zlib.output_compression_level=6 \
-    artisan serve --host=127.0.0.1 --port=8000
+    artisan serve --host=0.0.0.0 --port=8000

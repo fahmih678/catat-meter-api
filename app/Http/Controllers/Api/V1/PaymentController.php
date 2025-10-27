@@ -91,65 +91,87 @@ class PaymentController extends Controller
 
     public function payBilling(Request $request, int $customerId): JsonResponse
     {
-
-        $billValidate = $request->validate([
+        $validatedData = $request->validate([
             'bill_ids' => 'required|array|min:1',
             'bill_ids.*' => 'integer|exists:bills,id',
         ]);
 
-        foreach ($billValidate as $key => $value) {
-            $bill = Bill::where('id', $value)->first();
-            if (!$bill) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Bill not found with ID: ' . $value
-                ], 404);
-            }
-            $bill->status = 'paid';
-            $bill->paid_at = Carbon::now()->format('Y-m-d H:i:s');
-            $bill->paid_by = $request->user()->id;
-            $bill->payment_method = 'cash';
-            $bill->save();
+        $billIds = $validatedData['bill_ids'];
+        $updatedBills = [];
+        $errors = [];
 
-            $bill->meterReading->update([
-                'status' => 'paid',
-            ]);
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Bill updated successfully',
-                'data' => $bill->meterReading
-            ], 200);
-            $bill->meterReading->update([
-                'status' => 'paid',
-            ]);
-        }
-
-        $bill = Bill::where('customer_id', $customerId)
-            ->whereIn('id', $request->bill_ids)
+        // Verify bills belong to the specified customer
+        $bills = Bill::where('customer_id', $customerId)
+            ->whereIn('id', $billIds)
+            ->where('status', 'pending')
+            ->with('meterReading')
             ->get();
-        // $meterReading = $bill->meterReading;
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Bill retrieved successfully',
-            'data' => $bill,
-        ], 200);
 
-        if (!$bill) {
+        if ($bills->isEmpty()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Bill not found'
+                'message' => 'No pending bills found for the given customer ID and bill IDs'
             ], 404);
         }
-        $bill->status = 'paid';
-        $bill->paid_at = Carbon::now()->format('Y-m-d H:i:s');
-        $bill->save();
-        $meterReading->status = 'paid';
-        $meterReading->save();
+
+        // Check if all requested bills exist and belong to the customer
+        $foundBillIds = $bills->pluck('id')->toArray();
+        $missingBillIds = array_diff($billIds, $foundBillIds);
+
+        if (!empty($missingBillIds)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Some bills not found or already paid: ' . implode(', ', $missingBillIds)
+            ], 404);
+        }
+
+        // Update each bill
+        foreach ($bills as $bill) {
+            try {
+                $bill->status = 'paid';
+                $bill->paid_at = Carbon::now()->format('Y-m-d H:i:s');
+                $bill->paid_by = $request->user()->id;
+                $bill->payment_method = 'cash';
+                $bill->save();
+
+                // Update meter reading status if exists
+                if ($bill->meterReading) {
+                    $bill->meterReading->update([
+                        'status' => 'paid',
+                    ]);
+                }
+
+                $updatedBills[] = [
+                    'id' => $bill->id,
+                    'bill_number' => $bill->bill_number,
+                    'total_bill' => $bill->total_bill,
+                    'paid_at' => $bill->paid_at
+                ];
+            } catch (\Exception $e) {
+                $errors[] = [
+                    'bill_id' => $bill->id,
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'status' => 'partial_success',
+                'message' => 'Some bills were updated with errors',
+                'updated_bills' => $updatedBills,
+                'errors' => $errors
+            ], 207); // 207 Multi-Status
+        }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Bill updated successfully',
-            'data' => $bill
+            'message' => count($updatedBills) . ' bills paid successfully',
+            'data' => [
+                'updated_bills' => $updatedBills,
+                'total_amount' => $bills->sum('total_bill'),
+                'customer_id' => $customerId
+            ]
         ], 200);
     }
 }
