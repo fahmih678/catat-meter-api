@@ -16,13 +16,13 @@ class SuperAdminUserSeeder extends Seeder
     {
         // Create SuperAdmin
         $superAdmin = User::create([
-            'name' => 'Super Administrator',
-            'email' => 'superadmin@example.com',
+            'name' => 'alpha',
+            'email' => 'alpha@gmail.com',
             'password' => Hash::make('password'),
-            'phone' => '081234567890',
+            'phone' => '089699077651',
             'pam_id' => null, // SuperAdmin not tied to specific PAM
         ]);
         $superAdmin->assignRole('superadmin');
-        $this->command->info('SuperAdmin created: superadmin@example.com');
+        $this->command->info('SuperAdmin created: alpha@gmail.com');
     }
 }

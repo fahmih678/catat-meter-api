@@ -44,12 +44,12 @@ class UserRoleSeeder extends Seeder
             // Create 1 Pembayaran user per PAM
             $pembayaran = User::create([
                 'name' => "Petugas Pembayaran - {$pam->name}",
-                'email' => "bayar.{$pam->code}@example.com",
+                'email' => "loket.{$pam->code}@example.com",
                 'password' => Hash::make('password'),
                 'phone' => '0814567890' . sprintf('%02d', $index + 20),
                 'pam_id' => $pam->id,
             ]);
-            $pembayaran->assignRole('pembayaran');
+            $pembayaran->assignRole('loket');
             $this->command->info("Pembayaran created: bayar.{$pam->code}@example.com");
 
             $customer = User::create([
