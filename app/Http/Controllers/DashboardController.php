@@ -29,4 +29,12 @@ class DashboardController extends Controller
     {
         return view('dashboard.settings', ['showFooter' => true]);
     }
+
+    /**
+     * Show the import data page.
+     */
+    public function import()
+    {
+        return view('dashboard.import');
+    }
 }

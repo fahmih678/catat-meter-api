@@ -25,16 +25,16 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,     // 10. Roles & Permissions (independent)
             SuperAdminUserSeeder::class,     // 11. Super Admin User (independent)
-            PamSeeder::class,                // 1. PAMs first (no dependencies)
-            AreaSeeder::class,               // 2. Areas (depends on PAMs)
-            TariffGroupSeeder::class,        // 3. Tariff Groups (depends on PAMs)
-            TariffTierSeeder::class,         // 4. Tariff Tiers (depends on PAMs and Tariff Groups)
-            FixedFeeSeeder::class,           // 5. Fixed Fees (depends on PAMs and Tariff Groups)
-            CustomerSeeder::class,           // 6. Customers (depends on PAMs, Areas, Tariff Groups)
-            MeterSeeder::class,              // 7. Meters (depends on Customers)
+            // PamSeeder::class,                // 1. PAMs first (no dependencies)
+            // AreaSeeder::class,               // 2. Areas (depends on PAMs)
+            // TariffGroupSeeder::class,        // 3. Tariff Groups (depends on PAMs)
+            // TariffTierSeeder::class,         // 4. Tariff Tiers (depends on PAMs and Tariff Groups)
+            // FixedFeeSeeder::class,           // 5. Fixed Fees (depends on PAMs and Tariff Groups)
+            // CustomerSeeder::class,           // 6. Customers (depends on PAMs, Areas, Tariff Groups)
+            // MeterSeeder::class,              // 7. Meters (depends on Customers)
             // RegisteredMonthSeeder::class,    // 8. Registered Months (depends on PAMs)
             // MeterReadingSeeder::class,       // 9. Meter Readings (depends on Meters, RegisteredMonths, Users)
-            UserRoleSeeder::class,           // 11. Users with Roles (depends on PAMs and Roles)
+            // UserRoleSeeder::class,           // 11. Users with Roles (depends on PAMs and Roles)
         ]);
 
         $this->command->info('🎉 Database seeding completed successfully!');

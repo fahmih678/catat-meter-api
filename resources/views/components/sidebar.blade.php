@@ -69,7 +69,15 @@
         </div>
 
         <div class="sidebar-item">
-            <a href="#" class="sidebar-link" data-bs-toggle="tooltip" data-bs-placement="right"
+            <a href="{{ route('import') }}" class="sidebar-link {{ request()->is('import*') ? 'active' : '' }}" data-bs-toggle="tooltip" data-bs-placement="right"
+                title="Import Data">
+                <i class="bi bi-cloud-upload"></i>
+                <span>Import Data</span>
+            </a>
+        </div>
+
+        <div class="sidebar-item">
+            <a href="{{ route('settings') }}" class="sidebar-link {{ request()->is('settings*') ? 'active' : '' }}" data-bs-toggle="tooltip" data-bs-placement="right"
                 title="Pengaturan">
                 <i class="bi bi-gear"></i>
                 <span>Pengaturan</span>
