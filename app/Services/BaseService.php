@@ -18,9 +18,9 @@ abstract class BaseService
         $this->repository = $repository;
     }
 
-    public function getAll(): Collection
+    public function getAll($fields = ['*']): Collection
     {
-        return $this->repository->all();
+        return $this->repository->all($fields);
     }
 
     public function getPaginated(int $perPage = 15): LengthAwarePaginator
@@ -28,9 +28,9 @@ abstract class BaseService
         return $this->repository->paginate($perPage);
     }
 
-    public function findById(int $id): ?Model
+    public function findById(int $id, array $fields = ['*']): ?Model
     {
-        return $this->repository->find($id);
+        return $this->repository->find($id, $fields);
     }
 
     public function findByIdOrFail(int $id): Model

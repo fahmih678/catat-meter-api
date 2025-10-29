@@ -22,9 +22,9 @@ class PamService extends BaseService
         return $this->pamRepository->findByCode($code);
     }
 
-    public function getActiveOnly(): Collection
+    public function getActiveOnly($fields = ['*']): Collection
     {
-        return $this->pamRepository->getActiveOnly();
+        return $this->pamRepository->getActiveOnly($fields);
     }
 
     public function getWithRelations(): Collection

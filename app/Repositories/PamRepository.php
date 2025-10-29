@@ -18,9 +18,9 @@ class PamRepository extends BaseRepository
         return $this->model->where('code', $code)->first();
     }
 
-    public function getActiveOnly(): Collection
+    public function getActiveOnly($fields = ['*']): Collection
     {
-        return $this->model->where('status', 'active')->get();
+        return $this->model->select($fields)->where('is_active', true)->get();
     }
 
     public function getWithRelations(): Collection

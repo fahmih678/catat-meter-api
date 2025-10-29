@@ -175,7 +175,7 @@
                     <tr>
                         <td class="text-center">{{ $no++ }}</td>
                         <td class="text-center">
-                            {{ $payment->issued_at_formatted ? $payment->issued_at_formatted : '-' }}</td>
+                            {{ $payment->period_formatted ? $payment->period_formatted : '-' }}</td>
                         <td class="text-center">{{ htmlspecialchars($payment->customer_number ?? '-') }}</td>
                         <td class="text-left">{{ htmlspecialchars($payment->customer_name ?? '-') }}</td>
                         <td class="text-right">Rp {{ number_format($payment->total_bill, 0, ',', '.') }}</td>

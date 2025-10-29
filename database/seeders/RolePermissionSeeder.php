@@ -83,7 +83,7 @@ class RolePermissionSeeder extends Seeder
         $this->createSuperAdminRole();
         $this->createAdminPamRole();
         $this->createCatatMeterRole();
-        $this->createPembayaranRole();
+        $this->createLoketRole();
         $this->createCustomerRole();
 
         $this->command->info('Roles and permissions created successfully.');
@@ -189,9 +189,9 @@ class RolePermissionSeeder extends Seeder
         $this->command->info('Catat Meter role created with meter reading permissions.');
     }
 
-    private function createPembayaranRole(): void
+    private function createLoketRole(): void
     {
-        $role = Role::create(['name' => 'pembayaran']);
+        $role = Role::create(['name' => 'loket']);
 
         // Pembayaran permissions - focused on billing and payments
         $permissions = [

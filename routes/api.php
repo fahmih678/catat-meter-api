@@ -19,6 +19,9 @@ use App\Http\Controllers\Api\V1\DashboardController as V1DashboardController;
 use App\Http\Controllers\Api\V1\ReportController as V1ReportController;
 use App\Http\Controllers\Api\V1\CatatMeterController as V1CatatMeterController;
 use App\Http\Controllers\Api\V1\MeterReadingController as V1MeterReadingController;
+use App\Http\Controllers\Api\V1\UserController as V1UserController;
+use App\Http\Controllers\Api\V1\PamController as V1PamController;
+
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -85,6 +88,15 @@ Route::prefix('v1')->name('v1.')->group(function () {
         // Bill Monthly Reports
         Route::get('/reports/monthly-payment-report', [V1BillController::class, 'monthlyPaymentReport'])->name('monthly-payment-report');
         Route::get('/reports/download-payment-report', [V1BillController::class, 'downloadPaymentReport'])->name('download-payment-report');
+
+        // User Management
+        Route::get('/pams', [V1PamController::class, 'getPams'])->name('get-pams');
+        Route::get('/users', [V1UserController::class, 'index'])->name('users.index');
+        Route::get('/users/{id}', [V1UserController::class, 'show'])->name('users.show');
+        Route::put('/users/{id}', [V1UserController::class, 'update'])->name('users.update');
+        Route::post('/users/{id}/assign-role', [V1UserController::class, 'assignRole'])->name('users.assign-role');
+        Route::delete('/users/{id}/remove-role', [V1UserController::class, 'removeRole'])->name('users.remove-role');
+        Route::delete('/users/{id}', [V1UserController::class, 'destroy'])->name('users.destroy');
     });
 });
 
