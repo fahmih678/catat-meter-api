@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -52,7 +53,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
 
@@ -75,7 +76,7 @@
             background: white;
             border-radius: 15px;
             padding: 1.5rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
             border: none;
             transition: all 0.3s ease;
             height: 100%;
@@ -83,7 +84,7 @@
 
         .dashboard-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         }
 
         .stat-card {
@@ -119,6 +120,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -194,9 +196,46 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--secondary-color);
         }
+
+        /* Topbar positioning */
+        .topbar {
+            margin-left: var(--sidebar-width);
+            transition: all 0.3s ease;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+        }
+
+        .sidebar.collapsed + .main-content .topbar,
+        .main-content.expanded .topbar {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+
+        /* Sidebar positioning for mobile */
+        @media (max-width: 768px) {
+            .topbar {
+                margin-left: 0;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1030;
+            }
+
+            .main-content {
+                margin-top: var(--topbar-height);
+                padding-top: 0;
+            }
+
+            .content {
+                padding: 1rem;
+                margin-top: 0;
+            }
+        }
     </style>
     @stack('styles')
 </head>
+
 <body>
     <!-- Mobile Overlay -->
     <div class="mobile-overlay" id="mobileOverlay"></div>
@@ -227,12 +266,21 @@
         const mobileOverlay = document.getElementById('mobileOverlay');
 
         function toggleSidebar() {
+            const topbar = document.querySelector('.topbar');
+
             if (window.innerWidth <= 768) {
                 sidebar.classList.toggle('mobile-show');
                 mobileOverlay.classList.toggle('show');
             } else {
                 sidebar.classList.toggle('collapsed');
                 mainContent.classList.toggle('expanded');
+
+                // Adjust topbar margin based on sidebar state
+                if (sidebar.classList.contains('collapsed')) {
+                    topbar.style.marginLeft = 'var(--sidebar-collapsed-width)';
+                } else {
+                    topbar.style.marginLeft = 'var(--sidebar-width)';
+                }
             }
         }
 
@@ -246,15 +294,27 @@
 
         // Handle window resize
         window.addEventListener('resize', () => {
+            const topbar = document.querySelector('.topbar');
+
             if (window.innerWidth > 768) {
                 sidebar.classList.remove('mobile-show');
                 mobileOverlay.classList.remove('show');
+
+                // Ensure topbar margin is correct for desktop
+                if (sidebar.classList.contains('collapsed')) {
+                    topbar.style.marginLeft = 'var(--sidebar-collapsed-width)';
+                } else {
+                    topbar.style.marginLeft = 'var(--sidebar-width)';
+                }
+            } else {
+                // Reset topbar margin for mobile
+                topbar.style.marginLeft = '0';
             }
         });
 
         // Initialize tooltips
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
 
@@ -270,4 +330,5 @@
 
     @stack('scripts')
 </body>
+
 </html>

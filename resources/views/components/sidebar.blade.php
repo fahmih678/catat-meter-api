@@ -30,6 +30,14 @@
         </div>
 
         <div class="sidebar-item">
+            <a href="{{ route('pam.index') }}" class="sidebar-link {{ request()->is('pam*') ? 'active' : '' }}"
+                data-bs-toggle="tooltip" data-bs-placement="right" title="PAM Management">
+                <i class="bi bi-building"></i>
+                <span>PAM Management</span>
+            </a>
+        </div>
+
+        <div class="sidebar-item">
             <a href="{{ route('import') }}" class="sidebar-link {{ request()->is('import*') ? 'active' : '' }}"
                 data-bs-toggle="tooltip" data-bs-placement="right" title="Import Data">
                 <i class="bi bi-cloud-upload"></i>

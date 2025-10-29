@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Pam;
 use App\Repositories\PamRepository;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 
 class PamService extends BaseService
@@ -17,9 +19,19 @@ class PamService extends BaseService
         $this->pamRepository = $pamRepository;
     }
 
+    public function getPaginate(int $perPage = 15, $fields = ['*'], string $pageName = 'page', ?int $page = null): LengthAwarePaginator
+    {
+        return $this->pamRepository->getPaginate($perPage, $fields, $pageName, $page);
+    }
+
     public function findByCode(string $code): ?Pam
     {
         return $this->pamRepository->findByCode($code);
+    }
+
+    public function findById(int $id, array $fields = ['*']): ?Pam
+    {
+        return $this->repository->findOrFail($id, $fields);
     }
 
     public function getActiveOnly($fields = ['*']): Collection
@@ -35,6 +47,11 @@ class PamService extends BaseService
     public function searchByName(string $name): Collection
     {
         return $this->pamRepository->searchByName($name);
+    }
+
+    public function searchPaginate(string $search, int $perPage = 15, $fields = ['*'], string $pageName = 'page', ?int $page = null): LengthAwarePaginator
+    {
+        return $this->pamRepository->searchPaginate($search, $perPage, $fields, $pageName, $page);
     }
 
     public function getStatistics(int $pamId): array

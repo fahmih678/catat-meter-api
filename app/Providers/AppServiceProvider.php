@@ -12,6 +12,7 @@ use App\Services\PamService;
 use App\Services\CustomerService;
 use App\Services\MeterService;
 use App\Services\MeterReadingService;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -78,6 +79,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Register custom validation rules if needed
         $this->registerValidationRules();
+
+        Paginator::defaultView('pagination::bootstrap-5');
+
+        Paginator::defaultSimpleView('simple-bootstrap-5');
     }
 
     /**
