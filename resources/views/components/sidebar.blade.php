@@ -61,10 +61,9 @@
         </div>
 
         <div class="sidebar-item">
-            <a href="#" class="sidebar-link" data-bs-toggle="tooltip" data-bs-placement="right"
-                title="Pembayaran">
+            <a href="#" class="sidebar-link" data-bs-toggle="tooltip" data-bs-placement="right" title="Loket">
                 <i class="bi bi-credit-card"></i>
-                <span>Pembayaran</span>
+                <span>Loket</span>
             </a>
         </div>
 

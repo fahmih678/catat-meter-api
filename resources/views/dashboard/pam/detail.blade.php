@@ -178,7 +178,64 @@
         </div>
     </div>
 
-    <!-- Modal templates will be added here as needed -->
+    <!-- Create Tariff Group Modal -->
+    <div class="modal fade" id="createTariffGroupModal" tabindex="-1" aria-labelledby="createTariffGroupModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title" id="createTariffGroupModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Add New Tariff Group
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="createTariffGroupForm" method="POST"
+                    action="{{ route('pam.tariff-groups.store', $pam->id) }}">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tariffGroupName" class="form-label">Group Name <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="tariffGroupName" name="name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="tariffGroupCode" class="form-label">Group Code <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="tariffGroupCode" name="code" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tariffGroupDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="tariffGroupDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tariffGroupStatus" class="form-label">Status <span
+                                    class="text-danger">*</span></label>
+                            <select class="form-select" id="tariffGroupStatus" name="is_active" required>
+                                <option value="">Select Status</option>
+                                <option value="1" selected>Active</option>
+                                <option value="0">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <small>After creating this tariff group, you can add tariff tiers to define pricing
+                                structure.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-plus-circle me-2"></i>Create Tariff Group
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('styles')
@@ -247,6 +304,15 @@
                     const tab = new bootstrap.Tab(tabButton);
                     tab.show();
                 }
+            }
+
+            // Handle tariff group form submission
+            const createTariffGroupForm = document.getElementById('createTariffGroupForm');
+            if (createTariffGroupForm) {
+                createTariffGroupForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    handleCreateTariffGroup();
+                });
             }
         });
 
@@ -324,8 +390,15 @@
         }
 
         function showCreateTariffGroupModal() {
-            console.log('Show Create Tariff Group Modal');
-            showNotification('Create Tariff Group modal coming soon', 'info');
+            const modal = new bootstrap.Modal(document.getElementById('createTariffGroupModal'));
+
+            // Generate default code based on current date and random number
+            const date = new Date();
+            const code = 'TG' + date.getFullYear() + String(date.getMonth() + 1).padStart(2, '0') + String(Math.floor(Math
+                .random() * 1000)).padStart(3, '0');
+            document.getElementById('tariffGroupCode').value = code;
+
+            modal.show();
         }
 
         function showCreateTariffTierModal() {
@@ -336,6 +409,57 @@
         function showCreateFixedFeeModal() {
             console.log('Show Create Fixed Fee Modal');
             showNotification('Create Fixed Fee modal coming soon', 'info');
+        }
+
+        function handleCreateTariffGroup() {
+            const form = document.getElementById('createTariffGroupForm');
+            const formData = new FormData(form);
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating...';
+
+            fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('createTariffGroupModal'));
+                        modal.hide();
+
+                        // Reset form
+                        form.reset();
+
+                        // Show success message
+                        showNotification(data.message || 'Tariff group created successfully!', 'success');
+
+                        // Reload page after a short delay to show new data
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        // Show error message
+                        showNotification(data.message || 'Failed to create tariff group', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('An error occurred while creating the tariff group', 'danger');
+                })
+                .finally(() => {
+                    // Restore button state
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                });
         }
 
         function showNotification(message, type = 'info') {
