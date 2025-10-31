@@ -70,7 +70,7 @@ class DashboardController extends Controller
             $dashboard = $this->mergeDashboard($dashboard, $this->getCatatMeterDashboard($user->pam_id));
         }
 
-        if ($user->hasRole('pembayaran')) {
+        if ($user->hasRole('loket')) {
             $dashboard = $this->mergeDashboard($dashboard, $this->getLoketDashboard($user->pam_id));
         }
 

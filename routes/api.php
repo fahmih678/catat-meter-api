@@ -77,10 +77,13 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('/customers/{id}/meter-input-data', [V1MeterReadingController::class, 'getMeterInputData'])->name('customer-meter-input-data');
         Route::post('/store-meter-reading', [V1MeterReadingController::class, 'store'])->name('submit-meter-reading');
 
+        Route::post('/meter-readings/{meterReadingId}/destroy', [V1MeterReadingController::class, 'destroy'])->name('destroy-meter-reading');
+
         // Pay Operations
         Route::put('/meter-readings/{meterReadingId}/submit-to-pending', [V1MeterReadingController::class, 'submitToPending'])->name('submit-meter-reading-to-pending');
         Route::get('/customers/{customerId}/billings', [V1PaymentController::class, 'getBilling'])->name('get-billing');
         Route::post('/customers/{customerId}/pay', [V1PaymentController::class, 'payBilling'])->name('pay-billing');
+        Route::post('/bills/{billId}/remove', [V1PaymentController::class, 'removeBilling'])->name('remove-billing');
 
         // Get Bills for Customer
         Route::get('/customers/{userId}/get-bills', [V1CustomerController::class, 'getBillsByUser'])->name('customers.get-bills');

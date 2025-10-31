@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Helpers\RoleHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MeterReadingRequest;
 use App\Http\Traits\HasPamFiltering;
@@ -312,6 +313,47 @@ class MeterReadingController extends Controller
                 'status' => 'error',
                 'message' => $e->getMessage()
             ], 400);
+        }
+    }
+
+    public function destroy(Request $request, int $meterReadingId): JsonResponse
+    {
+        try {
+            // Check if user can access billing features
+            if (!RoleHelper::isAdminPam() && !RoleHelper::canAccessPam($request->user()->pam_id)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Access denied. You do not have permission to access meter reading features.'
+                ], 403);
+            }
+
+            $user = $request->user();
+
+            // Delete meter reading using service
+            $deleted = $this->meterReadingService->deleteRecord($meterReadingId);
+
+            if (!$deleted) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Meter reading tidak ditemukan atau tidak berstatus draft'
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Meter reading berhasil dihapus'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error deleting meter reading: ' . $e->getMessage(), [
+                'meter_reading_id' => $meterReadingId,
+                'user_id' => $user->id ?? null,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat menghapus meter reading'
+            ], 500);
         }
     }
 }

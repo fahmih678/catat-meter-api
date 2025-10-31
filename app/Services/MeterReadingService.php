@@ -84,11 +84,11 @@ class MeterReadingService
         return DB::transaction(function () use ($id) {
             $record = $this->meterReadingRepository->find($id);
 
-            if (!$record) {
+            if (!$record || $record->status !== 'draft') {
                 return false;
             }
 
-            $result = $this->meterReadingRepository->delete($record);
+            $result = $this->meterReadingRepository->forceDelete($record);
 
             if ($result) {
                 $this->afterDelete($record);

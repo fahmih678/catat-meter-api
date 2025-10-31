@@ -31,11 +31,11 @@ class RoleHelper
     }
 
     /**
-     * Check if current user is Pembayaran
+     * Check if current user is Loket
      */
-    public static function isPembayaran(): bool
+    public static function isLoket(): bool
     {
-        return Auth::check() && Auth::user()->hasRole('pembayaran');
+        return Auth::check() && Auth::user()->hasRole('loket');
     }
 
     /**
@@ -123,7 +123,7 @@ class RoleHelper
             return false;
         }
 
-        return Auth::user()->hasAnyRole(['superadmin', 'admin', 'pembayaran']);
+        return Auth::user()->hasAnyRole(['superadmin', 'admin', 'loket']);
     }
 
     /**
@@ -140,7 +140,7 @@ class RoleHelper
         if ($user->hasRole('superadmin')) return 4;
         if ($user->hasRole('admin')) return 3;
         if ($user->hasRole('catat_meter')) return 2;
-        if ($user->hasRole('pembayaran')) return 1;
+        if ($user->hasRole('loket')) return 1;
 
         return 0;
     }

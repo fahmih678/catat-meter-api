@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Helpers\RoleHelper;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Customer;
@@ -19,6 +20,29 @@ class PaymentController extends Controller
     public function getBilling($customerId): JsonResponse
     {
         try {
+            // Check if user can access billing features
+            if (!RoleHelper::canAccessBilling()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Access denied. You do not have permission to access billing features.'
+                ], 403);
+            }
+
+            // Check if customer exists
+            $customer = Customer::find($customerId);
+            if (!$customer) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Customer not found'
+                ], 404);
+            }
+
+            // Check PAM access for the customer
+            $pamAccess = $this->checkEntityPamAccess($customer);
+            if ($pamAccess) {
+                return $pamAccess;
+            }
+
             // Get bills with customer, meter, area and tariff information
             $bills = Bill::with([
                 'customer.tariffGroup.tariffTiers',
@@ -37,8 +61,7 @@ class PaymentController extends Controller
                 ], 404);
             }
 
-            // Get customer data (since all bills belong to same customer)
-            $customer = $bills->first()->customer;
+            // Customer data already retrieved above
 
             // Format the response data
             $responseData = [
@@ -77,10 +100,33 @@ class PaymentController extends Controller
 
     public function payBilling(Request $request, int $customerId): JsonResponse
     {
+        // Check if user can access billing features
+        if (!RoleHelper::canAccessBilling()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Access denied. You do not have permission to access billing features.'
+            ], 403);
+        }
+
         $validatedData = $request->validate([
             'bill_ids' => 'required|array|min:1',
             'bill_ids.*' => 'integer|exists:bills,id',
         ]);
+
+        // Check if customer exists
+        $customer = Customer::find($customerId);
+        if (!$customer) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Customer not found'
+            ], 404);
+        }
+
+        // Check PAM access for the customer
+        $pamAccess = $this->checkEntityPamAccess($customer);
+        if ($pamAccess) {
+            return $pamAccess;
+        }
 
         $billIds = $validatedData['bill_ids'];
         $updatedBills = [];
@@ -159,5 +205,55 @@ class PaymentController extends Controller
                 'customer_id' => $customerId
             ]
         ], 200);
+    }
+
+    public function removeBilling(Request $request, int $billId): JsonResponse
+    {
+        try {
+            // Check if user can access billing features
+            if (!RoleHelper::canAccessBilling()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Access denied. You do not have permission to access billing features.'
+                ], 403);
+            }
+
+            $bill = Bill::with(['meterReading', 'customer'])->findOrFail($billId);
+
+            if ($bill->status !== 'paid') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Only paid bills can be removed'
+                ], 400);
+            }
+
+            // Check PAM access for the customer associated with this bill
+            $pamAccess = $this->checkEntityPamAccess($bill->customer);
+            if ($pamAccess) {
+                return $pamAccess;
+            }
+
+            // Update meter reading status to pending if exists
+            if ($bill->meterReading) {
+                $bill->meterReading->update([
+                    'status' => 'draft',
+                ]);
+            }
+
+            $bill->forceDelete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Bill removed successfully and meter reading status updated to pending',
+                'data' => [
+                    'bill_id' => $billId
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error removing bill: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
