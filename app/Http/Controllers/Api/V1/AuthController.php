@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -16,44 +17,110 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-            'device_name' => 'string|nullable'
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+        try {
+            // Validate input
+            $request->validate([
+                'email' => 'required|email|max:255',
+                'password' => 'required|string|min:1',
+                'device_name' => 'string|nullable|max:100'
             ]);
-        }
 
-        // Delete old tokens for this device
-        if ($request->device_name) {
-            $user->tokens()->where('name', $request->device_name)->delete();
-        }
+            // Find user by email
+            $user = User::where('email', $request->email)->first();
 
-        $token = $user->createToken($request->device_name ?? 'mobile-app')->plainTextToken;
+            // Check if user exists
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Authentication failed',
+                    'error_code' => 'USER_NOT_FOUND',
+                    'errors' => [
+                        'email' => ['No account found with this email address.']
+                    ],
+                    'data' => null,
+                    'timestamp' => now()->toISOString()
+                ], 404);
+            }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Login successful',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'roles' => $user->getRoleNames(),
-                    'pam_id' => $user->pam_id,
-                    // 'created_at' => $user->created_at,
-                    // 'updated_at' => $user->updated_at
+            // Check if password is correct
+            if (!Hash::check($request->password, $user->password)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Authentication failed',
+                    'error_code' => 'INVALID_CREDENTIALS',
+                    'errors' => [
+                        'email' => ['The provided credentials are incorrect.']
+                    ],
+                    'data' => null,
+                    'timestamp' => now()->toISOString()
+                ], 401);
+            }
+
+            // Check if user is active (if the field exists)
+            if (isset($user->is_active) && !$user->is_active) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Account access denied',
+                    'error_code' => 'ACCOUNT_INACTIVE',
+                    'errors' => [
+                        'account' => ['Your account has been deactivated. Please contact support.']
+                    ],
+                    'data' => null,
+                    'timestamp' => now()->toISOString()
+                ], 403);
+            }
+
+            // Delete old tokens for this device to prevent multiple sessions
+            if ($request->device_name) {
+                $user->tokens()->where('name', $request->device_name)->delete();
+            }
+
+            // Create new token
+            $token = $user->createToken($request->device_name ?? 'mobile-app')->plainTextToken;
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Login successful',
+                'data' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'roles' => $user->getRoleNames(),
+                        'pam_id' => $user->pam_id,
+                    ],
+                    'token' => $token,
+                    'token_type' => 'Bearer',
+                ]
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'error_code' => 'VALIDATION_ERROR',
+                'errors' => $e->errors(),
+                'data' => null,
+                'timestamp' => now()->toISOString()
+            ], 422);
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            Log::error('Login error: ' . $e->getMessage(), [
+                'email' => $request->email,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Internal server error',
+                'error_code' => 'SERVER_ERROR',
+                'errors' => [
+                    'server' => ['An unexpected error occurred. Please try again.']
                 ],
-                'token' => $token,
-                'token_type' => 'Bearer'
-            ]
-        ], 200);
+                'data' => null,
+                'timestamp' => now()->toISOString()
+            ], 500);
+        }
     }
 
     /**
