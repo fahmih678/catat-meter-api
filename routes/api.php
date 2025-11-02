@@ -11,7 +11,7 @@ use App\Http\Controllers\Api\ReportController;
 
 // V1 API Controllers
 use App\Http\Controllers\Api\V1\AuthController as V1AuthController;
-use App\Http\Controllers\API\V1\BillController as V1BillController;
+use App\Http\Controllers\Api\V1\BillController as V1BillController;
 use App\Http\Controllers\Api\V1\MeterController as V1MeterController;
 use App\Http\Controllers\Api\V1\CustomerController as V1CustomerController;
 use App\Http\Controllers\Api\V1\PaymentController as V1PaymentController;
