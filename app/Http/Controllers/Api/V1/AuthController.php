@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
@@ -138,6 +139,7 @@ class AuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'phone' => $user->phone,
                     'roles' => $user->getRoleNames(),
                     'pam_id' => $user->pam_id,
                 ]
@@ -153,9 +155,10 @@ class AuthController extends Controller
         $user = $request->user();
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8|confirmed'
+            'name' => ['sometimes', 'string', 'max:255'],
+            'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
+            'phone' => ['sometimes', 'string', 'max:20'],
+            'password' => ['sometimes', 'string', 'min:8', 'confirmed'],
         ]);
 
         $user->name = $request->name;
@@ -172,11 +175,7 @@ class AuthController extends Controller
             'message' => 'Profile updated successfully',
             'data' => [
                 'user' => [
-                    'id' => $user->id,
                     'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->getRoleNames()->first(),
-                    'pam_id' => $user->pam_id,
                     'updated_at' => $user->updated_at
                 ]
             ]
