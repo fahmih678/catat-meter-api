@@ -301,8 +301,6 @@ class MeterReadingService
         return DB::transaction(function () use ($meterReadingId, $requestData) {
             // Find meter reading with required relationships
             $meterReading = $this->meterReadingRepository->find($meterReadingId);
-            $meter = $meterReading->meter;
-            $registeredMonth = $meterReading->registeredMonth;
 
             if (!$meterReading) {
                 throw new \Exception('Meter reading tidak ditemukan.');
@@ -313,6 +311,8 @@ class MeterReadingService
                 throw new \Exception('Hanya meter reading dengan status draft yang dapat disubmit.');
             }
 
+            $meter = $meterReading->meter;
+            $registeredMonth = $meterReading->registeredMonth;
             // Load meter and customer relationships if not loaded
             $meterReading->load(['meter.customer.tariffGroup.tariffTiers', 'meter.customer.tariffGroup.fixedFees', 'meter.customer.pam']);
 
