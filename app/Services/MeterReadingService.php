@@ -317,8 +317,8 @@ class MeterReadingService
             $meterReading->load(['meter.customer.tariffGroup.tariffTiers', 'meter.customer.tariffGroup.fixedFees', 'meter.customer.pam']);
 
             // Validate meter reading has all required data
-            if (!$meterReading->meter || !$meterReading->meter->customer) {
-                throw new \Exception('Data meter reading tidak valid: missing meter atau customer data.');
+            if (!$meterReading->meter || !$meterReading->meter->customer || !$meterReading->meter->customer->tariffGroup->tariffTiers) {
+                throw new \Exception('Data meter reading tidak valid: missing meter, customer, atau tariff data.');
             }
 
             $customer = $meterReading->meter->customer;
