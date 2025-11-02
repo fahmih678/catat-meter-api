@@ -317,7 +317,7 @@ class MeterReadingService
             $meterReading->load(['meter.customer.tariffGroup.tariffTiers', 'meter.customer.tariffGroup.fixedFees', 'meter.customer.pam']);
 
             // Validate meter reading has all required data
-            if (!$meterReading->meter || !$meterReading->meter->customer || !$meterReading->meter->customer->tariffGroup->tariffTiers) {
+            if (!$meterReading->meter || !$meterReading->meter->customer || !isset($meterReading->meter->customer->tariffGroup->tariffTiers)) {
                 throw new \Exception('Data meter reading tidak valid: missing meter, customer, atau tariff data.');
             }
 
@@ -340,7 +340,7 @@ class MeterReadingService
             ];
 
             // Add tariff tiers if available
-            if ($tariffGroup && $tariffGroup->relationLoaded('tariffTiers') && $meterReading->volume_usage !== null) {
+            if ($tariffGroup && $tariffGroup->tariffTiers->isNotEmpty() && $meterReading->volume_usage !== null) {
                 // Filter active tiers (status = 'active' and within effective dates)
                 $activeTiers = $tariffGroup->tariffTiers->filter(function ($tier) use ($meterReading) {
                     $isActive = $tier->is_active;
@@ -365,7 +365,7 @@ class MeterReadingService
                 }
             }
             // Add fixed fees if available
-            if ($tariffGroup && $tariffGroup->relationLoaded('fixedFees')) {
+            if ($tariffGroup && $tariffGroup->fixedFees->isNotEmpty()) {
                 // Filter active fees (status = 'active' and within effective dates)
                 $activeFees = $tariffGroup->fixedFees->filter(function ($fee) {
                     $isActive = $fee->is_active;
