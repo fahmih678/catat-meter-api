@@ -25,6 +25,11 @@ class Customer extends Model
         'is_active',
     ];
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function pam(): BelongsTo
     {
         return $this->belongsTo(Pam::class);

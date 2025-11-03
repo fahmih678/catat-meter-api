@@ -12,8 +12,8 @@ return [
     | other UI elements where an application name needs to be displayed.
     |
     */
-
-    'name' => env('APP_NAME', 'Laravel'),
+    'version' => env('APP_VERSION', '0.1.0-alpha'),
+    'name' => env('APP_NAME', 'Catat Meter API'),
 
     /*
     |--------------------------------------------------------------------------

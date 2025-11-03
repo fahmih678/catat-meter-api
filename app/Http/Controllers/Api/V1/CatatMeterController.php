@@ -151,7 +151,7 @@ class CatatMeterController extends Controller
                 'area_id' => 'nullable|integer|exists:areas,id',
                 'per_page' => 'nullable|integer|min:10|max:100',
                 'page' => 'nullable|integer|min:1',
-                'sort_by' => 'nullable|in:customer_name,customer_number,area_name,meter_number,status',
+                'sort_by' => 'nullable|in:customer_id,customer_number,area_name,meter_number,status',
                 'sort_order' => 'nullable|in:asc,desc'
             ]);
 
@@ -217,8 +217,8 @@ class CatatMeterController extends Controller
             }
             // Apply sorting
             switch ($sortBy) {
-                case 'customer_name':
-                    $query->orderBy('customers.name', $sortOrder);
+                case 'customer_id':
+                    $query->orderBy('customers.id', $sortOrder);
                     break;
                 case 'customer_number':
                     $query->orderBy('customers.customer_number', $sortOrder);
