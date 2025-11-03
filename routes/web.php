@@ -38,6 +38,9 @@ Route::middleware('auth')->group(function () {
 
         // Nested routes for PAM-specific management
         Route::prefix('{pamId}')->group(function () {
+            // Customers within PAM
+            Route::get('/customers', [PamManagementController::class, 'customers'])->name('customers');
+
             // Areas within PAM
             Route::get('/areas', [PamManagementController::class, 'areas'])->name('areas');
             Route::post('/areas', [PamManagementController::class, 'storeArea'])->name('areas.store')->middleware('role:superadmin');

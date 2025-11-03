@@ -9,22 +9,21 @@
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>Description</th>
                     <th>Group Name</th>
+                    <th>Description</th>
                     <th>Tiers</th>
                     <th>Customers</th>
-                    <th>Avg Price/m³</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($tariffGroups as $group)
+                    {{-- {{ dd($group) }} --}}
                     <tr>
+                        <td><span class="badge bg-primary">{{ $group->name }}</span></td>
                         <td>{{ $group->description }}</td>
-                        <td>{{ $group->name }}</td>
-                        <td>{{ $group->tiers_count ?? count($group->tiers ?? []) }} tiers</td>
+                        <td>{{ $group->tariff_tiers_count }} tiers</td>
                         <td>{{ number_format($group->customers_count ?? 0) }}</td>
-                        <td>Rp {{ number_format($group->average_price ?? 0, 0, ',', '.') }}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <button class="btn btn-outline-primary" onclick="editTariffGroup({{ $group->id }})">

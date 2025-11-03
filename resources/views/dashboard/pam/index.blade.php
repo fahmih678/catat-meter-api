@@ -47,10 +47,11 @@
                                             title="Search">
                                             <i class="bi bi-search"></i>
                                         </button>
-                                        <a href="javascript:void(0)" class="btn btn-outline-danger clear-button" onclick="clearSearch()"
-   title="Clear search" style="display: {{ ($search ?? '') ? 'inline-block' : 'none' }};">
-   <i class="bi bi-x-lg"></i>
-</a>
+                                        <a href="javascript:void(0)" class="btn btn-outline-danger clear-button"
+                                            onclick="clearSearch()" title="Clear search"
+                                            style="display: {{ $search ?? '' ? 'inline-block' : 'none' }};">
+                                            <i class="bi bi-x-lg"></i>
+                                        </a>
                                     </div>
                                 </form>
                             </div>
@@ -76,12 +77,18 @@
                         @endif
 
                         <div id="pamTableContainer">
-                        @include('dashboard.pam.partials.table', ['pams' => $pams, 'search' => $search])
-                    </div>
+                            @include('dashboard.pam.partials.table', [
+                                'pams' => $pams,
+                                'search' => $search,
+                            ])
+                        </div>
 
-                    <div id="pamPaginationContainer">
-                        @include('dashboard.pam.partials.pagination', ['pams' => $pams, 'search' => $search])
-                    </div>
+                        <div id="pamPaginationContainer">
+                            @include('dashboard.pam.partials.pagination', [
+                                'pams' => $pams,
+                                'search' => $search,
+                            ])
+                        </div>
                     </div>
                 </div>
             </div>
@@ -357,8 +364,13 @@
         }
 
         @keyframes spin {
-            0% { transform: translateY(-50%) rotate(0deg); }
-            100% { transform: translateY(-50%) rotate(360deg); }
+            0% {
+                transform: translateY(-50%) rotate(0deg);
+            }
+
+            100% {
+                transform: translateY(-50%) rotate(360deg);
+            }
         }
     </style>
 @endpush
@@ -506,35 +518,35 @@
                 if (page > 1) params.append('page', page);
 
                 fetch(`/pam/search?${params.toString()}`, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateTableContent(data.tableHtml);
-                        updatePaginationContent(data.paginationHtml);
-                        updateSearchInfo(data.search, data.total);
-                        currentSearch = data.search;
-                        currentPage = data.currentPage;
-                        highlightSearchResults();
-                    } else {
-                        showNotification(data.message || 'Search failed', 'danger');
-                    }
-                })
-                .catch(error => {
-                    console.error('Search error:', error);
-                    showNotification('An error occurred while searching', 'danger');
-                })
-                .finally(() => {
-                    // Reset loading states
-                    searchButton.innerHTML = '<i class="bi bi-search"></i>';
-                    searchButton.disabled = false;
-                    hideLoadingState();
-                });
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateTableContent(data.tableHtml);
+                            updatePaginationContent(data.paginationHtml);
+                            updateSearchInfo(data.search, data.total);
+                            currentSearch = data.search;
+                            currentPage = data.currentPage;
+                            highlightSearchResults();
+                        } else {
+                            showNotification(data.message || 'Search failed', 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                        showNotification('An error occurred while searching', 'danger');
+                    })
+                    .finally(() => {
+                        // Reset loading states
+                        searchButton.innerHTML = '<i class="bi bi-search"></i>';
+                        searchButton.disabled = false;
+                        hideLoadingState();
+                    });
             }
 
             // Load page function for pagination

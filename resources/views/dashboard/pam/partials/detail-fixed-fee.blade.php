@@ -1,8 +1,8 @@
-<div class="tab-pane fade" id="tiers" role="tabpanel">
+<div class="tab-pane fade" id="fees" role="tabpanel">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="mb-0"><i class="bi bi-layers me-2"></i>Tariff Tiers Management</h5>
-        <button class="btn btn-info btn-sm" onclick="showCreateTariffTierModal()">
-            <i class="bi bi-plus-circle me-2"></i>Add Tariff Tier
+        <h5 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Fixed Fees Management</h5>
+        <button class="btn btn-success btn-sm" onclick="showCreateFixedFeeModal()">
+            <i class="bi bi-plus-circle me-2"></i>Add Fixed Fee
         </button>
     </div>
     <div class="table-responsive">
@@ -10,24 +10,21 @@
             <thead>
                 <tr>
                     <th>Group Name</th>
-                    <th>Description</th>
-                    <th>Range (m³)</th>
-                    <th>Price/m³</th>
+                    <th>Fee Name</th>
+                    <th>Amount</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($tariffTiers as $tier)
+                @forelse($fixedFees as $fee)
                     <tr>
-                        <td><span
-                                class="badge bg-primary">{{ $tier->tariffGroup->name ?? ($tier->tariffGroup->name ?? 'N/A') }}</span>
-                        </td>
-                        <td>{{ $tier->description }}</td>
-                        <td>{{ $tier->meter_min }} - {{ $tier->meter_max ?? '∞' }}</td>
-                        <td>Rp {{ number_format($tier->amount, 0, ',', '.') }}</td>
+                        <td><span class="badge bg-success">{{ $fee->tariffGroup->name }}</span></td>
+                        <td>{{ $fee->name }}</td>
+
+                        <td>Rp {{ number_format($fee->amount, 0, ',', '.') }}</td>
                         <td>
-                            @if ($tier->is_active == true)
+                            @if ($fee->status === 'active' || (isset($fee->is_active) && $fee->is_active))
                                 <span class="badge bg-success">Active</span>
                             @else
                                 <span class="badge bg-warning">Inactive</span>
@@ -35,11 +32,11 @@
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary" onclick="editTariffTier({{ $tier->id }})">
+                                <button class="btn btn-outline-primary" onclick="editFixedFee({{ $fee->id }})">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn btn-outline-danger"
-                                    onclick="deleteTariffTier({{ $tier->id }}, '{{ $tier->name }}')">
+                                    onclick="deleteFixedFee({{ $fee->id }}, '{{ $fee->name }}')">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
@@ -49,8 +46,8 @@
                     <tr>
                         <td colspan="6" class="text-center py-4">
                             <div class="text-muted">
-                                <i class="bi bi-layers fs-1 d-block mb-2"></i>
-                                No tariff tiers found for this PAM
+                                <i class="bi bi-cash-stack fs-1 d-block mb-2"></i>
+                                No fixed fees found for this PAM
                             </div>
                         </td>
                     </tr>

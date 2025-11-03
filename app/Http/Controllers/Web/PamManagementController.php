@@ -6,6 +6,8 @@ use App\Helpers\RoleHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\RoleMiddleware;
 use App\Models\Area;
+use App\Models\Customer;
+use App\Models\FixedFee;
 use App\Models\TariffGroup;
 use App\Models\TariffTier;
 use App\Services\PamService;
@@ -127,6 +129,86 @@ class PamManagementController extends Controller
     }
 
     /**
+     * Show customers for specific PAM.
+     */
+    public function customers(Request $request, $pamId)
+    {
+
+        try {
+            // Get PAM data
+            $pam = $this->pamService->findById($pamId);
+
+            if (!$pam) {
+                return redirect()->route('pam.index')
+                    ->with('error', 'PAM not found');
+            }
+
+            // Get search and filter parameters
+            $search = $request->get('search', '');
+            $areaId = $request->get('area_id', '');
+            $status = $request->get('status', '');
+            $perPage = $request->get('per_page', 10);
+
+            // Build customer query for this PAM
+            $query = Customer::where('pam_id', $pamId)
+                ->with(['area', 'tariffGroup', 'user']);
+
+            // Apply search filters
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('customer_number', 'like', '%' . $search . '%')
+                        ->orWhere('phone', 'like', '%' . $search . '%')
+                        ->orWhere('address', 'like', '%' . $search . '%');
+                });
+            }
+
+            if ($areaId) {
+                $query->where('area_id', $areaId);
+            }
+
+            if ($status) {
+                if ($status === 'active') {
+                    $query->where('is_active', true);
+                } elseif ($status === 'inactive') {
+                    $query->where('is_active', false);
+                }
+            }
+
+
+            // Get customers with pagination
+            $customers = $query->orderBy('id')->paginate($perPage);
+            // Get available areas for filter dropdown
+            $areas = $this->getPamAreas($pamId);
+
+            // Get customer statistics
+            $statistics = [
+                'total' => Customer::where('pam_id', $pamId)->count(),
+                'active' => Customer::where('pam_id', $pamId)->where('is_active', true)->count(),
+                'inactive' => Customer::where('pam_id', $pamId)->where('is_active', false)->count(),
+                'with_meters' => Customer::where('pam_id', $pamId)->whereNotNull('user_id')->count(),
+            ];
+
+
+            return view('dashboard.pam.customers', compact(
+                'pam',
+                'customers',
+                'areas',
+                'statistics',
+                'search',
+                'areaId',
+                'status',
+                'perPage'
+            ));
+        } catch (\Throwable $th) {
+            Log::error('Failed to load PAM customers: ' . $th->getMessage());
+
+            return redirect()->route('pam.show', $pamId)
+                ->with('error', 'Failed to load customers');
+        }
+    }
+
+    /**
      * Get PAM areas
      */
     private function getPamAreas($pamId)
@@ -153,7 +235,7 @@ class PamManagementController extends Controller
     {
         // This is a placeholder - implement proper tariff tier fetching
         // For now, return empty collection
-        return TariffTier::where('pam_id', $pamId)->get();
+        return TariffTier::select('description', 'meter_min', 'meter_max', 'amount', 'is_active', 'effective_from', 'effective_to', 'tariff_group_id')->with(['tariffGroup:id,name'])->where('pam_id', $pamId)->get();
     }
 
     /**
@@ -163,7 +245,7 @@ class PamManagementController extends Controller
     {
         // This is a placeholder - implement proper fixed fee fetching
         // For now, return empty collection
-        return collect([]);
+        return FixedFee::select('id', 'name', 'amount', 'effective_from', 'effective_to', 'is_active', 'tariff_group_id')->with(['tariffGroup:id,name'])->where('pam_id', $pamId)->get();
     }
 
     /**
@@ -224,16 +306,83 @@ class PamManagementController extends Controller
      */
     public function storeArea(Request $request, $pamId)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:areas,code',
-            'description' => 'nullable|string',
-            'status' => 'required|in:active,inactive',
-        ]);
+        try {
+            // Validate the request data
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'code' => 'required|string|max:50',
+                'description' => 'nullable|string|max:1000',
+            ]);
 
-        // Area creation logic here with pam_id
+            // Add pam_id to validated data
+            $validated['pam_id'] = $pamId;
 
-        return back()->with('success', 'Area created successfully');
+            // Check if area code is unique within this PAM
+            $existingArea = \App\Models\Area::where('pam_id', $pamId)
+                ->where('code', $validated['code'])
+                ->first();
+
+            if ($existingArea) {
+                $errorMessage = 'Area code already exists for this PAM';
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage,
+                        'errors' => ['code' => ['Area code already exists for this PAM']]
+                    ], 422);
+                }
+                return back()->with('error', $errorMessage);
+            }
+
+            // Create the area
+            $area = \App\Models\Area::create($validated);
+
+            // Return JSON response for AJAX requests
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Area created successfully',
+                    'data' => [
+                        'id' => $area->id,
+                        'name' => $area->name,
+                        'code' => $area->code,
+                        'description' => $area->description,
+                        'pam_id' => $area->pam_id,
+                        'created_at' => $area->created_at->format('Y-m-d H:i:s')
+                    ]
+                ], 201);
+            }
+
+            return back()->with('success', 'Area created successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Return validation errors for AJAX requests
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('Area creation error: ' . $e->getMessage(), [
+                'pam_id' => $pamId,
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $errorMessage = 'Failed to create area. Please try again.';
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                    'errors' => []
+                ], 500);
+            }
+
+            return back()->with('error', $errorMessage);
+        }
     }
 
     /**

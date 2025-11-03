@@ -41,14 +41,11 @@
                             </div>
                         </div>
                         <div class="col-auto">
-                            <button class="btn btn-outline-secondary me-2" onclick="window.history.back()">
-                                <i class="bi bi-arrow-left me-2"></i>Back
-                            </button>
+                            <a href="{{ route('pam.customers', $pam->id) }}" class="btn btn-info me-2">
+                                <i class="bi bi-people me-2"></i>Pelanggan
+                            </a>
                             <button class="btn btn-warning me-2" onclick="editPam({{ $pam->id }})">
                                 <i class="bi bi-pencil me-2"></i>Edit PAM
-                            </button>
-                            <button class="btn btn-danger" onclick="deletePam({{ $pam->id }}, '{{ $pam->name }}')">
-                                <i class="bi bi-trash me-2"></i>Delete
                             </button>
                         </div>
                     </div>
@@ -112,66 +109,7 @@
                         @include('dashboard.pam.partials.detail-tariff-tier')
 
                         <!-- Fixed Fees Tab -->
-                        <div class="tab-pane fade" id="fees" role="tabpanel">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Fixed Fees Management</h5>
-                                <button class="btn btn-success btn-sm" onclick="showCreateFixedFeeModal()">
-                                    <i class="bi bi-plus-circle me-2"></i>Add Fixed Fee
-                                </button>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Fee Code</th>
-                                            <th>Fee Name</th>
-                                            <th>Amount</th>
-                                            <th>Frequency</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($fixedFees as $fee)
-                                            <tr>
-                                                <td><span class="badge bg-success">{{ $fee->code }}</span></td>
-                                                <td>{{ $fee->name }}</td>
-                                                <td>Rp {{ number_format($fee->amount, 0, ',', '.') }}</td>
-                                                <td>{{ ucfirst($fee->frequency) }}</td>
-                                                <td>
-                                                    @if ($fee->status === 'active' || (isset($fee->is_active) && $fee->is_active))
-                                                        <span class="badge bg-success">Active</span>
-                                                    @else
-                                                        <span class="badge bg-warning">Inactive</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group btn-group-sm">
-                                                        <button class="btn btn-outline-primary"
-                                                            onclick="editFixedFee({{ $fee->id }})">
-                                                            <i class="bi bi-pencil"></i>
-                                                        </button>
-                                                        <button class="btn btn-outline-danger"
-                                                            onclick="deleteFixedFee({{ $fee->id }}, '{{ $fee->name }}')">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="6" class="text-center py-4">
-                                                    <div class="text-muted">
-                                                        <i class="bi bi-cash-stack fs-1 d-block mb-2"></i>
-                                                        No fixed fees found for this PAM
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        @include('dashboard.pam.partials.detail-fixed-fee')
                     </div>
                 </div>
             </div>
@@ -189,8 +127,7 @@
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="createTariffGroupForm" method="POST"
-                    action="{{ route('pam.tariff-groups.store', $pam->id) }}">
+                <form id="createTariffGroupForm" method="POST" action="{{ route('pam.tariff-groups.store', $pam->id) }}">
                     @csrf
                     <div class="modal-body">
                         <div class="row">

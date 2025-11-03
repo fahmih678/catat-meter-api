@@ -83,7 +83,7 @@
         }
 
         .dashboard-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-0.1px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         }
 
@@ -206,7 +206,7 @@
             z-index: 1030;
         }
 
-        .sidebar.collapsed + .main-content .topbar,
+        .sidebar.collapsed+.main-content .topbar,
         .main-content.expanded .topbar {
             margin-left: var(--sidebar-collapsed-width);
         }

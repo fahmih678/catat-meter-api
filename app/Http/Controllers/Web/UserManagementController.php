@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class UserManagementController extends Controller
 {
@@ -94,27 +96,75 @@ class UserManagementController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email',
-            'phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:8',
-            'roles' => 'nullable|array',
-            'roles.*' => 'exists:roles,name',
-        ]);
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255|unique:users,email',
+                'phone' => 'nullable|string|max:20',
+                'password' => 'required|string|min:8',
+                'roles' => 'nullable|array',
+                'roles.*' => 'exists:roles,name',
+            ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-        ]);
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'password' => Hash::make($request->password),
+            ]);
 
-        if ($request->has('roles')) {
-            $user->syncRoles($request->roles);
+            if ($request->has('roles')) {
+                $user->syncRoles($request->roles);
+            }
+
+            // Return JSON response for AJAX requests
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'User created successfully',
+                    'data' => [
+                        'user' => [
+                            'id' => $user->id,
+                            'name' => $user->name,
+                            'email' => $user->email,
+                            'phone' => $user->phone,
+                            'roles' => $user->roles->pluck('name'),
+                            'created_at' => $user->created_at->format('Y-m-d H:i:s')
+                        ]
+                    ]
+                ], 201);
+            }
+
+            return back()->with('success', 'User created successfully');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Return validation errors for AJAX requests
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+
+            throw $e;
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            Log::error('User creation error: ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Return error response for AJAX requests
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create user: ' . $e->getMessage(),
+                    'errors' => []
+                ], 500);
+            }
+
+            return back()->with('error', 'Failed to create user. Please try again.');
         }
-
-        return back()->with('success', 'User created successfully');
     }
 
     /**
@@ -122,16 +172,70 @@ class UserManagementController extends Controller
      */
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
+        try {
+            $user = User::findOrFail($id);
 
-        // Prevent deletion of self
-        if ($user->id === auth()->id()) {
-            return back()->with('error', 'You cannot delete your own account');
+            // Prevent deletion of self
+            if ($user->id === Auth::id()) {
+                $errorMessage = 'You cannot delete your own account';
+
+                if (request()->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage,
+                        'errors' => []
+                    ], 403);
+                }
+
+                return back()->with('error', $errorMessage);
+            }
+
+            $user->delete();
+
+            // Return JSON response for AJAX requests
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'User deleted successfully',
+                    'data' => [
+                        'deleted_user_id' => $user->id,
+                        'deleted_user_name' => $user->name
+                    ]
+                ], 200);
+            }
+
+            return back()->with('success', 'User deleted successfully');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            $errorMessage = 'User not found';
+
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                    'errors' => []
+                ], 404);
+            }
+
+            return back()->with('error', $errorMessage);
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            Log::error('User deletion error: ' . $e->getMessage(), [
+                'user_id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $errorMessage = 'Failed to delete user. Please try again.';
+
+            if (request()->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                    'errors' => []
+                ], 500);
+            }
+
+            return back()->with('error', $errorMessage);
         }
-
-        $user->delete();
-
-        return back()->with('success', 'User deleted successfully');
     }
 
     /**
@@ -142,7 +246,7 @@ class UserManagementController extends Controller
         $user = User::findOrFail($id);
 
         // Prevent deactivation of self
-        if ($user->id === auth()->id()) {
+        if ($user->id === Auth::id()) {
             return back()->with('error', 'You cannot deactivate your own account');
         }
 
