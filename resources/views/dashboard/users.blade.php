@@ -9,6 +9,7 @@
 
 @push('head')
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="current-user-id" content="{{ auth()->id() }}">
 @endpush
 
 @section('content')
@@ -106,26 +107,35 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if ($user->email_verified_at)
-                                                <span class="badge bg-success bg-opacity-10 text-success">
-                                                    <i class="bi bi-check-circle me-1"></i>Verified
-                                                </span>
-                                            @else
-                                                <span class="badge bg-warning bg-opacity-10 text-warning">
-                                                    <i class="bi bi-clock me-1"></i>Pending
-                                                </span>
-                                            @endif
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input status-toggle" type="checkbox"
+                                                    id="statusToggle{{ $user->id }}"
+                                                    data-user-id="{{ $user->id }}"
+                                                    {{ $user->is_active ? 'checked' : '' }}
+                                                    {{ $user->id == auth()->id() ? 'disabled' : '' }}>
+                                                <label class="form-check-label" for="statusToggle{{ $user->id }}">
+                                                    @if ($user->is_active)
+                                                        <span class="badge bg-success bg-opacity-10 text-success">
+                                                            <i class="bi bi-check-circle me-1"></i>Active
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-danger bg-opacity-10 text-danger">
+                                                            <i class="bi bi-x-circle me-1"></i>Inactive
+                                                        </span>
+                                                    @endif
+                                                </label>
+                                            </div>
                                         </td>
                                         <td>
                                             <small class="text-muted">{{ $user->created_at->format('M d, Y') }}</small>
                                         </td>
                                         <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <a href="{{ route('users.detail', $user->id) }}"
-                                                    class="btn btn-outline-primary btn-sm">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                                <button class="btn btn-outline-danger btn-sm"
+                                            <div>
+                                                <button class="btn btn-outline-warning btn-sm"
+                                                    onclick="editUser({{ $user->id }}, '{{ $user->name }}', '{{ $user->email }}', '{{ $user->phone ?? '' }}', '{{ $user->roles->pluck('name')->implode(',') }}')">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger btn-sm ms-1"
                                                     onclick="confirmDelete({{ $user->id }}, '{{ $user->name }}')">
                                                     <i class="bi bi-trash"></i>
                                                 </button>
@@ -181,7 +191,8 @@
                                     <option value="superadmin">Super Admin</option>
                                     <option value="admin">Admin</option>
                                     <option value="catat_meter">Catat Meter</option>
-                                    <option value="pembayaran">Pembayaran</option>
+                                    <option value="loket">Loket</option>
+                                    <option value="customer">Customer</option>
                                 </select>
                                 <small class="text-muted">Hold Ctrl/Cmd to select multiple roles</small>
                             </div>
@@ -190,6 +201,71 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="button" class="btn btn-primary" id="submitUserBtn" onclick="addUser()">Create
+                            User</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit User Modal -->
+        <div class="modal fade" id="editUserModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editUserForm">
+                            @csrf
+                            <input type="hidden" name="user_id" id="editUserId">
+                            <div class="mb-3">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-control" name="name" id="editUserName" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" name="email" id="editUserEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                                <input type="text" class="form-control" name="phone" id="editUserPhone">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Roles</label>
+                                <select class="form-select" name="roles[]" id="editUserRoles" multiple>
+                                    <option value="super_admin">Super Admin</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="catat_meter">Catat Meter</option>
+                                    <option value="loket">Loket</option>
+                                    <option value="customer">Customer</option>
+
+                                </select>
+                                <small class="text-muted">Hold Ctrl/Cmd to select multiple roles</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <input type="checkbox" id="editUserPasswordToggle"> Change Password
+                                </label>
+                                <div id="passwordFields" style="display: none; margin-top: 10px;">
+                                    <div class="mb-2">
+                                        <label class="form-label">New Password</label>
+                                        <input type="password" class="form-control" name="password"
+                                            id="editUserPassword">
+                                        <small class="text-muted">Minimum 8 characters</small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label">Confirm Password</label>
+                                        <input type="password" class="form-control" name="password_confirmation"
+                                            id="editUserPasswordConfirmation">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="updateUserBtn" onclick="updateUser()">Update
                             User</button>
                     </div>
                 </div>
@@ -259,6 +335,41 @@
             border-top: 1px solid #f8f9fa;
             border-radius: 0 0 15px 15px;
         }
+
+        /* Custom styles for status toggle */
+        .form-check {
+            min-height: auto;
+            margin-bottom: 0;
+        }
+
+        .form-check-input.status-toggle {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .form-check-input.status-toggle:checked {
+            background-color: #198754;
+            border-color: #198754;
+        }
+
+        .form-check-input.status-toggle:not(:checked) {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .form-check-input.status-toggle:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .form-check-label {
+            cursor: pointer;
+            margin-left: 0.5rem;
+        }
+
+        .form-check-label .badge {
+            margin-left: 0.5rem;
+        }
     </style>
 @endpush
 
@@ -315,6 +426,10 @@
                                     userRow.style.opacity = '0';
                                     setTimeout(() => userRow.remove(), 300);
                                 }
+                                // Reload page to show new user
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 1000);
                             } else {
                                 showNotification(data.message || 'Failed to delete user', 'danger');
                             }
@@ -484,6 +599,172 @@
             }, 3000);
         }
 
+        // Edit User functionality
+        let currentEditingUserId = null;
+
+        function editUser(userId, userName, userEmail, userPhone, userRoles) {
+            currentEditingUserId = userId;
+
+            // Populate form fields
+            document.getElementById('editUserId').value = userId;
+            document.getElementById('editUserName').value = userName;
+            document.getElementById('editUserEmail').value = userEmail;
+            document.getElementById('editUserPhone').value = userPhone;
+
+            // Set roles
+            const rolesSelect = document.getElementById('editUserRoles');
+            const rolesArray = userRoles ? userRoles.split(',') : [];
+
+            // Clear all selections first
+            Array.from(rolesSelect.options).forEach(option => {
+                option.selected = false;
+            });
+
+            // Select the user's roles
+            rolesArray.forEach(role => {
+                const option = Array.from(rolesSelect.options).find(opt => opt.value === role.trim());
+                if (option) {
+                    option.selected = true;
+                }
+            });
+
+            // Reset password fields
+            document.getElementById('editUserPasswordToggle').checked = false;
+            document.getElementById('passwordFields').style.display = 'none';
+            document.getElementById('editUserPassword').value = '';
+            document.getElementById('editUserPasswordConfirmation').value = '';
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+            modal.show();
+        }
+
+        // Toggle password fields visibility
+        document.getElementById('editUserPasswordToggle')?.addEventListener('change', function() {
+            const passwordFields = document.getElementById('passwordFields');
+            if (this.checked) {
+                passwordFields.style.display = 'block';
+            } else {
+                passwordFields.style.display = 'none';
+            }
+        });
+
+        function updateUser() {
+            try {
+                const form = document.getElementById('editUserForm');
+                const submitBtn = document.getElementById('updateUserBtn');
+                const userId = document.getElementById('editUserId').value;
+
+                if (!form || !submitBtn) {
+                    console.error('Edit form or button not found');
+                    showNotification('Form not found', 'danger');
+                    return;
+                }
+
+                // Validate form
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                // Check password fields if password change is enabled
+                const passwordToggle = document.getElementById('editUserPasswordToggle');
+                if (passwordToggle.checked) {
+                    const password = document.getElementById('editUserPassword').value;
+                    const passwordConfirmation = document.getElementById('editUserPasswordConfirmation').value;
+
+                    if (password && password !== passwordConfirmation) {
+                        showNotification('Password and confirmation do not match', 'danger');
+                        return;
+                    }
+
+                    if (password && password.length < 8) {
+                        showNotification('Password must be at least 8 characters', 'danger');
+                        return;
+                    }
+                }
+
+                const originalText = submitBtn.innerHTML;
+
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Updating...';
+
+                const formData = new FormData(form);
+                formData.append('_method', 'PUT');
+
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]');
+                if (!csrfToken) {
+                    throw new Error('CSRF token not found');
+                }
+
+                fetch(`/users/${userId}/update`, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            if (response.status === 401) {
+                                showNotification('Session expired. Please refresh the page and try again.', 'warning');
+                                setTimeout(() => location.reload(), 2000);
+                                throw new Error('Unauthenticated');
+                            }
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            showNotification(data.message || 'User updated successfully', 'success');
+
+                            // Close modal
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+                            if (modal) {
+                                modal.hide();
+                            }
+
+                            // Reload page to show updated user
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            // Handle validation errors
+                            if (data.errors) {
+                                let errorMessage = 'Validation failed:\n';
+                                Object.keys(data.errors).forEach(key => {
+                                    errorMessage += `- ${data.errors[key].join(', ')}\n`;
+                                });
+                                showNotification(errorMessage, 'danger');
+                            } else {
+                                showNotification(data.message || 'Failed to update user', 'danger');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        if (error.message !== 'Unauthenticated') {
+                            showNotification('An error occurred while updating the user', 'danger');
+                        }
+                    })
+                    .finally(() => {
+                        // Restore button state
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
+                        }
+                    });
+
+            } catch (error) {
+                console.error('UpdateUser function error:', error);
+                showNotification('An unexpected error occurred', 'danger');
+            }
+        }
+
         // Debug function to check if all required elements are loaded
         function debugUserManagement() {
             console.log('=== User Management Debug ===');
@@ -506,6 +787,9 @@
             const addModal = document.getElementById('addUserModal');
             console.log('Add Modal:', addModal ? 'Found' : 'NOT FOUND');
 
+            const editModal = document.getElementById('editUserModal');
+            console.log('Edit Modal:', editModal ? 'Found' : 'NOT FOUND');
+
             const deleteModal = document.getElementById('deleteModal');
             console.log('Delete Modal:', deleteModal ? 'Found' : 'NOT FOUND');
 
@@ -519,7 +803,99 @@
             console.log('=== End Debug ===');
         }
 
-        // Run debug when DOM is loaded
+        // Status toggle functionality
+        function toggleUserStatus(userId, currentStatus) {
+            try {
+                const toggle = document.querySelector(`#statusToggle${userId}`);
+                const label = toggle.nextElementSibling;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]');
+
+                if (!csrfToken) {
+                    showNotification('Security token not found', 'danger');
+                    return;
+                }
+
+                if (!toggle || !label) {
+                    showNotification('Toggle elements not found', 'danger');
+                    return;
+                }
+
+                // Show loading state
+                toggle.disabled = true;
+                const originalChecked = toggle.checked;
+
+                fetch(`/users/${userId}/toggle-status`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Update UI based on new status from server
+                            const isActive = data.data.is_active;
+
+                            console.log('Toggle response:', {
+                                userId: userId,
+                                isActive: isActive,
+                                originalChecked: originalChecked
+                            });
+
+                            // Force update toggle state
+                            toggle.checked = isActive;
+
+                            // Update badge with proper HTML structure
+                            const badgeContainer = label;
+                            if (badgeContainer) {
+                                if (isActive) {
+                                    badgeContainer.innerHTML =
+                                        '<span class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle me-1"></i>Active</span>';
+                                } else {
+                                    badgeContainer.innerHTML =
+                                        '<span class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-x-circle me-1"></i>Inactive</span>';
+                                }
+                            }
+
+                            showNotification(data.message, 'success');
+                        } else {
+                            // Revert toggle state on failure
+                            toggle.checked = originalChecked;
+                            showNotification(data.message || 'Failed to update user status', 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Toggle error:', error);
+                        // Revert toggle state on error
+                        toggle.checked = originalChecked;
+                        showNotification('An error occurred while updating user status', 'danger');
+                    })
+                    .finally(() => {
+                        // Re-enable toggle (except for own account)
+                        // Check if this is the current user's own account
+                        const currentUserIdElement = document.querySelector('meta[name="current-user-id"]');
+                        const currentUserId = currentUserIdElement ? parseInt(currentUserIdElement.getAttribute(
+                            'content')) : null;
+
+                        if (userId !== currentUserId) {
+                            toggle.disabled = false;
+                        }
+                    });
+
+            } catch (error) {
+                console.error('Toggle status function error:', error);
+                showNotification('An unexpected error occurred', 'danger');
+            }
+        }
+
+        // Add event listeners to all toggle switches
         document.addEventListener('DOMContentLoaded', function() {
             // Debug user management elements
             debugUserManagement();
@@ -530,6 +906,28 @@
             } else {
                 console.error('addUser function: NOT AVAILABLE');
             }
+
+            // Initialize toggle switches
+            const toggleSwitches = document.querySelectorAll('.status-toggle');
+            console.log(`Found ${toggleSwitches.length} toggle switches`);
+
+            toggleSwitches.forEach((toggle, index) => {
+                const userId = parseInt(toggle.getAttribute('data-user-id'));
+                console.log(
+                    `Initializing toggle ${index + 1} for user ${userId}, current state: ${toggle.checked}`
+                );
+
+                toggle.addEventListener('change', function(e) {
+                    e.preventDefault();
+                    const userId = parseInt(this.getAttribute('data-user-id'));
+                    const newState = this.checked;
+
+                    console.log(`Toggle changed for user ${userId}, new state: ${newState}`);
+
+                    // Call the toggle function
+                    toggleUserStatus(userId, newState);
+                });
+            });
         });
     </script>
 @endpush

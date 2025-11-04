@@ -76,7 +76,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('users')->group(function () {
         Route::get('/', [UserManagementController::class, 'index'])->name('users');
         Route::get('/{id}', [UserManagementController::class, 'show'])->name('users.detail');
-        Route::post('/{id}/update', [UserManagementController::class, 'update'])->name('users.update');
+        Route::put('/{id}/update', [UserManagementController::class, 'update'])->name('users.update');
         Route::put('/{id}/password', [UserManagementController::class, 'updatePassword'])->name('users.password.update');
         Route::post('/{id}/role', [UserManagementController::class, 'updateRole'])->name('users.role.update');
         Route::post('/', [UserManagementController::class, 'store'])->name('users.store');
