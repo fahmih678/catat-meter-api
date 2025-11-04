@@ -13,24 +13,29 @@
                     <th>Description</th>
                     <th>Tiers</th>
                     <th>Customers</th>
+                    <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($tariffGroups as $group)
                     {{-- {{ dd($group) }} --}}
-                    <tr>
-                        <td><span class="badge bg-primary">{{ $group->name }}</span></td>
+                    <tr data-tariff-group-id="{{ $group->id }}">
+                        <td><span class="badge bg-warning">{{ $group->name }}</span></td>
                         <td>{{ $group->description }}</td>
                         <td>{{ $group->tariff_tiers_count }} tiers</td>
                         <td>{{ number_format($group->customers_count ?? 0) }}</td>
                         <td>
-                            <div class="btn-group btn-group-sm">
+                            @if ($group->is_active == true)
+                                <span class="badge bg-success">Active</span>
+                            @else
+                                <span class="badge bg-warning">Inactive</span>
+                            @endif
+                        </td>
+                        <td>
+                            <div class="btn-group-sm">
                                 <button class="btn btn-outline-primary" onclick="editTariffGroup({{ $group->id }})">
                                     <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-outline-success" onclick="manageTiers({{ $group->id }})">
-                                    <i class="bi bi-layers"></i>
                                 </button>
                                 <button class="btn btn-outline-danger"
                                     onclick="deleteTariffGroup({{ $group->id }}, '{{ $group->name }}')">

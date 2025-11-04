@@ -18,11 +18,11 @@
             <tbody>
                 @forelse($areas as $area)
                     <tr>
-                        <td><span class="badge bg-info">{{ $area->code }}</span></td>
+                        <td><span class="badge bg-primary">{{ $area->code }}</span></td>
                         <td>{{ $area->name }}</td>
                         <td>{{ number_format($area->customers_count ?? 0) }}</td>
                         <td>
-                            <div class="btn-group btn-group-sm">
+                            <div class="btn-group-sm">
                                 <button class="btn btn-outline-primary" onclick="editArea({{ $area->id }})">
                                     <i class="bi bi-pencil"></i>
                                 </button>

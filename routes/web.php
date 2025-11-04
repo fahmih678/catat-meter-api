@@ -5,7 +5,12 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\Web\UserManagementController;
-use App\Http\Controllers\Web\PamManagementController;
+use App\Http\Controllers\Web\Pam\{
+    PamManagementController,
+    AreaController,
+    TariffController,
+    FixedFeeController
+};
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -41,29 +46,32 @@ Route::middleware('auth')->group(function () {
             // Customers within PAM
             Route::get('/customers', [PamManagementController::class, 'customers'])->name('customers');
 
-            // Areas within PAM
-            Route::get('/areas', [PamManagementController::class, 'areas'])->name('areas');
-            Route::post('/areas', [PamManagementController::class, 'storeArea'])->name('areas.store')->middleware('role:superadmin');
-            Route::put('/areas/{id}', [PamManagementController::class, 'updateArea'])->name('areas.update')->middleware('role:superadmin');
-            Route::delete('/areas/{id}', [PamManagementController::class, 'destroyArea'])->name('areas.destroy')->middleware('role:superadmin');
+            // Areas within PAM - using AreaController
+            Route::get('/areas', [AreaController::class, 'index'])->name('areas');
+            Route::post('/areas', [AreaController::class, 'store'])->name('areas.store')->middleware('role:superadmin');
+            Route::get('/areas/{id}/edit', [AreaController::class, 'edit'])->name('areas.edit')->middleware('role:superadmin');
+            Route::put('/areas/{id}', [AreaController::class, 'update'])->name('areas.update')->middleware('role:superadmin');
+            Route::delete('/areas/{id}', [AreaController::class, 'destroy'])->name('areas.destroy')->middleware('role:superadmin');
 
-            // Tariff Groups within PAM
-            Route::get('/tariff-groups', [PamManagementController::class, 'tariffGroups'])->name('tariff-groups');
-            Route::post('/tariff-groups', [PamManagementController::class, 'storeTariffGroup'])->name('tariff-groups.store')->middleware('role:superadmin');
-            Route::put('/tariff-groups/{id}', [PamManagementController::class, 'updateTariffGroup'])->name('tariff-groups.update')->middleware('role:superadmin');
-            Route::delete('/tariff-groups/{id}', [PamManagementController::class, 'destroyTariffGroup'])->name('tariff-groups.destroy')->middleware('role:superadmin');
+            // Tariff Groups within PAM - using TariffController
+            Route::get('/tariff-groups', [TariffController::class, 'groups'])->name('tariff-groups');
+            Route::post('/tariff-groups', [TariffController::class, 'storeGroup'])->name('tariff-groups.store')->middleware('role:superadmin');
+            Route::get('/tariff-groups/{id}/edit', [TariffController::class, 'editGroup'])->name('tariff-groups.edit')->middleware('role:superadmin');
+            Route::put('/tariff-groups/{id}', [TariffController::class, 'updateGroup'])->name('tariff-groups.update')->middleware('role:superadmin');
+            Route::delete('/tariff-groups/{id}', [TariffController::class, 'destroyGroup'])->name('tariff-groups.destroy')->middleware('role:superadmin');
 
-            // Tariff Tiers within PAM
-            Route::get('/tariff-tiers', [PamManagementController::class, 'tariffTiers'])->name('tariff-tiers');
-            Route::post('/tariff-tiers', [PamManagementController::class, 'storeTariffTier'])->name('tariff-tiers.store')->middleware('role:superadmin');
-            Route::put('/tariff-tiers/{id}', [PamManagementController::class, 'updateTariffTier'])->name('tariff-tiers.update')->middleware('role:superadmin');
-            Route::delete('/tariff-tiers/{id}', [PamManagementController::class, 'destroyTariffTier'])->name('tariff-tiers.destroy')->middleware('role:superadmin');
+            // Tariff Tiers within PAM - using TariffController
+            Route::get('/tariff-tiers', [TariffController::class, 'tiers'])->name('tariff-tiers');
+            Route::post('/tariff-tiers', [TariffController::class, 'storeTier'])->name('tariff-tiers.store')->middleware('role:superadmin');
+            Route::put('/tariff-tiers/{id}', [TariffController::class, 'updateTier'])->name('tariff-tiers.update')->middleware('role:superadmin');
+            Route::delete('/tariff-tiers/{id}', [TariffController::class, 'destroyTier'])->name('tariff-tiers.destroy')->middleware('role:superadmin');
 
-            // Fixed Fees within PAM
-            Route::get('/fixed-fees', [PamManagementController::class, 'fixedFees'])->name('fixed-fees');
-            Route::post('/fixed-fees', [PamManagementController::class, 'storeFixedFee'])->name('fixed-fees.store')->middleware('role:superadmin');
-            Route::put('/fixed-fees/{id}', [PamManagementController::class, 'updateFixedFee'])->name('fixed-fees.update')->middleware('role:superadmin');
-            Route::delete('/fixed-fees/{id}', [PamManagementController::class, 'destroyFixedFee'])->name('fixed-fees.destroy')->middleware('role:superadmin');
+            // Fixed Fees within PAM - using FixedFeeController
+            Route::get('/fixed-fees', [FixedFeeController::class, 'index'])->name('fixed-fees');
+            Route::post('/fixed-fees', [FixedFeeController::class, 'store'])->name('fixed-fees.store')->middleware('role:superadmin');
+            Route::get('/fixed-fees/{id}/edit', [FixedFeeController::class, 'edit'])->name('fixed-fees.edit')->middleware('role:superadmin');
+            Route::put('/fixed-fees/{id}', [FixedFeeController::class, 'update'])->name('fixed-fees.update')->middleware('role:superadmin');
+            Route::delete('/fixed-fees/{id}', [FixedFeeController::class, 'destroy'])->name('fixed-fees.destroy')->middleware('role:superadmin');
         });
 
         // PAM CRUD - Superadmin only for create, update, delete

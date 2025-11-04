@@ -31,7 +31,7 @@
                             @endif
                         </td>
                         <td>
-                            <div class="btn-group btn-group-sm">
+                            <div class="btn-group-sm">
                                 <button class="btn btn-outline-primary" onclick="editFixedFee({{ $fee->id }})">
                                     <i class="bi bi-pencil"></i>
                                 </button>

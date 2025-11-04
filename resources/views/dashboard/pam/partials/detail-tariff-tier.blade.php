@@ -21,7 +21,7 @@
                 @forelse($tariffTiers as $tier)
                     <tr>
                         <td><span
-                                class="badge bg-primary">{{ $tier->tariffGroup->name ?? ($tier->tariffGroup->name ?? 'N/A') }}</span>
+                                class="badge bg-warning">{{ $tier->tariffGroup->name ?? ($tier->tariffGroup->name ?? 'N/A') }}</span>
                         </td>
                         <td>{{ $tier->description }}</td>
                         <td>{{ $tier->meter_min }} - {{ $tier->meter_max ?? '∞' }}</td>
@@ -34,7 +34,7 @@
                             @endif
                         </td>
                         <td>
-                            <div class="btn-group btn-group-sm">
+                            <div class="btn-group-sm">
                                 <button class="btn btn-outline-primary" onclick="editTariffTier({{ $tier->id }})">
                                     <i class="bi bi-pencil"></i>
                                 </button>
