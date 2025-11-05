@@ -20,7 +20,7 @@ class TariffTier extends Model
         'effective_from',
         'effective_to',
         'description',
-        'status',
+        'is_active',
     ];
 
     protected $casts = [
@@ -29,6 +29,7 @@ class TariffTier extends Model
         'amount' => 'decimal:2',
         'effective_from' => 'date',
         'effective_to' => 'date',
+        'is_active' => 'boolean',
     ];
 
     public function pam(): BelongsTo

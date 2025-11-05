@@ -9,7 +9,8 @@ use App\Http\Controllers\Web\Pam\{
     PamManagementController,
     AreaController,
     TariffController,
-    FixedFeeController
+    FixedFeeController,
+    TariffTierController
 };
 
 Route::middleware('guest')->group(function () {
@@ -65,6 +66,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/tariff-tiers', [TariffController::class, 'storeTier'])->name('tariff-tiers.store')->middleware('role:superadmin');
             Route::put('/tariff-tiers/{id}', [TariffController::class, 'updateTier'])->name('tariff-tiers.update')->middleware('role:superadmin');
             Route::delete('/tariff-tiers/{id}', [TariffController::class, 'destroyTier'])->name('tariff-tiers.destroy')->middleware('role:superadmin');
+
+            // Tariff Tiers within PAM - using TariffTierController
+            Route::post('/tiers', [TariffTierController::class, 'store'])->name('tiers.store')->middleware('role:superadmin');
+            Route::get('/tiers/{id}/edit', [TariffTierController::class, 'edit'])->name('tiers.edit')->middleware('role:superadmin');
+            Route::put('/tiers/{id}', [TariffTierController::class, 'update'])->name('tiers.update')->middleware('role:superadmin');
+            Route::delete('/tiers/{id}', [TariffTierController::class, 'destroy'])->name('tiers.destroy')->middleware('role:superadmin');
 
             // Fixed Fees within PAM - using FixedFeeController
             Route::get('/fixed-fees', [FixedFeeController::class, 'index'])->name('fixed-fees');

@@ -12,12 +12,14 @@ class PamDetailPage {
         // Initialize managers
         this.areasManager = new PamAreasManager(this.pamId);
         this.tariffGroupsManager = new PamTariffGroupsManager(this.pamId);
+        this.tariffTiersManager = new PamTariffTiersManager(this.pamId);
         this.fixedFeesManager = new PamFixedFeesManager(this.pamId);
         this.modalManager = new PamModalManager(this.pamId);
 
         // Make managers globally available for onclick handlers
         window.pamAreasManager = this.areasManager;
         window.pamTariffGroupsManager = this.tariffGroupsManager;
+        window.pamTariffTiersManager = this.tariffTiersManager;
         window.pamFixedFeesManager = this.fixedFeesManager;
         window.pamModalManager = this.modalManager;
 
@@ -49,20 +51,7 @@ class PamDetailPage {
      * Setup additional handlers for placeholder functions
      */
     setupAdditionalHandlers() {
-        // Tariff Tiers placeholders
-        window.editTariffTier = (id) => {
-            console.log('Edit Tariff Tier:', id);
-            PamUtils.showNotification('Edit Tariff Tier functionality coming soon', 'info');
-        };
 
-        window.deleteTariffTier = (id, name) => {
-            if (confirm(`Are you sure you want to delete ${name}?`)) {
-                console.log('Delete Tariff Tier:', id);
-                PamUtils.showNotification('Tariff Tier deleted successfully', 'success');
-            }
-        };
-
-        
         // Modal placeholders
         window.showCreateTariffTierModal = () => {
             this.modalManager.showCreateTariffTierModal();

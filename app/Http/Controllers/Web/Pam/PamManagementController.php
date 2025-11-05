@@ -293,7 +293,7 @@ class PamManagementController extends Controller
      */
     private function getPamAreas($pamId)
     {
-        return Area::select('id', 'name', 'code')
+        return Area::select('id', 'name', 'code', 'description')
             ->withCount('customers')
             ->where('pam_id', $pamId)
             ->orderBy('id', 'desc')
@@ -318,7 +318,7 @@ class PamManagementController extends Controller
      */
     private function getPamTariffTiers($pamId)
     {
-        return TariffTier::select('description', 'meter_min', 'meter_max', 'amount', 'is_active', 'effective_from', 'effective_to', 'tariff_group_id')
+        return TariffTier::select('id', 'description', 'meter_min', 'meter_max', 'amount', 'is_active', 'effective_from', 'effective_to', 'tariff_group_id')
             ->with(['tariffGroup:id,name'])
             ->where('pam_id', $pamId)
             ->orderBy('id', 'desc')

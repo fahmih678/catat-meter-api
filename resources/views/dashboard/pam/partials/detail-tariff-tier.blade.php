@@ -12,7 +12,8 @@
                     <th>Group Name</th>
                     <th>Description</th>
                     <th>Range (m³)</th>
-                    <th>Price/m³</th>
+                    <th>Amount</th>
+                    <th>Effectivity Date</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -20,12 +21,12 @@
             <tbody>
                 @forelse($tariffTiers as $tier)
                     <tr>
-                        <td><span
-                                class="badge bg-warning">{{ $tier->tariffGroup->name ?? ($tier->tariffGroup->name ?? 'N/A') }}</span>
-                        </td>
-                        <td>{{ $tier->description }}</td>
-                        <td>{{ $tier->meter_min }} - {{ $tier->meter_max ?? '∞' }}</td>
+                        <td><span class="badge bg-warning">{{ $tier->tariffGroup->name ?? 'N/A' }}</span></td>
+                        <td>{{ $tier->description ?? '-' }}</td>
+                        <td>{{ number_format($tier->meter_min, 2) }} - {{ number_format($tier->meter_max, 2) }}</td>
                         <td>Rp {{ number_format($tier->amount, 0, ',', '.') }}</td>
+                        <td>{{ $tier->effective_from?->format('d M y') }}
+                            {{ $tier->effective_to ? ' to ' . $tier->effective_to->format('d M Y') : '' }}</td>
                         <td>
                             @if ($tier->is_active == true)
                                 <span class="badge bg-success">Active</span>
@@ -39,7 +40,7 @@
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn btn-outline-danger"
-                                    onclick="deleteTariffTier({{ $tier->id }}, '{{ $tier->name }}')">
+                                    onclick="deleteTariffTier({{ $tier->id }}, '{{ $tier->tariffGroup->name ?? 'Tariff Tier' }}')">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>

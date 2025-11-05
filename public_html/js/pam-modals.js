@@ -65,6 +65,51 @@ class PamModalManager {
     }
 
     /**
+     * Show Create Tariff Tier Modal
+     */
+    showCreateTariffTierModal() {
+        const modal = new bootstrap.Modal(document.getElementById('createTariffTierModal'));
+
+        // Reset form
+        const form = document.getElementById('createTariffTierForm');
+        form.reset();
+        document.getElementById('tariffTierStatus').value = '1'; // Set to Active by default
+
+        modal.show();
+    }
+
+    /**
+     * Show Edit Tariff Tier Modal
+     */
+    showEditTariffTierModal(tariffTierData) {
+        // Populate form fields
+        document.getElementById('editTariffTierId').value = tariffTierData.id;
+        document.getElementById('editTariffTierGroup').value = tariffTierData.tariff_group_id;
+        document.getElementById('editTariffMeterMin').value = tariffTierData.meter_min;
+        document.getElementById('editTariffMeterMax').value = tariffTierData.meter_max;
+        document.getElementById('editTariffAmount').value = tariffTierData.amount;
+        document.getElementById('editTariffDescription').value = tariffTierData.description || '';
+        document.getElementById('editTariffTierStatus').value = tariffTierData.is_active ? '1' : '0';
+
+        // Format dates
+        let effectiveFrom = tariffTierData.effective_from;
+        let effectiveTo = tariffTierData.effective_to;
+        if (effectiveFrom) {
+            const date = new Date(effectiveFrom);
+            const formattedDate = date.toISOString().split('T')[0];
+            document.getElementById('editTariffEffectiveFrom').value = formattedDate;
+        }
+        if (effectiveTo) {
+            const dateTo = new Date(effectiveTo);
+            const formattedDateTo = dateTo.toISOString().split('T')[0];
+            document.getElementById('editTariffEffectiveTo').value = formattedDateTo;
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('editTariffTierModal'));
+        modal.show();
+    }
+
+    /**
      * Show Edit Fixed Fee Modal
      */
     showEditFixedFeeModal(fixedFeeData) {
@@ -91,13 +136,6 @@ class PamModalManager {
 
         const modal = new bootstrap.Modal(document.getElementById('editFixedFeeModal'));
         modal.show();
-    }
-
-    /**
-     * Show Create Tariff Tier Modal (placeholder)
-     */
-    showCreateTariffTierModal() {
-        PamUtils.showNotification('Create Tariff Tier modal coming soon', 'info');
     }
 
     /**

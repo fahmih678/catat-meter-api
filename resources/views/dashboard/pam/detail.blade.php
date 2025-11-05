@@ -128,6 +128,9 @@
 
     <!-- Fixed Fee Modals -->
     @include('dashboard.pam.modals.fixed-fee')
+
+    <!-- Tariff Tier Modals -->
+    @include('dashboard.pam.modals.tariff-tier')
 @endsection
 
 @push('styles')
@@ -182,6 +185,7 @@
     <script src="{{ asset('js/pam-areas.js') }}"></script>
     <script src="{{ asset('js/pam-tariff-groups.js') }}"></script>
     <script src="{{ asset('js/pam-fixed-fees.js') }}"></script>
+    <script src="{{ asset('js/pam-tariff-tiers.js') }}"></script>
 
     <!-- Make PAM ID available to JavaScript -->
     <script>

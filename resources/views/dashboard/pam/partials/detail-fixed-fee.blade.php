@@ -19,7 +19,7 @@
             <tbody>
                 @forelse($fixedFees as $fee)
                     <tr>
-                        <td><span class="badge bg-success">{{ $fee->tariffGroup->name }}</span></td>
+                        <td><span class="badge bg-warning">{{ $fee->tariffGroup->name }}</span></td>
                         <td>{{ $fee->name }}</td>
 
                         <td>Rp {{ number_format($fee->amount, 0, ',', '.') }}</td>

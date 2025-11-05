@@ -12,12 +12,12 @@
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="areaName" class="form-label">Area Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="areaName" name="name" required>
+                        <label for="areaCode" class="form-label">Code <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="areaCode" name="code" required>
                     </div>
                     <div class="mb-3">
-                        <label for="areaCode" class="form-label">Area Code <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="areaCode" name="code" required>
+                        <label for="areaName" class="form-label">Area Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="areaName" name="name" required>
                     </div>
                     <div class="mb-3">
                         <label for="areaDescription" class="form-label">Description</label>

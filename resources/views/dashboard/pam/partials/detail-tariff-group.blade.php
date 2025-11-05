@@ -9,7 +9,7 @@
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>Group Name</th>
+                    <th>Name</th>
                     <th>Description</th>
                     <th>Tiers</th>
                     <th>Customers</th>

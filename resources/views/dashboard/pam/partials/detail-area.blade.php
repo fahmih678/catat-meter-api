@@ -9,8 +9,9 @@
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>Area Code</th>
-                    <th>Area Name</th>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Description</th>
                     <th>Customers</th>
                     <th>Actions</th>
                 </tr>
@@ -20,6 +21,7 @@
                     <tr>
                         <td><span class="badge bg-primary">{{ $area->code }}</span></td>
                         <td>{{ $area->name }}</td>
+                        <td>{{ $area->description }}</td>
                         <td>{{ number_format($area->customers_count ?? 0) }}</td>
                         <td>
                             <div class="btn-group-sm">
