@@ -103,10 +103,10 @@ class PamManagementController extends Controller
             $statistics = $this->pamService->getStatistics($id);
 
             // Get related data (areas, tariff groups, etc.)
-            $areas = $this->getPamAreas($id);
-            $tariffGroups = $this->getPamTariffGroups($id);
-            $tariffTiers = $this->getPamTariffTiers($id);
-            $fixedFees = $this->getPamFixedFees($id);
+            $areas = $this->pamService->getPamAreas($id);
+            $tariffGroups = $this->pamService->getPamTariffGroups($id);
+            $tariffTiers = $this->pamService->getPamTariffTiers($id);
+            $fixedFees = $this->pamService->getPamFixedFees($id);
 
             return view('dashboard.pam.detail', compact(
                 'pam',
@@ -121,84 +121,6 @@ class PamManagementController extends Controller
 
             return redirect()->route('pam.index')
                 ->with('error', 'Failed to load PAM details');
-        }
-    }
-
-    /**
-     * Show customers for specific PAM.
-     */
-    public function customers(Request $request, $pamId)
-    {
-        try {
-            // Get PAM data
-            $pam = $this->pamService->findById($pamId);
-
-            if (!$pam) {
-                return redirect()->route('pam.index')
-                    ->with('error', 'PAM not found');
-            }
-
-            // Get search and filter parameters
-            $search = $request->get('search', '');
-            $areaId = $request->get('area_id', '');
-            $status = $request->get('status', '');
-            $perPage = $request->get('per_page', 10);
-
-            // Build customer query for this PAM
-            $query = Customer::where('pam_id', $pamId)
-                ->with(['area', 'tariffGroup', 'user']);
-
-            // Apply search filters
-            if ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                        ->orWhere('customer_number', 'like', '%' . $search . '%')
-                        ->orWhere('phone', 'like', '%' . $search . '%')
-                        ->orWhere('address', 'like', '%' . $search . '%');
-                });
-            }
-
-            if ($areaId) {
-                $query->where('area_id', $areaId);
-            }
-
-            if ($status) {
-                if ($status === 'active') {
-                    $query->where('is_active', true);
-                } elseif ($status === 'inactive') {
-                    $query->where('is_active', false);
-                }
-            }
-
-            // Get customers with pagination
-            $customers = $query->orderBy('id')->paginate($perPage);
-
-            // Get available areas for filter dropdown
-            $areas = $this->getPamAreas($pamId);
-
-            // Get customer statistics
-            $statistics = [
-                'total' => Customer::where('pam_id', $pamId)->count(),
-                'active' => Customer::where('pam_id', $pamId)->where('is_active', true)->count(),
-                'inactive' => Customer::where('pam_id', $pamId)->where('is_active', false)->count(),
-                'with_meters' => Customer::where('pam_id', $pamId)->whereNotNull('user_id')->count(),
-            ];
-
-            return view('dashboard.pam.customers', compact(
-                'pam',
-                'customers',
-                'areas',
-                'statistics',
-                'search',
-                'areaId',
-                'status',
-                'perPage'
-            ));
-        } catch (\Throwable $th) {
-            Log::error('Failed to load PAM customers: ' . $th->getMessage());
-
-            return redirect()->route('pam.show', $pamId)
-                ->with('error', 'Failed to load customers');
         }
     }
 
@@ -284,56 +206,5 @@ class PamManagementController extends Controller
         // PAM deletion logic here
 
         return back()->with('success', 'PAM deleted successfully');
-    }
-
-    // === PRIVATE HELPER METHODS ===
-
-    /**
-     * Get PAM areas
-     */
-    private function getPamAreas($pamId)
-    {
-        return Area::select('id', 'name', 'code', 'description')
-            ->withCount('customers')
-            ->where('pam_id', $pamId)
-            ->orderBy('id', 'desc')
-            ->get();
-    }
-
-    /**
-     * Get PAM tariff groups
-     */
-    private function getPamTariffGroups($pamId)
-    {
-        return TariffGroup::select('id', 'name', 'is_active', 'description')
-            ->withCount('customers')
-            ->withCount('tariffTiers')
-            ->where('pam_id', $pamId)
-            ->orderBy('id', 'desc')
-            ->get();
-    }
-
-    /**
-     * Get PAM tariff tiers
-     */
-    private function getPamTariffTiers($pamId)
-    {
-        return TariffTier::select('id', 'description', 'meter_min', 'meter_max', 'amount', 'is_active', 'effective_from', 'effective_to', 'tariff_group_id')
-            ->with(['tariffGroup:id,name'])
-            ->where('pam_id', $pamId)
-            ->orderBy('id', 'desc')
-            ->get();
-    }
-
-    /**
-     * Get PAM fixed fees
-     */
-    private function getPamFixedFees($pamId)
-    {
-        return FixedFee::select('id', 'name', 'amount', 'effective_from', 'effective_to', 'is_active', 'tariff_group_id')
-            ->with(['tariffGroup:id,name'])
-            ->where('pam_id', $pamId)
-            ->orderBy('id', 'desc')
-            ->get();
     }
 }

@@ -116,4 +116,36 @@ class PamService extends BaseService
             throw new \Exception('Cannot delete PAM with active customers');
         }
     }
+
+    /**
+     * Get PAM areas
+     */
+    public function getPamAreas($pamId)
+    {
+        return $this->pamRepository->getPamAreas($pamId);
+    }
+
+    /**
+     * Get PAM tariff groups
+     */
+    public function getPamTariffGroups($pamId)
+    {
+        return $this->pamRepository->getPamTariffGroups($pamId);
+    }
+
+    /**
+     * Get PAM tariff tiers
+     */
+    public function getPamTariffTiers($pamId)
+    {
+        return $this->pamRepository->getPamTariffTiers($pamId);
+    }
+
+    /**
+     * Get PAM fixed fees
+     */
+    public function getPamFixedFees($pamId)
+    {
+        return $this->pamRepository->getPamFixedFees($pamId);
+    }
 }

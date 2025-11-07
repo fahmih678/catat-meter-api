@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\UserManagementController;
 use App\Http\Controllers\Web\Pam\{
     PamManagementController,
     AreaController,
+    CustomerController,
     TariffController,
     FixedFeeController,
     TariffTierController
@@ -23,7 +24,7 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::middleware('auth')->group(function () {
+Route::middleware('auth', 'role:superadmin')->group(function () {
     // Import routes - put first to avoid conflicts
     Route::prefix('import')->group(function () {
         Route::post('/sheets', [ImportController::class, 'getSheets']);
@@ -45,7 +46,16 @@ Route::middleware('auth')->group(function () {
         // Nested routes for PAM-specific management
         Route::prefix('{pamId}')->group(function () {
             // Customers within PAM
-            Route::get('/customers', [PamManagementController::class, 'customers'])->name('customers');
+            Route::get('/customers', [CustomerController::class, 'index'])->name('customers');
+            Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
+            Route::get('/customers/form-data', [CustomerController::class, 'getFormData'])->name('customers.form-data');
+            Route::get('/customers/{id}', [CustomerController::class, 'show'])->name('customers.show');
+            Route::put('/customers/{id}', [CustomerController::class, 'update'])->name('customers.update');
+            Route::delete('/customers/{id}', [CustomerController::class, 'destroy'])->name('customers.destroy');
+
+            // Generate unique numbers
+            Route::get('/generate-customer-number', [CustomerController::class, 'generateCustomerNumber'])->name('customers.generate-number');
+            Route::get('/generate-meter-number', [CustomerController::class, 'generateMeterNumber'])->name('customers.generate-meter-number');
 
             // Areas within PAM - using AreaController
             Route::get('/areas', [AreaController::class, 'index'])->name('areas');

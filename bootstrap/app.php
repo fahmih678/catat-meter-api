@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'pam.scope' => \App\Http\Middleware\PamScopeMiddleware::class,
             'spatie.role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'spatie.permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'superadmin.only' => \App\Http\Middleware\SuperAdminOnly::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
     })

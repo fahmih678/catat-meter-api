@@ -2,7 +2,11 @@
 
 namespace App\Repositories;
 
+use App\Models\Area;
+use App\Models\FixedFee;
 use App\Models\Pam;
+use App\Models\TariffGroup;
+use App\Models\TariffTier;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
@@ -64,5 +68,54 @@ class PamRepository extends BaseRepository
             'total_areas' => $pam->areas()->count(),
             'pending_bills' => $pam->bills()->where('status', 'pending')->count(),
         ];
+    }
+
+    /**
+     * Get PAM areas
+     */
+    public function getPamAreas($pamId)
+    {
+        return Area::select('id', 'name', 'code', 'description')
+            ->withCount('customers')
+            ->where('pam_id', $pamId)
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
+    /**
+     * Get PAM tariff groups
+     */
+    public function getPamTariffGroups($pamId)
+    {
+        return TariffGroup::select('id', 'name', 'is_active', 'description')
+            ->withCount('customers')
+            ->withCount('tariffTiers')
+            ->where('pam_id', $pamId)
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
+    /**
+     * Get PAM tariff tiers
+     */
+    public function getPamTariffTiers($pamId)
+    {
+        return TariffTier::select('id', 'description', 'meter_min', 'meter_max', 'amount', 'is_active', 'effective_from', 'effective_to', 'tariff_group_id')
+            ->with(['tariffGroup:id,name'])
+            ->where('pam_id', $pamId)
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
+    /**
+     * Get PAM fixed fees
+     */
+    public function getPamFixedFees($pamId)
+    {
+        return FixedFee::select('id', 'name', 'amount', 'effective_from', 'effective_to', 'is_active', 'tariff_group_id')
+            ->with(['tariffGroup:id,name'])
+            ->where('pam_id', $pamId)
+            ->orderBy('id', 'desc')
+            ->get();
     }
 }

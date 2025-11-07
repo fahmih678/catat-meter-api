@@ -16,19 +16,19 @@ class Meter extends Model
         'pam_id',
         'customer_id',
         'meter_number',
-        'status',
         'installed_at',
         'initial_installed_meter',
         'notes',
-        'last_recorded_at',
         'total_usage',
+        'last_reading_at',
         'is_active',
     ];
 
     protected $casts = [
         'installed_at' => 'datetime',
-        'last_recorded_at' => 'datetime',
+        'last_reading_at' => 'datetime',
         'initial_installed_meter' => 'decimal:2',
+        'total_usage' => 'json',
     ];
 
     public function pam(): BelongsTo

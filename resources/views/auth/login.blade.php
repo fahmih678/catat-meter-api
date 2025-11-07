@@ -94,6 +94,14 @@
             background-color: #f8d7da;
             color: #721c24;
         }
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
         .logo-icon {
             font-size: 3rem;
             margin-bottom: 1rem;
@@ -172,15 +180,40 @@
                 <div class="col-lg-6 login-right">
                     <div class="text-center mb-4">
                         <h2 class="fw-bold text-dark">Selamat Datang</h2>
-                        <p class="text-muted">Silakan login untuk melanjutkan</p>
+                        <p class="text-muted">Silakan login sebagai Super Admin untuk melanjutkan</p>
+                    </div>
+
+                    <!-- Access Policy Notice -->
+                    <div class="alert alert-info mb-4" role="alert">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Kebijakan Akses:</strong> Sistem ini hanya dapat diakses oleh pengguna dengan role <strong>Super Administrator</strong>. Jika Anda bukan Super Admin, silakan hubungi administrator sistem.
                     </div>
 
                     @if ($errors->any())
-                        <div class="alert alert-danger mb-4" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            @foreach ($errors->all() as $error)
-                                {{ $error }}<br>
-                            @endforeach
+                        @php
+                            $hasRoleError = in_array('Anda tidak memiliki izin akses yang cukup. Hubungi administrator sistem.', $errors->all()) ||
+                                         in_array('Akses ditolak. Hanya pengguna dengan role Super Admin yang dapat mengakses sistem ini.', $errors->all());
+                        @endphp
+
+                        <div class="alert {{ $hasRoleError ? 'alert-warning' : 'alert-danger' }} mb-4" role="alert">
+                            <div class="d-flex align-items-start">
+                                <i class="bi {{ $hasRoleError ? 'bi-shield-exclamation-triangle-fill' : 'bi-exclamation-triangle-fill' }} me-2 mt-1"></i>
+                                <div>
+                                    @foreach ($errors->all() as $error)
+                                        <div>{{ $error }}</div>
+                                    @endforeach
+
+                                    @if ($hasRoleError)
+                                        <hr class="my-2">
+                                        <small class="text-muted">
+                                            <strong>Langkah selanjutnya:</strong><br>
+                                            • Hubungi Super Administrator sistem<br>
+                                            • Mintakan role "Super Administrator" jika diperlukan<br>
+                                            • Pastikan Anda memiliki izin akses yang tepat
+                                        </small>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
                     @endif
 
