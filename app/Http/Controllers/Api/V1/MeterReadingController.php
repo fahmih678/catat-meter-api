@@ -328,14 +328,6 @@ class MeterReadingController extends Controller
             }
 
             $user = $request->user();
-            $meterReading = MeterReading::find($meterReadingId);
-
-            if (!$meterReading) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Meter reading tidak ditemukan'
-                ], 404);
-            }
 
             // Delete meter reading using service
             $deleted = $this->meterReadingService->deleteRecord($meterReadingId);

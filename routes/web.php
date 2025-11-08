@@ -72,7 +72,7 @@ Route::middleware('auth', 'role:superadmin')->group(function () {
 
             // Meter readings by month - using MeterReadingByMonthController
             Route::get('/meter-readings', [MeterReadingByMonthController::class, 'index'])->name('meter-readings.index');
-            Route::get('/meter-readings/month/{month}', [MeterReadingByMonthController::class, 'show'])->name('meter-readings.month');
+            Route::get('/meter-readings/{month}', [MeterReadingByMonthController::class, 'show'])->name('meter-readings.month');
             Route::get('/meter-readings/export/{month}', [MeterReadingByMonthController::class, 'export'])->name('meter-readings.export');
 
             // Meter readings routes - using MeterReadingController
