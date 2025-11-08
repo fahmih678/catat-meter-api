@@ -71,12 +71,12 @@ class PamService extends BaseService
 
     public function activatePam(int $pamId): Pam
     {
-        return $this->update($pamId, ['status' => 'active']);
+        return $this->update($pamId, ['is_active' => true]);
     }
 
     public function deactivatePam(int $pamId): Pam
     {
-        return $this->update($pamId, ['status' => 'inactive']);
+        return $this->update($pamId, ['is_active' => false]);
     }
 
     private function generateUniqueCode(string $name): string
@@ -104,16 +104,21 @@ class PamService extends BaseService
     protected function afterUpdate($model, array $data, array $oldData): void
     {
         // Log activity untuk perubahan status
-        if (isset($data['status']) && $data['status'] !== $oldData['status']) {
-            // Example: Log::info('PAM status changed', ['pam_id' => $model->id, 'old_status' => $oldData['status'], 'new_status' => $data['status']]);
+        if (isset($data['is_active']) && $data['is_active'] !== $oldData['is_active']) {
+            $statusText = $data['is_active'] ? 'activated' : 'deactivated';
+            // Example: Log::info("PAM {$statusText}", ['pam_id' => $model->id, 'old_status' => $oldData['is_active'], 'new_status' => $data['is_active']]);
         }
     }
 
     protected function beforeDelete($model): void
     {
         // Validasi sebelum delete - pastikan tidak ada customers aktif
-        if ($model->customers()->where('status', 'active')->exists()) {
-            throw new \Exception('Cannot delete PAM with active customers');
+        if ($model->customers()->exists()) {
+            throw new \Exception('Cannot delete PAM with existing customers');
+        }
+
+        if ($model->areas()->exists()) {
+            throw new \Exception('Cannot delete PAM with existing areas');
         }
     }
 
@@ -147,5 +152,38 @@ class PamService extends BaseService
     public function getPamFixedFees($pamId)
     {
         return $this->pamRepository->getPamFixedFees($pamId);
+    }
+
+    /**
+     * Check if PAM has related data (areas, customers, etc.)
+     */
+    public function hasRelatedData($pamId): bool
+    {
+        $pam = $this->findById($pamId);
+        if (!$pam) {
+            return false;
+        }
+
+        // Check for related areas
+        if ($pam->areas()->exists()) {
+            return true;
+        }
+
+        // Check for related customers
+        if ($pam->customers()->exists()) {
+            return true;
+        }
+
+        // Check for related tariff groups
+        if ($pam->tariffGroups()->exists()) {
+            return true;
+        }
+
+        // Check for related fixed fees
+        if ($pam->fixedFees()->exists()) {
+            return true;
+        }
+
+        return false;
     }
 }

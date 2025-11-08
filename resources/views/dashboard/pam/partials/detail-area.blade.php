@@ -18,7 +18,7 @@
             </thead>
             <tbody>
                 @forelse($areas as $area)
-                    <tr>
+                    <tr data-area-id="{{ $area->id }}">
                         <td><span class="badge bg-primary">{{ $area->code }}</span></td>
                         <td>{{ $area->name }}</td>
                         <td>{{ $area->description }}</td>

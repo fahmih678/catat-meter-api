@@ -95,8 +95,106 @@
         </div>
     </div>
 
+    <!-- Edit PAM Modal -->
+    <div class="modal fade" id="editPamModal" tabindex="-1" aria-labelledby="editPamModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPamModalLabel">
+                        <i class="bi bi-building-gear me-2"></i>Edit Water Utility Company
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editPamForm">
+                    @csrf
+                    <input type="hidden" id="edit_pam_id" name="id">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="edit_pam_name" name="name" required>
+                                    <label for="edit_pam_name">Name *</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="edit_pam_code" name="code" required>
+                                    <label for="edit_pam_code">Code *</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="edit_pam_address" name="address" style="height: 80px" required></textarea>
+                                    <label for="edit_pam_address">Address *</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="email" class="form-control" id="edit_pam_email" name="email">
+                                    <label for="edit_pam_email">Email Address</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="tel" class="form-control" id="edit_pam_phone" name="phone">
+                                    <label for="edit_pam_phone">Phone Number</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="edit_pam_coordinate"
+                                        name="coordinate">
+                                    <label for="edit_pam_coordinate">Coordinate (latitude,longitude)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="url" class="form-control" id="edit_pam_logo_url" name="logo_url">
+                                    <label for="edit_pam_logo_url">Logo URL</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="edit_pam_is_active"
+                                        name="is_active" value="1">
+                                    <label class="form-check-label" for="edit_pam_is_active">
+                                        Active Status
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Error display area -->
+                        <div id="editPamErrors" class="alert alert-danger d-none"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg me-1"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitEditPamBtn">
+                            <i class="bi bi-check-lg me-1"></i>Update PAM
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Create PAM Modal -->
-    <div class="modal fade" id="createPamModal" tabindex="-1" aria-labelledby="createPamModalLabel" aria-hidden="true">
+    <div class="modal fade" id="createPamModal" tabindex="-1" aria-labelledby="createPamModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -152,15 +250,6 @@
                                 <div class="form-floating mb-3">
                                     <input type="text" class="form-control" id="pam_coordinate" name="coordinate">
                                     <label for="pam_coordinate">Coordinate (latitude,longitude)</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="form-floating mb-3">
-                                    <textarea class="form-control" id="pam_description" name="description" style="height: 80px"></textarea>
-                                    <label for="pam_description">Description</label>
                                 </div>
                             </div>
                         </div>
@@ -383,8 +472,189 @@
         }
 
         function editPam(id) {
-            console.log('Edit PAM:', id);
-            showNotification('Edit PAM functionality coming soon', 'info');
+            // Show loading state
+            const submitBtn = document.getElementById('submitEditPamBtn');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
+            }
+
+            // Fetch PAM data
+            fetch(`/pam/${id}/edit`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const pam = data.data;
+
+                        // Check if all elements exist before accessing them
+                        const elements = {
+                            id: document.getElementById('edit_pam_id'),
+                            name: document.getElementById('edit_pam_name'),
+                            code: document.getElementById('edit_pam_code'),
+                            address: document.getElementById('edit_pam_address'),
+                            email: document.getElementById('edit_pam_email'),
+                            phone: document.getElementById('edit_pam_phone'),
+                            coordinate: document.getElementById('edit_pam_coordinate'),
+                            logoUrl: document.getElementById('edit_pam_logo_url'),
+                            activeCheckbox: document.getElementById('edit_pam_is_active'),
+                            errors: document.getElementById('editPamErrors')
+                        };
+
+                        // Populate form fields safely
+                        if (elements.id) elements.id.value = pam.id || '';
+                        if (elements.name) elements.name.value = pam.name || '';
+                        if (elements.code) elements.code.value = pam.code || '';
+                        if (elements.address) elements.address.value = pam.address || '';
+                        if (elements.email) elements.email.value = pam.email || '';
+                        if (elements.phone) elements.phone.value = pam.phone || '';
+                        if (elements.coordinate) {
+                            elements.coordinate.value = pam.coordinate ? (typeof pam
+                                .coordinate === 'string' ? pam.coordinate :
+                                `${pam.coordinate.lat},${pam.coordinate.lng}`) : '';
+                        }
+                        if (elements.logoUrl) elements.logoUrl.value = pam.logo_url || '';
+
+                        // Set active status
+                        if (elements.activeCheckbox) {
+                            elements.activeCheckbox.checked = pam.is_active === 1 || pam.is_active === true;
+                        }
+
+                        // Clear any previous errors
+                        if (elements.errors) {
+                            elements.errors.classList.add('d-none');
+                        }
+
+                        // Show modal with focus management
+                        const modalElement = document.getElementById('editPamModal');
+                        if (modalElement) {
+                            // Remove any existing modal instance
+                            const existingModal = bootstrap.Modal.getInstance(modalElement);
+                            if (existingModal) {
+                                existingModal.dispose();
+                            }
+
+                            // Create new modal instance
+                            const modal = new bootstrap.Modal(modalElement, {
+                                focus: true,
+                                keyboard: true
+                            });
+
+                            // Show modal
+                            modal.show();
+
+                            // Handle modal hidden event to clean up focus
+                            modalElement.addEventListener('hidden.bs.modal', function() {
+                                if (document.activeElement && modalElement.contains(document.activeElement)) {
+                                    document.activeElement.blur();
+                                }
+                            }, { once: true });
+                        }
+                    } else {
+                        showNotification(data.message || 'Failed to load PAM data', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching PAM data:', error);
+                    showNotification('An error occurred while loading PAM data', 'danger');
+                })
+                .finally(() => {
+                    if (submitBtn) {
+                        submitBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Update PAM';
+                    }
+                });
+        }
+
+        function deletePam(id, name) {
+            if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+                // Show loading state
+                showNotification('Deleting PAM...', 'info');
+
+                fetch(`/pam/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification(data.message || 'PAM deleted successfully!', 'success');
+
+                            // Reload page after a short delay to show updated data
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            showNotification(data.message || 'Failed to delete PAM', 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting PAM:', error);
+
+                        if (error.status === 403) {
+                            showNotification('Access denied. You do not have permission to delete PAM.', 'danger');
+                        } else if (error.status === 401) {
+                            showNotification('Your session has expired. Please login again.', 'danger');
+                        } else {
+                            showNotification('An error occurred while deleting PAM', 'danger');
+                        }
+                    });
+            }
+        }
+
+        function togglePamStatus(id, currentStatus) {
+            const newStatus = !currentStatus;
+            const statusText = newStatus ? 'activate' : 'deactivate';
+
+            if (confirm(`Are you sure you want to ${statusText} this PAM?`)) {
+                showNotification(`${statusText.charAt(0).toUpperCase() + statusText.slice(1)}ing PAM...`, 'info');
+
+                const formData = new FormData();
+                formData.append('_method', 'PUT');
+                formData.append('is_active', newStatus ? '1' : '0');
+
+                fetch(`/pam/${id}/toggle-status`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification(data.message || `PAM ${statusText}d successfully!`, 'success');
+
+                            // Reload page after a short delay to show updated data
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            showNotification(data.message || `Failed to ${statusText} PAM`, 'danger');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error toggling PAM status:', error);
+
+                        if (error.status === 403) {
+                            showNotification('Access denied. You do not have permission to change PAM status.',
+                                'danger');
+                        } else if (error.status === 401) {
+                            showNotification('Your session has expired. Please login again.', 'danger');
+                        } else {
+                            showNotification(`An error occurred while ${statusText}ing PAM`, 'danger');
+                        }
+                    });
+            }
         }
 
         function viewArea(id) {
@@ -417,9 +687,32 @@
 
         // Modal functions
         function showCreatePamModal() {
-            const modal = new bootstrap.Modal(document.getElementById('createPamModal'));
-            document.getElementById('createPamForm').reset();
-            document.getElementById('createPamErrors').classList.add('d-none');
+            const modalElement = document.getElementById('createPamModal');
+            if (!modalElement) return;
+
+            // Remove any existing modal instance
+            const existingModal = bootstrap.Modal.getInstance(modalElement);
+            if (existingModal) {
+                existingModal.dispose();
+            }
+
+            // Create new modal instance
+            const modal = new bootstrap.Modal(modalElement, {
+                focus: true,
+                keyboard: true
+            });
+
+            const form = document.getElementById('createPamForm');
+            const errors = document.getElementById('createPamErrors');
+
+            if (form) {
+                form.reset();
+            }
+
+            if (errors) {
+                errors.classList.add('d-none');
+            }
+
             modal.show();
         }
 
@@ -796,6 +1089,153 @@
                         submitPamBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Create PAM';
                     });
             });
+        });
+
+        // Form submission for editing PAM
+        document.addEventListener('DOMContentLoaded', function() {
+            const editPamForm = document.getElementById('editPamForm');
+            const submitEditPamBtn = document.getElementById('submitEditPamBtn');
+            const editPamErrors = document.getElementById('editPamErrors');
+
+            if (editPamForm) {
+                editPamForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    // Get form elements safely
+                    const elements = {
+                        id: document.getElementById('edit_pam_id'),
+                        name: document.getElementById('edit_pam_name'),
+                        code: document.getElementById('edit_pam_code'),
+                        address: document.getElementById('edit_pam_address'),
+                        activeCheckbox: document.getElementById('edit_pam_is_active')
+                    };
+
+                    // Basic client-side validation
+                    const id = elements.id ? elements.id.value : '';
+                    const name = elements.name ? elements.name.value.trim() : '';
+                    const code = elements.code ? elements.code.value.trim() : '';
+                    const address = elements.address ? elements.address.value.trim() : '';
+
+                    if (!id || !name || !code || !address) {
+                        if (editPamErrors) {
+                            editPamErrors.innerHTML =
+                                'Please fill in all required fields (Name, Code, and Address).';
+                            editPamErrors.classList.remove('d-none');
+                        }
+                        return;
+                    }
+
+                    // Disable submit button
+                    if (submitEditPamBtn) {
+                        submitEditPamBtn.disabled = true;
+                        submitEditPamBtn.innerHTML =
+                            '<span class="spinner-border spinner-border-sm me-1"></span>Updating...';
+                    }
+
+                    if (editPamErrors) {
+                        editPamErrors.classList.add('d-none');
+                    }
+
+                    const formData = new FormData(editPamForm);
+                    const submitData = Object.fromEntries(formData.entries());
+
+                    // Handle checkbox
+                    submitData.is_active = elements.activeCheckbox ?
+                        (elements.activeCheckbox.checked ? '1' : '0') : '0';
+
+                    // Convert to PUT request for Laravel
+                    submitData._method = 'PUT';
+
+                    fetch(`/pam/${id}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                    .getAttribute('content'),
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify(submitData)
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(data => {
+                                    throw {
+                                        status: response.status,
+                                        response: data
+                                    };
+                                }).catch(() => {
+                                    throw {
+                                        status: response.status
+                                    };
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Close modal safely
+                                const modalElement = document.getElementById('editPamModal');
+                                if (modalElement) {
+                                    const modal = bootstrap.Modal.getInstance(modalElement);
+                                    if (modal) {
+                                        modal.hide();
+                                    }
+                                }
+
+                                // Show success message
+                                showNotification(data.message || 'PAM updated successfully!',
+                                    'success');
+
+                                // Reload page after a short delay to show updated data
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                // Show error messages
+                                let errorMessage = '';
+                                if (data.errors) {
+                                    Object.values(data.errors).forEach(errors => {
+                                        errors.forEach(error => {
+                                            errorMessage += error + '<br>';
+                                        });
+                                    });
+                                } else {
+                                    errorMessage = data.message ||
+                                        'An error occurred while updating the PAM.';
+                                }
+
+                                if (editPamErrors) {
+                                    editPamErrors.innerHTML = errorMessage;
+                                    editPamErrors.classList.remove('d-none');
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+
+                            // Handle unauthorized access
+                            let errorMessage = 'An unexpected error occurred. Please try again.';
+                            if (error.status === 403) {
+                                errorMessage = 'Access denied. You do not have permission to perform this action.';
+                            } else if (error.status === 401) {
+                                errorMessage = 'Your session has expired. Please login again.';
+                            }
+
+                            if (editPamErrors) {
+                                editPamErrors.innerHTML = errorMessage;
+                                editPamErrors.classList.remove('d-none');
+                            }
+                        })
+                        .finally(() => {
+                            // Re-enable submit button
+                            if (submitEditPamBtn) {
+                                submitEditPamBtn.disabled = false;
+                                submitEditPamBtn.innerHTML =
+                                    '<i class="bi bi-check-lg me-1"></i>Update PAM';
+                            }
+                        });
+                });
+            }
         });
 
         function showNotification(message, type = 'info') {

@@ -18,7 +18,7 @@ class FixedFee extends Model
         'effective_from',
         'effective_to',
         'description',
-        'status',
+        'is_active',
     ];
 
     protected $casts = [

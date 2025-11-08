@@ -92,9 +92,11 @@ Route::middleware('auth', 'role:superadmin')->group(function () {
         });
 
         // PAM CRUD - Superadmin only for create, update, delete
-        Route::post('/', [PamManagementController::class, 'storePam'])->name('store')->middleware('role:superadmin');
-        Route::put('/{id}', [PamManagementController::class, 'updatePam'])->name('update')->middleware('role:superadmin');
-        Route::delete('/{id}', [PamManagementController::class, 'destroyPam'])->name('destroy')->middleware('role:superadmin');
+        Route::post('/', [PamManagementController::class, 'store'])->name('store')->middleware('role:superadmin');
+        Route::get('/{id}/edit', [PamManagementController::class, 'edit'])->name('edit')->middleware('role:superadmin');
+        Route::put('/{id}', [PamManagementController::class, 'update'])->name('update')->middleware('role:superadmin');
+        Route::delete('/{id}', [PamManagementController::class, 'destroy'])->name('destroy')->middleware('role:superadmin');
+        Route::put('/{id}/toggle-status', [PamManagementController::class, 'toggleStatus'])->name('toggle-status')->middleware('role:superadmin');
     });
 
     // User Management routes

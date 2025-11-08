@@ -26,7 +26,7 @@
                         <td>{{ number_format($tier->meter_min, 2) }} - {{ number_format($tier->meter_max, 2) }}</td>
                         <td>Rp {{ number_format($tier->amount, 0, ',', '.') }}</td>
                         <td>{{ $tier->effective_from?->format('d M y') }}
-                            {{ $tier->effective_to ? ' to ' . $tier->effective_to->format('d M Y') : '' }}</td>
+                            {{ $tier->effective_to ? ' - ' . $tier->effective_to->format('d M y') : '' }}</td>
                         <td>
                             @if ($tier->is_active == true)
                                 <span class="badge bg-success">Active</span>

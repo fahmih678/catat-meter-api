@@ -12,6 +12,7 @@
                     <th>Group Name</th>
                     <th>Fee Name</th>
                     <th>Amount</th>
+                    <th>Effectivity Date</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -23,6 +24,8 @@
                         <td>{{ $fee->name }}</td>
 
                         <td>Rp {{ number_format($fee->amount, 0, ',', '.') }}</td>
+                        <td>{{ $fee->effective_from?->format('d M y') }}
+                            {{ $fee->effective_to ? ' - ' . $fee->effective_to->format('d M y') : '' }}</td>
                         <td>
                             @if ($fee->status === 'active' || (isset($fee->is_active) && $fee->is_active))
                                 <span class="badge bg-success">Active</span>

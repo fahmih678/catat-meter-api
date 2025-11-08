@@ -36,11 +36,21 @@
                         <small class="text-muted">{{ $pam->created_at->format('M d, Y') }}</small>
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewPam({{ $pam->id }})">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewPam({{ $pam->id }})" title="View Details">
                             <i class="bi bi-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-warning" onclick="editPam({{ $pam->id }})">
+                        <button class="btn btn-sm btn-outline-warning me-1" onclick="editPam({{ $pam->id }})" title="Edit PAM">
                             <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-{{ $pam->is_active ? 'outline-secondary' : 'outline-success' }} me-1"
+                                onclick="togglePamStatus({{ $pam->id }}, {{ $pam->is_active ? 'true' : 'false' }})"
+                                title="{{ $pam->is_active ? 'Deactivate' : 'Activate' }} PAM">
+                            <i class="bi bi-{{ $pam->is_active ? 'pause' : 'play' }}"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger"
+                                onclick="deletePam({{ $pam->id }}, '{{ $pam->name }}')"
+                                title="Delete PAM">
+                            <i class="bi bi-trash"></i>
                         </button>
                     </td>
                 </tr>

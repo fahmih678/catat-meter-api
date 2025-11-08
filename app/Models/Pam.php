@@ -16,9 +16,11 @@ class Pam extends Model
         'phone',
         'address',
         'code',
+        'email',
         'logo_url',
-        'status',
+        'description',
         'coordinate',
+        'is_active',
         'created_by',
     ];
 

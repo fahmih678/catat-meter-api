@@ -21,7 +21,6 @@ class PamModalManager {
         const form = document.getElementById('createAreaForm');
         form.reset();
         document.getElementById('areaCode').value = code; // Keep the generated code
-        document.getElementById('areaStatus').value = '1'; // Set to Active by default
 
         modal.show();
     }
@@ -35,7 +34,6 @@ class PamModalManager {
         document.getElementById('editAreaName').value = areaData.name;
         document.getElementById('editAreaCode').value = areaData.code;
         document.getElementById('editAreaDescription').value = areaData.description || '';
-        document.getElementById('editAreaStatus').value = areaData.is_active ? '1' : '0';
 
         const modal = new bootstrap.Modal(document.getElementById('editAreaModal'));
         modal.show();

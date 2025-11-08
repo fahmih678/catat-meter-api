@@ -15,6 +15,7 @@ class TariffGroup extends Model
     protected $fillable = [
         'pam_id',
         'name',
+        'is_active',
         'description',
     ];
 

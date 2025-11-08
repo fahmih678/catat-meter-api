@@ -79,15 +79,6 @@
                         <label for="editAreaDescription" class="form-label">Description</label>
                         <textarea class="form-control" id="editAreaDescription" name="description" rows="3"></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label for="editAreaStatus" class="form-label">Status <span
-                                class="text-danger">*</span></label>
-                        <select class="form-select" id="editAreaStatus" name="is_active" required>
-                            <option value="">Select Status</option>
-                            <option value="1">Active</option>
-                            <option value="0">Inactive</option>
-                        </select>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">

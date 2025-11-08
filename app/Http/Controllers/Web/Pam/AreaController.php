@@ -186,7 +186,6 @@ class AreaController extends Controller
                 'name' => 'required|string|max:255',
                 'code' => 'required|string|max:50|unique:areas,code,' . $id . ',id,pam_id,' . $pamId,
                 'description' => 'nullable|string|max:1000',
-                'is_active' => 'required|boolean'
             ]);
 
             // Verify PAM exists
@@ -233,7 +232,6 @@ class AreaController extends Controller
                         'name' => $area->name,
                         'code' => $area->code,
                         'description' => $area->description,
-                        'is_active' => $area->is_active,
                         'updated_at' => $area->updated_at->format('Y-m-d H:i:s')
                     ]
                 ]);

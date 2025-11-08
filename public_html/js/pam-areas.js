@@ -48,10 +48,9 @@ class PamAreasManager {
             const cells = areaRow.getElementsByTagName('td');
             const areaData = {
                 id: id,
-                name: cells[0].textContent.trim(),
-                code: cells[1].textContent.trim(),
-                is_active: cells[3].textContent.trim() === 'Active',
-                description: '' // Would need to fetch from server if needed
+                code: cells[0].textContent.trim(),
+                name: cells[1].textContent.trim(),
+                description: cells[2].textContent.trim(),
             };
 
             this.modalManager.showEditAreaModal(areaData);
