@@ -3,8 +3,7 @@
 @section('title', 'PAM Management')
 
 @section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-    <li class="breadcrumb-item active">PAM Management</li>
+    <li class="breadcrumb-item active"><i class="bi bi-building me-1"></i>PAM Management</li>
 @endsection
 
 @section('content')
@@ -15,7 +14,7 @@
                 <div class="dashboard-card">
                     <div class="row align-items-center">
                         <div class="col">
-                            <h2 class="mb-1">PAM Management</h2>
+                            <h2 class="mb-1"><i class="bi bi-building me-1"></i>PAM Management</h2>
                             <p class="text-muted mb-0">Manage water utility companies, areas, and tariff settings</p>
                         </div>
                     </div>
@@ -552,7 +551,9 @@
                                 if (document.activeElement && modalElement.contains(document.activeElement)) {
                                     document.activeElement.blur();
                                 }
-                            }, { once: true });
+                            }, {
+                                once: true
+                            });
                         }
                     } else {
                         showNotification(data.message || 'Failed to load PAM data', 'danger');
@@ -1216,7 +1217,8 @@
                             // Handle unauthorized access
                             let errorMessage = 'An unexpected error occurred. Please try again.';
                             if (error.status === 403) {
-                                errorMessage = 'Access denied. You do not have permission to perform this action.';
+                                errorMessage =
+                                    'Access denied. You do not have permission to perform this action.';
                             } else if (error.status === 401) {
                                 errorMessage = 'Your session has expired. Please login again.';
                             }

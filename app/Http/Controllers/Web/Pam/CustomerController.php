@@ -136,7 +136,7 @@ class CustomerController extends Controller
                 'with_meters' => Customer::where('pam_id', $pamId)->whereNotNull('user_id')->count(),
             ];
             // return response()->json($statistics);
-            return view('dashboard.pam.customers', compact(
+            return view('dashboard.pam.customers.index', compact(
                 'pam',
                 'customers',
                 'areas',

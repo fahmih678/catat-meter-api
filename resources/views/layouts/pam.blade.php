@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,7 +35,7 @@
             transition: all 0.3s ease;
             z-index: 1000;
             overflow-y: auto;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
         }
 
         .sidebar.collapsed {
@@ -42,10 +43,10 @@
         }
 
         .sidebar-header {
-            background: rgba(0,0,0,0.1);
+            background: rgba(0, 0, 0, 0.1);
             padding: 1.2rem;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             height: var(--topbar-height);
             display: flex;
             align-items: center;
@@ -84,7 +85,7 @@
             display: flex;
             align-items: center;
             padding: 0.8rem 1.2rem;
-            color: rgba(255,255,255,0.8);
+            color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
             transition: all 0.3s ease;
             border-left: 3px solid transparent;
@@ -144,7 +145,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             position: sticky;
             top: 0;
             z-index: 999;
@@ -177,7 +178,7 @@
             padding: 0;
         }
 
-        .breadcrumb-item + .breadcrumb-item::before {
+        .breadcrumb-item+.breadcrumb-item::before {
             content: ">";
             color: #6c757d;
         }
@@ -230,7 +231,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
 
@@ -269,15 +270,15 @@
             background: white;
             border-radius: 15px;
             padding: 1.5rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
             border: none;
             transition: all 0.3s ease;
             height: 100%;
         }
 
         .dashboard-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         }
 
         .stat-card {
@@ -313,6 +314,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -324,6 +326,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Mobile Overlay -->
     <div class="mobile-overlay" id="mobileOverlay"></div>
@@ -339,19 +342,22 @@
 
         <div class="sidebar-menu">
             <div class="sidebar-item">
-                <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->is('dashboard') ? 'active' : '' }}">
+                <a href="{{ route('pam.show', $pam->id) }}"
+                    class="sidebar-link {{ request()->routeIs('pam.show') ? 'active' : '' }}">
                     <i class="bi bi-speedometer2"></i>
-                    <span>Dashboard</span>
+                    <span>Details PAM</span>
                 </a>
             </div>
             <div class="sidebar-item">
-                <a href="#" class="sidebar-link">
+                <a href="{{ route('pam.customers', $pam->id) }}"
+                    class="sidebar-link {{ request()->routeIs('pam.customers') ? 'active' : '' }}">
                     <i class="bi bi-people"></i>
                     <span>Pelanggan</span>
                 </a>
             </div>
             <div class="sidebar-item">
-                <a href="#" class="sidebar-link">
+                <a href="{{ route('pam.meter-readings.index', $pam->id) }}"
+                    class="sidebar-link {{ request()->routeIs('pam.meter-readings.*') ? 'active' : '' }}">
                     <i class="bi bi-speedometer"></i>
                     <span>Pencatatan Meter</span>
                 </a>
@@ -377,10 +383,10 @@
 
             <hr style="border-color: rgba(255,255,255,0.1); margin: 2rem 1rem;">
 
-            <div class="sidebar-item">
-                <a href="{{ route('logout') }}" class="sidebar-link" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();">
-                    <i class="bi bi-box-arrow-right"></i>
-                    <span>Logout</span>
+            <div class="sidebar-item text-center">
+                <a href="{{ route('pam.index') }}" class="sidebar-link bg-warning text-black rounded-pill">
+                    <i class="bi bi-building"></i>
+                    <span>Pam Management</span>
                 </a>
             </div>
         </div>
@@ -421,12 +427,15 @@
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
                     <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Pengaturan</a></li>
-                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
                     <li>
                         <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="d-none">
                             @csrf
                         </form>
-                        <a class="dropdown-item" href="#" onclick="event.preventDefault(); document.getElementById('logoutForm').submit();">
+                        <a class="dropdown-item" href="#"
+                            onclick="event.preventDefault(); document.getElementById('logoutForm').submit();">
                             <i class="bi bi-box-arrow-right me-2"></i>Logout
                         </a>
                     </li>
@@ -471,11 +480,12 @@
 
         // Initialize tooltips
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
     </script>
 
     @yield('scripts')
 </body>
+
 </html>

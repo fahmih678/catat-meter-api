@@ -3,7 +3,6 @@
 @section('title', 'User Management')
 
 @section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
     <li class="breadcrumb-item active">User Management</li>
 @endsection
 
@@ -21,7 +20,7 @@
                     <div class="row align-items-center">
                         <div class="col">
                             <h2 class="mb-2">
-                                <i class="bi bi-people-fill me-2 text-primary"></i>
+                                <i class="bi bi-people-fill me-2"></i>
                                 User Management
                             </h2>
                             <p class="text-muted mb-0">Manage user accounts and role assignments</p>
@@ -109,8 +108,7 @@
                                         <td>
                                             <div class="form-check form-switch">
                                                 <input class="form-check-input status-toggle" type="checkbox"
-                                                    id="statusToggle{{ $user->id }}"
-                                                    data-user-id="{{ $user->id }}"
+                                                    id="statusToggle{{ $user->id }}" data-user-id="{{ $user->id }}"
                                                     {{ $user->is_active ? 'checked' : '' }}
                                                     {{ $user->id == auth()->id() ? 'disabled' : '' }}>
                                                 <label class="form-check-label" for="statusToggle{{ $user->id }}">

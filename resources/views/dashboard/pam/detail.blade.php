@@ -1,11 +1,9 @@
-@extends('layouts.main')
+@extends('layouts.pam')
 
 @section('title', 'PAM Detail - ' . ($pam->name ?? 'PAM Not Found'))
 
 @section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-    <li class="breadcrumb-item"><a href="{{ route('pam.index') }}">PAM Management</a></li>
-    <li class="breadcrumb-item active">{{ $pam->name ?? 'PAM Not Found' }}</li>
+    <li class="breadcrumb-item active"><i class="bi bi-building me-1"></i>{{ $pam->name ?? 'PAM Not Found' }}</li>
 @endsection
 
 @push('head')
@@ -43,14 +41,6 @@
                                     @endif
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-auto">
-                            <a href="{{ route('pam.customers', $pam->id) }}" class="btn btn-info me-2">
-                                <i class="bi bi-people me-2"></i>Pelanggan
-                            </a>
-                            <button class="btn btn-warning me-2" onclick="editPam({{ $pam->id }})">
-                                <i class="bi bi-pencil me-2"></i>Edit PAM
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -121,16 +111,16 @@
     </div>
 
     <!-- Tariff Group Modals -->
-    @include('dashboard.pam.modals.tariff-group')
+    @include('dashboard.pam.partials.detail-modal.tariff-group')
 
     <!-- Area Modals -->
-    @include('dashboard.pam.modals.area')
+    @include('dashboard.pam.partials.detail-modal.area')
 
     <!-- Fixed Fee Modals -->
-    @include('dashboard.pam.modals.fixed-fee')
+    @include('dashboard.pam.partials.detail-modal.fixed-fee')
 
     <!-- Tariff Tier Modals -->
-    @include('dashboard.pam.modals.tariff-tier')
+    @include('dashboard.pam.partials.detail-modal.tariff-tier')
 @endsection
 
 @push('styles')

@@ -328,6 +328,74 @@ function generateMeterNumber(event) {
         });
 }
 
+/**
+ * Show add customer modal
+ */
+function showAddCustomerModal() {
+    console.log('showAddCustomerModal called');
+
+    // Reset form
+    const form = document.getElementById('addCustomerForm');
+    if (form) {
+        form.reset();
+    }
+
+    // Reset customer number field
+    const customerNumberField = document.getElementById('customer_number');
+    if (customerNumberField) {
+        customerNumberField.value = '';
+        customerNumberField.readOnly = true;
+    }
+
+    // Reset meter number field
+    const meterNumberField = document.getElementById('meter_number');
+    if (meterNumberField) {
+        meterNumberField.value = '';
+        meterNumberField.readOnly = true;
+    }
+
+    // Set default date for installation
+    const installedAtField = document.getElementById('installed_at');
+    if (installedAtField) {
+        installedAtField.valueAsDate = new Date();
+    }
+
+    // Show modal with accessibility fix
+    const modalElement = document.getElementById('addCustomerModal');
+    const modal = new bootstrap.Modal(modalElement);
+
+    modalElement.removeAttribute('aria-hidden');
+    modal.show();
+
+    setTimeout(() => {
+        modalElement.setAttribute('aria-hidden', 'true');
+    }, 300);
+}
+
+/**
+ * Reset filters
+ */
+function resetFilters() {
+    console.log('resetFilters called');
+
+    // Reset form values
+    document.getElementById('search').value = '';
+    document.getElementById('filter_area_id').value = '';
+    document.getElementById('status').value = '';
+    document.getElementById('per_page').value = '10';
+
+    // Submit form to reset
+    document.getElementById('filterForm').submit();
+}
+
+/**
+ * Apply filters
+ */
+function applyFilters() {
+    console.log('applyFilters called');
+    document.getElementById('filterForm').submit();
+}
+
 // Expose all functions to global scope for onclick handlers
 window.viewCustomer = viewCustomer;
 window.editCustomer = editCustomer;
@@ -338,6 +406,7 @@ window.editMeter = editMeter;
 window.deleteMeter = deleteMeter;
 window.showAddMeterModal = showAddMeterModal;
 window.showAddReadingModal = showAddReadingModal;
+window.showAddCustomerModal = showAddCustomerModal;
 window.editReading = editReading;
 window.deleteReading = deleteReading;
 window.backToCustomerMeters = backToCustomerMeters;
@@ -345,6 +414,8 @@ window.exportCustomers = exportCustomers;
 window.refreshTable = refreshTable;
 window.generateCustomerNumber = generateCustomerNumber;
 window.generateMeterNumber = generateMeterNumber;
+window.resetFilters = resetFilters;
+window.applyFilters = applyFilters;
 
 // Fallback: get PAM ID from URL if not properly set
 if (!currentPamId || currentPamId === 0) {

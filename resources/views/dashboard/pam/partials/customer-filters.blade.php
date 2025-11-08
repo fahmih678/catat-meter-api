@@ -1,13 +1,14 @@
 <div class="dashboard-card">
-    <form method="GET" action="{{ route('pam.customers', $pam->id) }}" id="filterForm">
+    <form method="GET" action="{{ route('pam.customers', $pam->id) }}" id="filterForm" autocomplete="off">
         <div class="row g-3">
             <div class="col-md-4">
                 <label for="search" class="form-label fw-semibold">
                     <i class="bi bi-search me-1"></i>Cari Pelanggan
                 </label>
                 <input type="text" class="form-control" id="search" name="search"
-                    value="{{ $search }}"
-                    placeholder="Nama, Nomor Pelanggan, Telepon, atau Alamat...">
+                    value="{{ e($search) }}"
+                    placeholder="Nama, Nomor Pelanggan, Telepon, atau Alamat..."
+                    maxlength="255">
             </div>
             <div class="col-md-3">
                 <label for="filter_area_id" class="form-label fw-semibold">

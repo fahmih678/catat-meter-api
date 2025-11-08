@@ -45,47 +45,6 @@
             </a>
         </div>
 
-        <div class="sidebar-item">
-            <a href="#" class="sidebar-link" data-bs-toggle="tooltip" data-bs-placement="right" title="Pelanggan">
-                <i class="bi bi-people"></i>
-                <span>Pelanggan</span>
-            </a>
-        </div>
-
-        <div class="sidebar-item">
-            <a href="#" class="sidebar-link" data-bs-toggle="tooltip" data-bs-placement="right"
-                title="Pencatatan Meter">
-                <i class="bi bi-speedometer"></i>
-                <span>Pencatatan Meter</span>
-            </a>
-        </div>
-
-        <div class="sidebar-item">
-            <a href="#" class="sidebar-link" data-bs-toggle="tooltip" data-bs-placement="right" title="Loket">
-                <i class="bi bi-credit-card"></i>
-                <span>Loket</span>
-            </a>
-        </div>
-
-        <!-- Reports Menu Group -->
-        <div class="sidebar-divider">
-            <small class="sidebar-divider-text">REPORTS</small>
-        </div>
-
-        <div class="sidebar-item">
-            <a href="#" class="sidebar-link" data-bs-toggle="tooltip" data-bs-placement="right" title="Laporan">
-                <i class="bi bi-file-text"></i>
-                <span>Laporan</span>
-            </a>
-        </div>
-
-        <div class="sidebar-item">
-            <a href="#" class="sidebar-link" data-bs-toggle="tooltip" data-bs-placement="right" title="Analytics">
-                <i class="bi bi-graph-up"></i>
-                <span>Analytics</span>
-            </a>
-        </div>
-
         <!-- Settings Menu Group -->
         <div class="sidebar-divider">
             <small class="sidebar-divider-text">SETTINGS</small>

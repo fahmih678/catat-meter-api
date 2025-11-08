@@ -108,7 +108,7 @@
                             @endif
                         </td>
                         <td class="text-center">
-                            <div class=" btn-group-sm">
+                            <div class="btn-group btn-group-sm">
                                 <button class="btn btn-outline-primary" onclick="viewCustomer({{ $customer->id }})"
                                     title="Lihat Detail">
                                     <i class="bi bi-eye"></i>
@@ -122,7 +122,7 @@
                                     <i class="bi bi-speedometer2"></i>
                                 </button>
                                 <button class="btn btn-outline-danger"
-                                    onclick="deleteCustomer({{ $customer->id }}, '{{ $customer->name }}')"
+                                    onclick="deleteCustomer({{ $customer->id }}, '{{ e($customer->name) }}')"
                                     title="Hapus">
                                     <i class="bi bi-trash"></i>
                                 </button>

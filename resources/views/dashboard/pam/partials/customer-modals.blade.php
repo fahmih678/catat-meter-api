@@ -35,19 +35,24 @@
                             <label for="name" class="form-label fw-semibold">
                                 Nama Pelanggan <span class="text-danger">*</span>
                             </label>
-                            <input type="text" class="form-control" id="name" name="name" required>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                maxlength="255" pattern="[a-zA-Z\s\-\.,']+"
+                                title="Nama hanya boleh mengandung huruf, spasi, dan karakter .,-'"
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-12">
                             <label for="address" class="form-label fw-semibold">
                                 Alamat <span class="text-danger">*</span>
                             </label>
-                            <textarea class="form-control" id="address" name="address" rows="2" required></textarea>
+                            <textarea class="form-control" id="address" name="address" rows="2" required
+                                maxlength="500" placeholder="Masukkan alamat lengkap"></textarea>
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-4">
                             <label for="phone" class="form-label fw-semibold">Telepon</label>
-                            <input type="tel" class="form-control" id="phone" name="phone">
+                            <input type="tel" class="form-control" id="phone" name="phone"
+                                maxlength="15" pattern="[0-9\-\+\(\)s]+"
+                                placeholder="08xx-xxxx-xxxx atau +62xxx" title="Format nomor telepon yang valid">
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-4">

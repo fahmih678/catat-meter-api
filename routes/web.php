@@ -11,6 +11,7 @@ use App\Http\Controllers\Web\Pam\{
     CustomerController,
     MeterController,
     MeterReadingController,
+    MeterReadingByMonthController,
     TariffController,
     FixedFeeController,
     TariffTierController
@@ -68,6 +69,11 @@ Route::middleware('auth', 'role:superadmin')->group(function () {
             Route::get('/meters/{meterId}', [MeterController::class, 'show'])->name('meters.show');
             Route::put('/meters/{meterId}', [MeterController::class, 'update'])->name('meters.update');
             Route::delete('/meters/{meterId}', [MeterController::class, 'destroy'])->name('meters.destroy');
+
+            // Meter readings by month - using MeterReadingByMonthController
+            Route::get('/meter-readings', [MeterReadingByMonthController::class, 'index'])->name('meter-readings.index');
+            Route::get('/meter-readings/month/{month}', [MeterReadingByMonthController::class, 'show'])->name('meter-readings.month');
+            Route::get('/meter-readings/export/{month}', [MeterReadingByMonthController::class, 'export'])->name('meter-readings.export');
 
             // Meter readings routes - using MeterReadingController
             Route::get('/meters/{meterId}/readings', [MeterReadingController::class, 'index'])->name('meters.readings.index');
