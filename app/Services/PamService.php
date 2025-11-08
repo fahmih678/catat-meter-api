@@ -125,17 +125,17 @@ class PamService extends BaseService
     /**
      * Get PAM areas
      */
-    public function getPamAreas($pamId)
+    public function getPamAreas($pamId, $fields = ['*'])
     {
-        return $this->pamRepository->getPamAreas($pamId);
+        return $this->pamRepository->getPamAreas($pamId, $fields);
     }
 
     /**
      * Get PAM tariff groups
      */
-    public function getPamTariffGroups($pamId)
+    public function getPamTariffGroups($pamId, $fields = ['*'])
     {
-        return $this->pamRepository->getPamTariffGroups($pamId);
+        return $this->pamRepository->getPamTariffGroups($pamId, $fields);
     }
 
     /**

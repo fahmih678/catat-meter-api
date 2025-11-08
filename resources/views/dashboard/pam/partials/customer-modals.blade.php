@@ -20,7 +20,8 @@
                             <div class="input-group">
                                 <input type="text" class="form-control" id="customer_number" name="customer_number"
                                     placeholder="Klik tombol Generate" readonly aria-describedby="customerNumberHelp">
-                                <button class="btn btn-outline-secondary" type="button" onclick="generateCustomerNumber(event)"
+                                <button class="btn btn-outline-secondary" type="button"
+                                    onclick="generateCustomerNumber(event)"
                                     aria-label="Generate nomor pelanggan otomatis">
                                     <i class="bi bi-arrow-clockwise"></i> Generate
                                 </button>
@@ -85,8 +86,8 @@
                             <div class="input-group">
                                 <input type="text" class="form-control" id="meter_number" name="meter_number"
                                     placeholder="Opsional: Isi jika ada meter" aria-describedby="meterNumberHelp">
-                                <button class="btn btn-outline-secondary" type="button" onclick="generateMeterNumber(event)"
-                                    aria-label="Generate nomor meter otomatis">
+                                <button class="btn btn-outline-secondary" type="button"
+                                    onclick="generateMeterNumber(event)" aria-label="Generate nomor meter otomatis">
                                     <i class="bi bi-arrow-clockwise"></i> Generate
                                 </button>
                             </div>
@@ -210,59 +211,21 @@
                         <div class="col-12">
                             <hr>
                             <h6 class="text-primary mb-3">
-                                <i class="bi bi-speedometer2 me-2"></i>Informasi Meter
+                                <i class="bi bi-speedometer2 me-2"></i>Manajemen Meter
                             </h6>
-                        </div>
-                        <div class="col-12 mb-3">
-                            <label class="form-label fw-semibold">Aksi Meter</label>
-                            <select class="form-select" id="edit_meter_action" name="meter_action"
-                                onchange="toggleMeterFields()">
-                                <option value="">Tidak ada perubahan</option>
-                                <option value="add">Tambah meter baru</option>
-                                <option value="update">Update meter yang ada</option>
-                                <option value="remove">Nonaktifkan meter</option>
-                            </select>
-                        </div>
-                        <div id="editMeterFields" style="display: none;">
-                            <div class="col-md-6">
-                                <label for="edit_meter_id" class="form-label fw-semibold">Pilih Meter</label>
-                                <select class="form-select" id="edit_meter_id" name="meter_id">
-                                    <option value="">Pilih Meter</option>
-                                </select>
-                                <div class="invalid-feedback"></div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="edit_meter_number" class="form-label fw-semibold">Nomor Meter</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="edit_meter_number"
-                                        name="meter_number" aria-describedby="editMeterNumberHelp">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="generateEditMeterNumber(event)"
-                                        aria-label="Generate nomor meter otomatis untuk edit">
-                                        <i class="bi bi-arrow-clockwise"></i> Generate
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <p class="text-muted mb-0">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Kelola meter pelanggan (tambah, edit, hapus meter)
+                                    </p>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <button type="button" class="btn btn-info btn-sm"
+                                        onclick="showCustomerMetersModal()">
+                                        <i class="bi bi-list-ul me-1"></i> Kelola Meter
                                     </button>
                                 </div>
-                                <div class="invalid-feedback"></div>
-                                <small id="editMeterNumberHelp" class="form-text text-muted">
-                                    Generate nomor meter baru untuk update atau tambah meter
-                                </small>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="edit_installed_at" class="form-label fw-semibold">Tanggal Pasang</label>
-                                <input type="date" class="form-control" id="edit_installed_at"
-                                    name="installed_at">
-                                <div class="invalid-feedback"></div>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="edit_initial_installed_meter" class="form-label fw-semibold">Awal Meter
-                                    (m³)</label>
-                                <input type="number" step="0.01" min="0" class="form-control"
-                                    id="edit_initial_installed_meter" name="initial_installed_meter">
-                                <div class="invalid-feedback"></div>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="edit_meter_notes" class="form-label fw-semibold">Catatan Meter</label>
-                                <input type="text" class="form-control" id="edit_meter_notes" name="meter_notes">
-                                <div class="invalid-feedback"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -312,3 +275,153 @@
         </div>
     </div>
 </div>
+
+<!-- Customer Meters Modal -->
+<div class="modal fade" id="customerMetersModal" tabindex="-1" aria-labelledby="customerMetersModalLabel"
+    data-bs-backdrop="static" data-bs-keyboard="true" role="dialog">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="customerMetersModalLabel">
+                    <i class="bi bi-speedometer2 me-2"></i>Daftar Meter Pelanggan
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-2">
+                            <i class="bi bi-person me-2"></i>Informasi Pelanggan
+                        </h6>
+                        <div id="customerInfoSection">
+                            <!-- Customer info will be loaded here -->
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-success" onclick="showAddMeterModal()">
+                            <i class="bi bi-plus-circle me-2"></i>Tambah Meter Baru
+                        </button>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6 class="text-primary mb-3">
+                    <i class="bi bi-list-ul me-2"></i>Daftar Meter
+                </h6>
+
+                <div class="table-responsive">
+                    <table class="table table-hover" id="customerMetersTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>No</th>
+                                <th>Nomor Meter</th>
+                                <th>Tanggal Pasang</th>
+                                <th>Awal Meter (m³)</th>
+                                <th>Status</th>
+                                <th>Catatan</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customerMetersTableBody">
+                            <!-- Meter data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Meter Modal -->
+<div class="modal fade" id="addEditMeterModal" tabindex="-1" aria-labelledby="addEditMeterModalLabel"
+    data-bs-backdrop="static" data-bs-keyboard="true" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white" id="addEditMeterModalHeader">
+                <h5 class="modal-title" id="addEditMeterModalLabel">
+                    <i class="bi bi-plus-circle me-2"></i>Tambah Meter Baru
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <form id="addEditMeterForm" method="POST">
+                <input type="hidden" id="meter_customer_id" name="customer_id">
+                <input type="hidden" id="meter_id" name="meter_id">
+                <input type="hidden" id="meter_action" name="meter_action" value="add">
+
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="add_edit_meter_number" class="form-label fw-semibold">
+                                Nomor Meter <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="add_edit_meter_number"
+                                    name="meter_number" placeholder="Klik tombol Generate" readonly>
+                                <button class="btn btn-outline-secondary" type="button"
+                                    onclick="generateAddEditMeterNumber(event)"
+                                    aria-label="Generate nomor meter otomatis">
+                                    <i class="bi bi-arrow-clockwise"></i> Generate
+                                </button>
+                            </div>
+                            <div class="invalid-feedback"></div>
+                            <small class="form-text text-muted">
+                                Klik tombol Generate untuk membuat nomor meter otomatis
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="add_edit_installed_at" class="form-label fw-semibold">
+                                Tanggal Pasang <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" class="form-control" id="add_edit_installed_at"
+                                name="installed_at" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="add_edit_initial_installed_meter" class="form-label fw-semibold">
+                                Awal Meter (m³)
+                            </label>
+                            <input type="number" step="0.01" min="0" class="form-control"
+                                id="add_edit_initial_installed_meter" name="initial_installed_meter"
+                                placeholder="0.00">
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="add_edit_meter_notes" class="form-label fw-semibold">Catatan Meter</label>
+                            <textarea class="form-control" id="add_edit_meter_notes" name="notes" rows="2"
+                                placeholder="Opsional: Catatan tambahan untuk meter"></textarea>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-4">
+                                <input class="form-check-input" type="checkbox" id="add_edit_meter_is_active"
+                                    name="is_active" checked>
+                                <label class="form-check-label fw-semibold" for="add_edit_meter_is_active">
+                                    Aktif
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-success" id="saveMeterBtn">
+                        <i class="bi bi-check-circle me-2"></i>Simpan Meter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Customer modals JavaScript is loaded from customer-table.js --}}
+{{-- No additional scripts needed here to avoid duplication --}}

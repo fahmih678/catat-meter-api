@@ -255,7 +255,14 @@ class CustomerController extends Controller
     {
         try {
             $customer = Customer::where('pam_id', $pamId)
-                ->with(['area', 'tariffGroup', 'user', 'meters'])
+                ->with([
+                    'area:id,name',
+                    'tariffGroup:id,name',
+                    'tariffGroup.activeTariffTiers:id,tariff_group_id,description',
+                    'tariffGroup.activeFixedFees:id,tariff_group_id,description',
+                    'user',
+                    'meters',
+                ])
                 ->findOrFail($id);
 
             return response()->json([
@@ -436,11 +443,14 @@ class CustomerController extends Controller
             }
 
             // Get available areas and tariff groups
-            $areas = $this->pamService->getPamAreas($pamId);
-            $tariffGroups = $this->pamService->getPamTariffGroups($pamId);
+            $areas = $this->pamService->getPamAreas($pamId, ['id', 'name', 'code']);
+            $tariffGroups = $this->pamService->getPamTariffGroups($pamId, ['id', 'name']);
 
             // Get available users (for user_id assignment)
-            $users = User::select('id', 'name')->where('is_active', true)->get();
+            $users = User::select('id', 'name')
+                ->where('pam_id', $pamId)
+                ->where('is_active', true)
+                ->get();
 
             return response()->json([
                 'success' => true,

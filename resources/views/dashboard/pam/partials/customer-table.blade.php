@@ -68,18 +68,15 @@
                         </td>
                         <td>
                             @if ($customer->tariffGroup)
-                                <span
-                                    class="badge bg-warning text-dark">{{ $customer->tariffGroup->name }}</span>
+                                <span class="badge bg-warning text-dark">{{ $customer->tariffGroup->name }}</span>
                             @else
                                 <span class="text-muted">-</span>
                             @endif
                         </td>
                         <td>
                             @if ($customer->meters && $customer->meters->count() > 0)
-                                <span class="badge bg-info"
-                                    title="{{ $customer->meters->count() }} meter terpasang">
-                                    <i
-                                        class="bi bi-speedometer2 me-1"></i>{{ $customer->meters->count() }}
+                                <span class="badge bg-info" title="{{ $customer->meters->count() }} meter terpasang">
+                                    <i class="bi bi-speedometer2 me-1"></i>{{ $customer->meters->count() }}
                                 </span>
                             @else
                                 <span class="text-muted">
@@ -111,18 +108,17 @@
                             @endif
                         </td>
                         <td class="text-center">
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary"
-                                    onclick="viewCustomer({{ $customer->id }})" title="Lihat Detail">
+                            <div class=" btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="viewCustomer({{ $customer->id }})"
+                                    title="Lihat Detail">
                                     <i class="bi bi-eye"></i>
                                 </button>
-                                <button class="btn btn-outline-warning"
-                                    onclick="editCustomer({{ $customer->id }})" title="Edit">
+                                <button class="btn btn-outline-warning" onclick="editCustomer({{ $customer->id }})"
+                                    title="Edit">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <button class="btn btn-outline-info"
-                                    onclick="viewMeterReadings({{ $customer->id }})"
-                                    title="Lihat Bacaan Meter">
+                                <button class="btn btn-outline-info" onclick="viewCustomerMeters({{ $customer->id }})"
+                                    title="Kelola Meter">
                                     <i class="bi bi-speedometer2"></i>
                                 </button>
                                 <button class="btn btn-outline-danger"
@@ -162,3 +158,19 @@
         </div>
     @endif
 </div>
+
+{{-- JavaScript for customer table functionality --}}
+<script>
+    // Set PAM ID for JavaScript
+    @php
+        $pamId = request()->route('pamId') ?? request()->segment(3) ?? (isset($pam) ? $pam->id : 0);
+    @endphp
+    window.currentPamId = {{ $pamId }};
+
+    // Debug: Log the PAM ID
+    console.log('PAM ID set to:', window.currentPamId);
+    console.log('Current URL:', window.location.pathname);
+</script>
+
+<script src="{{ asset('js/customer-table.js') }}"></script>
+<script src="{{ asset('js/customer-modals.js') }}"></script>

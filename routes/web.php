@@ -9,6 +9,8 @@ use App\Http\Controllers\Web\Pam\{
     PamManagementController,
     AreaController,
     CustomerController,
+    MeterController,
+    MeterReadingController,
     TariffController,
     FixedFeeController,
     TariffTierController
@@ -56,6 +58,24 @@ Route::middleware('auth', 'role:superadmin')->group(function () {
             // Generate unique numbers
             Route::get('/generate-customer-number', [CustomerController::class, 'generateCustomerNumber'])->name('customers.generate-number');
             Route::get('/generate-meter-number', [CustomerController::class, 'generateMeterNumber'])->name('customers.generate-meter-number');
+
+            // Customer meters - using MeterController
+            Route::get('/customers/{customerId}/meters', [MeterController::class, 'index'])->name('customers.meters.index');
+            Route::post('/customers/{customerId}/meters', [MeterController::class, 'store'])->name('customers.meters.store');
+            Route::get('/customers/{customerId}/generate-meter-number', [MeterController::class, 'generateMeterNumber'])->name('customers.meters.generate-number');
+
+            // Direct meter routes - using MeterController
+            Route::get('/meters/{meterId}', [MeterController::class, 'show'])->name('meters.show');
+            Route::put('/meters/{meterId}', [MeterController::class, 'update'])->name('meters.update');
+            Route::delete('/meters/{meterId}', [MeterController::class, 'destroy'])->name('meters.destroy');
+
+            // Meter readings routes - using MeterReadingController
+            Route::get('/meters/{meterId}/readings', [MeterReadingController::class, 'index'])->name('meters.readings.index');
+            Route::post('/meters/{meterId}/readings', [MeterReadingController::class, 'store'])->name('meters.readings.store');
+            Route::get('/meters/{meterId}/readings/statistics', [MeterReadingController::class, 'statistics'])->name('meters.readings.statistics');
+            Route::get('/meters/{meterId}/readings/{readingId}', [MeterReadingController::class, 'show'])->name('meters.readings.show');
+            Route::put('/meters/{meterId}/readings/{readingId}', [MeterReadingController::class, 'update'])->name('meters.readings.update');
+            Route::delete('/meters/{meterId}/readings/{readingId}', [MeterReadingController::class, 'destroy'])->name('meters.readings.destroy');
 
             // Areas within PAM - using AreaController
             Route::get('/areas', [AreaController::class, 'index'])->name('areas');

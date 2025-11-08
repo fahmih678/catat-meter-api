@@ -38,4 +38,14 @@ class TariffGroup extends Model
     {
         return $this->hasMany(FixedFee::class);
     }
+
+    public function activeTariffTiers()
+    {
+        return $this->hasMany(TariffTier::class)->where('is_active', true);
+    }
+
+    public function activeFixedFees()
+    {
+        return $this->hasMany(FixedFee::class)->where('is_active', true);
+    }
 }

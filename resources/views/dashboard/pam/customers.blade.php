@@ -38,26 +38,4 @@
     @include('dashboard.pam.partials.customer-styles')
 @endpush
 
-<!-- Include Customer JavaScript -->
-@push('scripts')
-    <script>
-        // Initialize PAM ID and customer management when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize PAM ID first
-            if (typeof initializePamId === 'function') {
-                initializePamId({{ $pam->id }});
-                console.log('PAM ID initialized:', {{ $pam->id }});
-            }
-
-            // Initialize customer management if not already initialized
-            if (typeof initializeCustomerManagement === 'function') {
-                // Check if already initialized to avoid duplicate initialization
-                if (!window.customerManagementInitialized) {
-                    initializeCustomerManagement();
-                    window.customerManagementInitialized = true;
-                }
-            }
-        });
-    </script>
-    <script src="{{ asset('js/customer-management.js') }}"></script>
-@endpush
+{{-- Customer JavaScript is loaded from the included partials --}}

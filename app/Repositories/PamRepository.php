@@ -73,9 +73,9 @@ class PamRepository extends BaseRepository
     /**
      * Get PAM areas
      */
-    public function getPamAreas($pamId)
+    public function getPamAreas($pamId, $fields)
     {
-        return Area::select('id', 'name', 'code', 'description')
+        return Area::select($fields)
             ->withCount('customers')
             ->where('pam_id', $pamId)
             ->orderBy('id', 'desc')
@@ -85,9 +85,9 @@ class PamRepository extends BaseRepository
     /**
      * Get PAM tariff groups
      */
-    public function getPamTariffGroups($pamId)
+    public function getPamTariffGroups($pamId, $fields)
     {
-        return TariffGroup::select('id', 'name', 'is_active', 'description')
+        return TariffGroup::select($fields)
             ->withCount('customers')
             ->withCount('tariffTiers')
             ->where('pam_id', $pamId)
