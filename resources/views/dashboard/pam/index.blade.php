@@ -681,11 +681,6 @@
             showNotification('View Fixed Fee functionality coming soon', 'info');
         }
 
-        function editFixedFee(id) {
-            console.log('Edit Fixed Fee:', id);
-            showNotification('Edit Fixed Fee functionality coming soon', 'info');
-        }
-
         // Modal functions
         function showCreatePamModal() {
             const modalElement = document.getElementById('createPamModal');

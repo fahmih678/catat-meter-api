@@ -108,7 +108,7 @@
                             @endif
                         </td>
                         <td class="text-center">
-                            <div class="btn-group btn-group-sm">
+                            <div class="btn-group-sm">
                                 <button class="btn btn-outline-primary" onclick="viewCustomer({{ $customer->id }})"
                                     title="Lihat Detail">
                                     <i class="bi bi-eye"></i>
@@ -163,7 +163,7 @@
 <script>
     // Set PAM ID for JavaScript
     @php
-        $pamId = request()->route('pamId') ?? request()->segment(3) ?? (isset($pam) ? $pam->id : 0);
+        $pamId = request()->route('pamId') ?? (request()->segment(3) ?? (isset($pam) ? $pam->id : 0));
     @endphp
     window.currentPamId = {{ $pamId }};
 

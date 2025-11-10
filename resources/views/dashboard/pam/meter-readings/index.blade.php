@@ -58,11 +58,10 @@
                                 <tr>
                                     <th>Periode</th>
                                     <th>Status</th>
-                                    <th>Total Pelanggan</th>
                                     <th>Total Pemakaian (m³)</th>
                                     <th>Total Tagihan</th>
                                     <th>Pembacaan</th>
-                                    <th>Verifikasi</th>
+                                    <th>Pelanggan</th>
                                     <th>Didaftarkan</th>
                                     <th class="text-center">Aksi</th>
                                 </tr>
@@ -72,9 +71,8 @@
                                     <tr>
                                         <td>
                                             <div>
-                                                <span class="badge bg-primary">{{ $month->period }}</span>
-                                                <br>
-                                                <small class="text-muted">{{ $month->period }}</small>
+                                                <span
+                                                    class="badge bg-primary">{{ date('M Y', strtotime($month->period)) }}</span>
                                             </div>
                                         </td>
                                         <td>
@@ -85,13 +83,7 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge bg-info text-dark">
-                                                <i class="bi bi-people me-1"></i>
-                                                {{ number_format($month->total_customers) }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-success text-dark">
+                                            <span class="badge bg-success">
                                                 <i class="bi bi-droplet me-1"></i>
                                                 {{ number_format($month->total_usage, 2) }}
                                             </span>
@@ -104,56 +96,40 @@
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <small class="text-muted me-1">Pembacaan:</small>
-                                                <span class="badge bg-info">
-                                                    {{ $month->total_readings ?? 0 }}
-                                                </span>
+                                                <small class="text-muted me-1">Pembacaan:
+                                                    <span
+                                                        class="badge bg-primary">{{ $month->meter_readings_count ?? 0 }}
+                                                    </span>
+                                                </small>
                                             </div>
-                                            <div class="d-flex align-items-center mt-1">
-                                                <small class="text-muted me-1">Rata-rata:</small>
-                                                <span class="badge bg-outline-info">
-                                                    {{ number_format($month->average_usage ?? 0, 1) }} m³
-                                                </span>
+                                            <div class="d-flex align-items-center">
+                                                <small class="text-muted me-1">Lunas:
+                                                    <span
+                                                        class="badge bg-success">{{ $month->paid_meter_readings_count ?? 0 }}
+                                                    </span>
+                                                </small>
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="d-flex align-items-center">
-                                                <small class="me-1">Terverifikasi:</small>
-                                                <span class="badge bg-success">
-                                                    {{ $month->verified_readings ?? 0 }}
-                                                </span>
-                                            </div>
-                                            <div class="d-flex align-items-center mt-1">
-                                                <small class="me-1">Menunggu:</small>
-                                                <span class="badge bg-warning text-dark">
-                                                    {{ $month->pending_readings ?? 0 }}
-                                                </span>
-                                            </div>
-                                            <div class="progress mt-2" style="height: 16px;">
-                                                <div class="progress-bar
-                                                    {{ ($month->verification_rate ?? 0) >= 90
-                                                        ? 'bg-success'
-                                                        : (($month->verification_rate ?? 0) >= 70
-                                                            ? 'bg-warning'
-                                                            : 'bg-danger') }}"
-                                                    role="progressbar"
-                                                    style="width: {{ $month->verification_rate ?? 0 }}%">
-                                                    <small>{{ $month->verification_rate ?? 0 }}%</small>
-                                                </div>
-                                            </div>
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-person me-1"></i>
+                                                {{ number_format($month->total_customers) }}
+                                            </span>
                                         </td>
                                         <td>
                                             <div>
                                                 <small class="text-muted d-block">
-                                                    <i class="bi bi-person me-1"></i>{{ $month->registered_by ?? '-' }}
+                                                    <i
+                                                        class="bi bi-person me-1"></i>{{ $month->registeredBy->name ?? '-' }}
                                                 </small>
                                                 <small class="text-muted d-block">
-                                                    <i class="bi bi-calendar me-1"></i>{{ $month->registered_at ?? '-' }}
+                                                    <i
+                                                        class="bi bi-calendar me-1"></i>{{ $month->created_at->format('d M Y') ?? '-' }}
                                                 </small>
                                             </div>
                                         </td>
                                         <td class="text-center">
-                                            <div class="btn-group btn-group-sm">
+                                            <div class="btn-group-sm">
                                                 <a href="{{ route('pam.meter-readings.month', ['pamId' => $pam->id, 'month' => $month->period]) }}"
                                                     class="btn btn-outline-primary" title="Lihat Detail">
                                                     <i class="bi bi-eye"></i>

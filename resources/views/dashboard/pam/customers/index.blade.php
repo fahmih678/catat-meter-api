@@ -60,5 +60,3 @@
 @push('styles')
     @include('dashboard.pam.partials.customer-styles')
 @endpush
-
-{{-- Customer JavaScript is loaded from the included partials --}}

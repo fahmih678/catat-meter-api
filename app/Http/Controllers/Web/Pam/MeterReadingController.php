@@ -7,6 +7,7 @@ use App\Models\MeterReading;
 use App\Models\Meter;
 use App\Http\Controllers\Api\V1\MeterReadingController as ApiMeterReadingController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class MeterReadingController extends Controller
@@ -124,7 +125,7 @@ class MeterReadingController extends Controller
                 'usage' => $usage,
                 'notes' => $validated['notes'] ?? null,
                 'status' => $validated['status'] ?? 'pending',
-                'reader_name' => $validated['reader_name'] ?? auth()->user()->name,
+                'reader_name' => $validated['reader_name'] ?? Auth::user()->name,
                 'pam_id' => $pamId,
             ]);
 
