@@ -364,7 +364,8 @@
                 </a>
             </div>
             <div class="sidebar-item">
-                <a href="#" class="sidebar-link">
+                <a href="{{ route('pam.bills.index', $pam->id) }}"
+                    class="sidebar-link {{ request()->routeIs('pam.bills.*') ? 'active' : '' }}">
                     <i class="bi bi-credit-card"></i>
                     <span>Pembayaran</span>
                 </a>

@@ -14,7 +14,8 @@ use App\Http\Controllers\Web\Pam\{
     MeterReadingByMonthController,
     TariffController,
     FixedFeeController,
-    TariffTierController
+    TariffTierController,
+    BillController
 };
 
 Route::middleware('guest')->group(function () {
@@ -117,6 +118,12 @@ Route::middleware('auth', 'role:superadmin')->group(function () {
             Route::get('/fixed-fees/{id}/edit', [FixedFeeController::class, 'edit'])->name('fixed-fees.edit')->middleware('role:superadmin');
             Route::put('/fixed-fees/{id}', [FixedFeeController::class, 'update'])->name('fixed-fees.update')->middleware('role:superadmin');
             Route::delete('/fixed-fees/{id}', [FixedFeeController::class, 'destroy'])->name('fixed-fees.destroy')->middleware('role:superadmin');
+
+            // Bills within PAM - using BillController
+            Route::get('/bills', [BillController::class, 'index'])->name('bills.index');
+            Route::post('/bills/{billId}/mark-as-paid', [BillController::class, 'markAsPaid'])->name('bills.mark-as-paid');
+            Route::post('/bills/{billId}/cancel-payment', [BillController::class, 'cancelPayment'])->name('bills.cancel-payment');
+            Route::delete('/bills/{billId}', [BillController::class, 'deleteBill'])->name('bills.delete');
         });
 
         // PAM CRUD - Superadmin only for create, update, delete

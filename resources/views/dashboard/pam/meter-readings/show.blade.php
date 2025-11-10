@@ -155,7 +155,6 @@
                                 <tbody>
                                     @foreach ($meterReadings as $index => $reading)
                                         <tr>
-
                                             <td>{{ $meterReadings->firstItem() + $index }}
                                             </td>
                                             <td>{{ $reading->reading_at }}

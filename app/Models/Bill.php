@@ -49,4 +49,9 @@ class Bill extends Model
     {
         return $this->belongsTo(MeterReading::class);
     }
+
+    public function paidBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'paid_by');
+    }
 }
