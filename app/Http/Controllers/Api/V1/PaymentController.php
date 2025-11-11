@@ -17,7 +17,7 @@ class PaymentController extends Controller
 {
     use HasPamFiltering;
 
-    public function getBilling($customerId): JsonResponse
+    public function getBills($customerId): JsonResponse
     {
         try {
             // Check if user can access billing features
@@ -98,7 +98,7 @@ class PaymentController extends Controller
         }
     }
 
-    public function payBilling(Request $request, int $customerId): JsonResponse
+    public function payBills(Request $request, int $customerId): JsonResponse
     {
         // Check if user can access billing features
         if (!RoleHelper::canAccessBilling()) {
@@ -207,7 +207,7 @@ class PaymentController extends Controller
         ], 200);
     }
 
-    public function removeBilling(Request $request, int $billId): JsonResponse
+    public function destroy(Request $request, int $billId): JsonResponse
     {
         try {
             // Check if user can access billing features

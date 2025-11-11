@@ -8,6 +8,7 @@ use App\Http\Traits\HasPamFiltering;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -391,7 +392,7 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         // Prevent self-deletion
-        if (RoleHelper::getUserPamId() === $user->id) {
+        if (Auth::user()->id === $user->id) {
             return response()->json([
                 'message' => 'Cannot delete your own account.',
             ], 403);

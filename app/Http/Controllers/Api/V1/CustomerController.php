@@ -262,9 +262,11 @@ class CustomerController extends Controller
      * @param int $userId
      * @return JsonResponse
      */
-    public function getBillsByUser(Request $request, int $userId): JsonResponse
+    public function getMyBills(Request $request): JsonResponse
     {
         try {
+            $user = $request->user();
+            $userId = $request->user()->id;
             // Validate query parameters
             $validated = $request->validate([
                 'customer_id' => 'nullable|integer|exists:customers,id',
@@ -345,28 +347,17 @@ class CustomerController extends Controller
                 'customers' => $userCustomers,
                 'pagination' => [
                     'total' => $bills->total(),
-                    'per_page' => $bills->perPage(),
-                    'current_page' => $bills->currentPage(),
-                    'hasNextPage' => $bills->hasMorePages(),
+                    'has_more_page' => $bills->hasMorePages(),
                 ],
             ], 200);
         } catch (\Exception $e) {
             Log::error('Error fetching bills by user: ' . $e->getMessage(), [
-                'user_id' => $userId,
+                'user_id' => $request->user()->id,
                 'filters' => $request->all(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'data' => [],
-                'pagination' => [
-                    'total' => 0,
-                    'per_page' => $perPage ?? 10,
-                    'current_page' => 1,
-                    'hasNextPage' => false,
-                ],
-                'message' => 'Failed to retrieve bills data'
-            ], 500);
+            return $this->errorResponse('Failed to retrieve bills data', 500);
         }
     }
 }

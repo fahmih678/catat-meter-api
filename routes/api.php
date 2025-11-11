@@ -21,6 +21,8 @@ use App\Http\Controllers\Api\V1\CatatMeterController as V1CatatMeterController;
 use App\Http\Controllers\Api\V1\MeterReadingController as V1MeterReadingController;
 use App\Http\Controllers\Api\V1\UserController as V1UserController;
 use App\Http\Controllers\Api\V1\PamController as V1PamController;
+use App\Http\Controllers\Api\V1\RegisteredMonthController as V1RegisteredMonthController;
+
 
 
 use Illuminate\Http\Request;
@@ -53,40 +55,32 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/profile', [V1AuthController::class, 'profile'])->name('profile');
             Route::put('/profile', [V1AuthController::class, 'updateProfile'])->name('update-profile');
             Route::post('/logout', [V1AuthController::class, 'logout'])->name('logout');
-            // Route::post('/logout-all', [V1AuthController::class, 'logoutAll'])->name('logout-all');
-            // Route::post('/refresh-token', [V1AuthController::class, 'refreshToken'])->name('refresh-token');
-            // Route::get('/check-token', [V1AuthController::class, 'checkToken'])->name('check-token');
         });
     });
 
-    // Protected Routes
     Route::middleware('auth:sanctum')->group(function () {
-        // Catat Meter Operations
-        Route::get('/dashboard', [V1DashboardController::class, 'index'])->name('dashboard');
-        Route::get('/profile', [V1AuthController::class, 'profile'])->name('profile');
+        // Route for catat meter : month -> list meter reading -> customer -> input meter
+        // month
+        Route::get('/registered-months/list/{year}', [V1RegisteredMonthController::class, 'monthList'])->name('registered-month');
+        Route::post('/registered-months/store', [V1RegisteredMonthController::class, 'store'])->name('registered-month-store');
 
-        // Month Management
-        Route::get('/month-list/{year}', [V1CatatMeterController::class, 'monthList'])->name('month-list');
-        Route::post('/create-month', [V1CatatMeterController::class, 'createMonth'])->name('create-month');
-
-        // Meter Management
-        Route::get('/meter-reading-list', [V1CatatMeterController::class, 'meterReadingList'])->name('meter-reading-list');
+        // list meter reading
+        Route::get('/meter-readings/list', [V1MeterReadingController::class, 'meterReadingList'])->name('meter-reading-list');
 
         // Meter Reading Operations
-        Route::get('/unrecorded-customers', [V1CustomerController::class, 'unrecordedList'])->name('unrecorded-customers');
-        Route::get('/customers/{id}/meter-input-data', [V1MeterReadingController::class, 'getMeterInputData'])->name('customer-meter-input-data');
-        Route::post('/store-meter-reading', [V1MeterReadingController::class, 'store'])->name('submit-meter-reading');
-
-        Route::post('/meter-readings/{meterReadingId}/destroy', [V1MeterReadingController::class, 'destroy'])->name('destroy-meter-reading');
+        Route::get('/customers/unrecorded', [V1CustomerController::class, 'unrecordedList'])->name('customers-unrecorded');
+        Route::get('/customers/{id}/meter-reading-form', [V1MeterReadingController::class, 'getMeterReadingForm'])->name('customers-meter-reading-form');
+        Route::post('/meter-readings/store', [V1MeterReadingController::class, 'store'])->name('meter-reading-store');
+        Route::post('/meter-readings/{meterReadingId}/destroy', [V1MeterReadingController::class, 'destroy'])->name('meter-reading-destroy');
 
         // Pay Operations
-        Route::put('/meter-readings/{meterReadingId}/submit-to-pending', [V1MeterReadingController::class, 'submitToPending'])->name('submit-meter-reading-to-pending');
-        Route::get('/customers/{customerId}/billings', [V1PaymentController::class, 'getBilling'])->name('get-billing');
-        Route::post('/customers/{customerId}/pay', [V1PaymentController::class, 'payBilling'])->name('pay-billing');
-        Route::post('/bills/{billId}/remove', [V1PaymentController::class, 'removeBilling'])->name('remove-billing');
+        Route::put('/meter-readings/{meterReadingId}/submit-to-pending', [V1MeterReadingController::class, 'submitToPending'])->name('meter-reading-pending');
+        Route::get('/customers/{customerId}/bills', [V1PaymentController::class, 'getBills'])->name('get-bills');
+        Route::post('/customers/{customerId}/bills/pay', [V1PaymentController::class, 'payBills'])->name('pay-bills');
+        Route::delete('/bills/{billId}', [V1PaymentController::class, 'destroy'])->name('bills.destroy');
 
         // Get Bills for Customer
-        Route::get('/customers/{userId}/get-bills', [V1CustomerController::class, 'getBillsByUser'])->name('customers.get-bills');
+        Route::get('/me/bills', [V1CustomerController::class, 'getMyBills'])->name('customers.my-bills');
 
         // Bill Monthly Reports
         Route::get('/reports/monthly-payment-report', [V1BillController::class, 'monthlyPaymentReport'])->name('monthly-payment-report');

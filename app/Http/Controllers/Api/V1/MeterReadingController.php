@@ -6,6 +6,8 @@ use App\Helpers\RoleHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MeterReadingRequest;
 use App\Http\Traits\HasPamFiltering;
+use App\Models\Area;
+use App\Models\Bill;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -27,6 +29,150 @@ class MeterReadingController extends Controller
     {
         $this->meterReadingService = $meterReadingService;
     }
+
+    public function meterReadingList(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $pamId = $user->pam_id;
+
+            // Validate query parameters
+            $validated = $request->validate([
+                'registered_month_id' => 'nullable|integer|exists:registered_months,id',
+                'search' => 'nullable|string|max:255',
+                'status' => 'nullable|in:draft,pending,paid',
+                'area_id' => 'nullable|integer|exists:areas,id',
+                'per_page' => 'nullable|integer|min:10|max:100',
+                'page' => 'nullable|integer|min:1',
+                'sort_by' => 'nullable|in:customer_id,status',
+                'sort_order' => 'nullable|in:asc,desc'
+            ]);
+
+            // Set defaults
+            $perPage = $validated['per_page'] ?? 20;
+            $sortBy = $validated['sort_by'] ?? 'customer_id';
+            $sortOrder = $validated['sort_order'] ?? 'desc';
+
+            // Build optimized query using indexes
+            $query = MeterReading::query()
+                ->select([
+                    'meter_readings.id',
+                    'meter_readings.meter_id',
+                    'meter_readings.registered_month_id',
+                    'meter_readings.previous_reading',
+                    'meter_readings.current_reading',
+                    'meter_readings.volume_usage',
+                    'meter_readings.photo_url',
+                    'meter_readings.status',
+                    'meter_readings.notes',
+                    'meter_readings.reading_by',
+                    'meter_readings.reading_at',
+                    'customers.id as customer_id',
+                    'customers.name as customer_name',
+                    'customers.customer_number',
+                    'customers.phone as customer_phone',
+                    'meters.meter_number',
+                    'tariff_groups.name as tariff_group_name',
+                    'areas.id as area_id',
+                    'areas.name as area_name',
+                    'registered_months.period'
+                ])
+                ->join('meters', 'meter_readings.meter_id', '=', 'meters.id')
+                ->join('customers', 'meters.customer_id', '=', 'customers.id')
+                ->join('tariff_groups', 'customers.tariff_group_id', '=', 'tariff_groups.id')
+                ->join('areas', 'customers.area_id', '=', 'areas.id')
+                ->join('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
+                ->where('meter_readings.pam_id', $pamId);
+
+            // Apply filters with index optimization
+            if (!empty($validated['registered_month_id'])) {
+                $query->where('meter_readings.registered_month_id', $validated['registered_month_id']);
+            }
+
+            if (!empty($validated['status'])) {
+                $query->where('meter_readings.status', $validated['status']);
+            }
+
+            if (!empty($validated['area_id'])) {
+                $query->where('customers.area_id', $validated['area_id']);
+            }
+            // Search functionality - optimized with indexes
+            if (!empty($validated['search'])) {
+                $search = trim($validated['search']);
+                $query->where(function ($q) use ($search) {
+                    $q->where('customers.name', 'LIKE', "%{$search}%")
+                        ->orWhere('customers.customer_number', 'LIKE', "%{$search}%")
+                        ->orWhere('meters.meter_number', 'LIKE', "%{$search}%")
+                        ->orWhere('customers.address', 'LIKE', "%{$search}%");
+                });
+            }
+            // Apply sorting
+            switch ($sortBy) {
+                case 'customer_id':
+                    $query->orderBy('customers.id', $sortOrder);
+                    break;
+                case 'status':
+                    $query->orderBy('meter_readings.status', $sortOrder);
+                    break;
+                default:
+                    $query->orderBy('meter_readings.reading_at', $sortOrder);
+            }
+
+            // Execute paginated query
+            $meterReadings = $query->paginate($perPage);
+
+            // Format response for mobile UI
+            $formattedData = $meterReadings->getCollection()->map(function ($reading) {
+                $periodDate = Carbon::createFromFormat('Y-m-d', $reading->period);
+                $bill = Bill::where('meter_reading_id', $reading->id)->first();
+
+                return [
+                    'id' => $reading->id,
+                    'period' => $periodDate,
+                    'customer' => [
+                        'id' => $reading->customer_id,
+                        'name' => $reading->customer_name,
+                        'number' => $reading->customer_number,
+                        'phone' => $reading->customer_phone ?? null,
+                        'tariff_group_name' => $reading->tariff_group_name,
+                        'area_name' => $reading->area_name,
+                    ],
+                    'meter_number' => $reading->meter_number,
+                    'previous_reading' => $reading->previous_reading,
+                    'current_reading' => $reading->current_reading,
+                    'volume_usage' => $reading->volume_usage,
+                    'bill_amount' => $bill ? $bill->total_bill : null,
+                    'notes' => $reading->notes,
+                    'photo_url' => $reading->photo_url,
+                    'status' =>  $reading->status,
+                    'reading_by' => $reading->readingBy->name,
+                    'reading_at' => $reading->reading_at,
+                ];
+            });
+
+            $data = [
+                'items' => $formattedData,
+                'pagination' => [
+                    'total' => $meterReadings->total(),
+                    'has_more_pages' => $meterReadings->hasMorePages(),
+                ]
+            ];
+            return $this->successResponse($data, 'Data pencatatan meter berhasil diambil');
+        } catch (\Exception $e) {
+            Log::error('Error fetching meter reading list: ' . $e->getMessage(), [
+                'pam_id' => $user->pam_id ?? null,
+                'filters' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data pencatatan meter',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
+
     /**
      * Get customer and meter data for meter reading input
      *
@@ -34,7 +180,7 @@ class MeterReadingController extends Controller
      * @param int $customerId
      * @return JsonResponse
      */
-    public function getMeterInputData(Request $request, int $customerId): JsonResponse
+    public function getMeterReadingForm(Request $request, int $customerId): JsonResponse
     {
         try {
             $user = $request->user();
@@ -61,12 +207,12 @@ class MeterReadingController extends Controller
 
             // Validate customer exists
             if (!$customer) {
-                return $this->jsonErrorResponse('Customer tidak ditemukan atau tidak sesuai dengan PAM Anda', 404);
+                return $this->errorResponse('Customer tidak ditemukan atau tidak sesuai dengan PAM Anda', 404);
             }
 
             // Validate meter exists
             if (!$customer->meter) {
-                return $this->jsonErrorResponse('Customer tidak memiliki meter aktif', 404);
+                return $this->errorResponse('Customer tidak memiliki meter aktif', 404);
             }
 
             // Get last reading (from eager loaded relationship)
@@ -103,24 +249,11 @@ class MeterReadingController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return $this->jsonErrorResponse('Terjadi kesalahan saat mengambil data meter input');
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data meter input');
         }
     }
 
-    /**
-     * Helper method for consistent error responses
-     *
-     * @param string $message
-     * @param int $statusCode
-     * @return JsonResponse
-     */
-    private function jsonErrorResponse(string $message, int $statusCode = 500): JsonResponse
-    {
-        return response()->json([
-            'status' => 'error',
-            'message' => $message
-        ], $statusCode);
-    }
+
 
     public function store(Request $request): JsonResponse
     {
