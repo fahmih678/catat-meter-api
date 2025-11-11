@@ -128,6 +128,7 @@ Route::middleware('auth', 'role:superadmin')->group(function () {
             Route::post('/bills/{billId}/mark-as-paid', [BillController::class, 'markAsPaid'])->name('bills.mark-as-paid');
             Route::post('/bills/{billId}/cancel-payment', [BillController::class, 'cancelPayment'])->name('bills.cancel-payment');
             Route::delete('/bills/{billId}', [BillController::class, 'deleteBill'])->name('bills.delete');
+            Route::get('/bills/download/payment-report', [BillController::class, 'downloadPaymentReport'])->name('bills.download.payment-report');
 
             // Bulk billing operations using MeterReadingByMonthController
             Route::post('/bills/pay-bulk', [MeterReadingByMonthController::class, 'payBilling'])->name('bills.pay-bulk');

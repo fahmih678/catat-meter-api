@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class BillController extends Controller
 {
@@ -127,5 +130,114 @@ class BillController extends Controller
                 'message' => 'Gagal menghapus tagihan'
             ], 500);
         }
+    }
+
+    /**
+     * Download payment data for specified period as PDF
+     */
+    public function downloadPaymentReport(Request $request, $pamId)
+    {
+        try {
+            // Validate that PAM exists
+            $pam = Pam::findOrFail($pamId);
+
+            // Get selected period from request, default to current month
+            $selectedPeriod = $request->input('period', now()->format('Y-m'));
+            $selectedUser = $request->input('user');
+
+            // Get payment data for selected period (paid bills only)
+            $paymentDataQuery = Bill::select(
+                'bills.id',
+                'bills.bill_number',
+                'bills.total_bill',
+                'bills.payment_method',
+                'bills.issued_at',
+                'bills.paid_at',
+                'customers.name as customer_name',
+                'customers.customer_number',
+                'users.name as paid_by_name',
+                DB::raw("DATE_FORMAT(registered_months.period, '%b %Y') as period_formatted"),
+                DB::raw("DATE_FORMAT(bills.issued_at, '%d %b %Y') as issued_at_formatted"),
+                DB::raw("DATE_FORMAT(bills.paid_at, '%d %b %Y') as paid_at_formatted"),
+            )
+                ->leftJoin('customers', 'bills.customer_id', '=', 'customers.id')
+                ->join('meter_readings', 'bills.meter_reading_id', '=', 'meter_readings.id')
+                ->join('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
+                ->leftJoin('users', 'bills.paid_by', '=', 'users.id')
+                ->where('bills.status', 'paid')
+                ->where('bills.pam_id', $pamId)
+                ->when($selectedPeriod, function ($query, $period) {
+                    $year = substr($period, 0, 4);
+                    $month = substr($period, 5, 2);
+                    return $query->whereMonth('bills.paid_at', $month)
+                        ->whereYear('bills.paid_at', $year);
+                })
+                ->when($selectedUser, function ($query, $userId) {
+                    return $query->where('bills.paid_by', $userId);
+                })
+                ->orderBy('bills.paid_at', 'desc');
+
+            $paymentData = $paymentDataQuery->get();
+
+            if ($paymentData->isEmpty()) {
+                return back()->with('error', 'Tidak ada data pembayaran untuk periode ' . $selectedPeriod);
+            }
+
+            // Calculate summary
+            $totalPayments = $paymentData->count();
+            $totalAmounts = $paymentData->sum(function ($item) {
+                return is_numeric($item->total_bill) ? (float) $item->total_bill : 0;
+            });
+
+            // Generate PDF
+            $options = new Options();
+            $options->set('defaultFont', 'Arial');
+            $options->set('isRemoteEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+
+            $dompdf = new Dompdf($options);
+
+            // Create HTML content
+            $html = $this->generatePaymentReportHtml($paymentData, $selectedPeriod, $totalPayments, $totalAmounts, $pam->name);
+
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            // Generate filename
+            $filename = 'laporan_pembayaran_' . $selectedPeriod . '.pdf';
+
+            // Return PDF response
+            return response($dompdf->output(), 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'private, max-age=0, must-revalidate',
+                'Pragma' => 'public',
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $th) {
+            Log::error('PAM not found for download payment report: ' . $th->getMessage());
+            return back()->with('error', 'PAM tidak ditemukan');
+        } catch (\Throwable $th) {
+            Log::error('Failed to generate payment report: ' . $th->getMessage());
+            return back()->with('error', 'Gagal membuat laporan pembayaran');
+        }
+    }
+
+    /**
+     * Generate HTML content for PDF payment report
+     */
+    private function generatePaymentReportHtml($paymentData, $period, $totalPayments, $totalAmounts, $pamName)
+    {
+        $periodName = Carbon::createFromFormat('Y-m', $period)->format('F Y');
+
+        $html = view('download_payment_report', [
+            'paymentData' => $paymentData,
+            'periodName' => $periodName,
+            'totalPayments' => $totalPayments,
+            'totalAmounts' => $totalAmounts,
+            'pamName' => $pamName,
+        ])->render();
+
+        return $html;
     }
 }

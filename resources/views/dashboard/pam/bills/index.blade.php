@@ -110,6 +110,12 @@
                                         <i class="bi bi-x-circle me-1"></i>Reset
                                     </a>
                                 @endif
+                                <!-- Download Report Button -->
+                                <a href="{{ route('pam.bills.download.payment-report', ['pamId' => $pam->id, 'month' => $selectedMonth, 'user' => request('user')]) }}"
+                                    class="btn btn-success"
+                                    title="Download Laporan Pembayaran">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i>Download
+                                </a>
                             </div>
                         </form>
                     </div>
