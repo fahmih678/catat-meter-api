@@ -443,6 +443,8 @@ class MeterReadingService
                     'bill' => [
                         'id' => $bill->id,
                         'status' => $bill->status,
+                        'bill_number' => $bill->bill_number,
+                        'total_bill' => $bill->total_bill,
                     ],
                 ],
             ];

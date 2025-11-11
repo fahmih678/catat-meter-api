@@ -11,8 +11,6 @@ use App\Models\Bill;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\MeterReadingsExport;
 use App\Services\MeterReadingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -90,7 +88,8 @@ class MeterReadingByMonthController extends Controller
                 'meter:id,meter_number,customer_id',
                 'meter.customer:id,name,customer_number,area_id',
                 'meter.customer.area:id,name',
-                'readingBy:id,name'
+                'readingBy:id,name',
+                'latestBill'
             ])
                 ->where('pam_id', $pamId)
                 ->where('registered_month_id', $registeredMonth->id);
@@ -150,80 +149,6 @@ class MeterReadingByMonthController extends Controller
         } catch (\Throwable $th) {
             Log::error('Failed to load meter readings: ' . $th->getMessage());
             return back()->with('error', 'Gagal memuat data pembacaan meter');
-        }
-    }
-
-    /**
-     * Export meter readings for specific month
-     */
-    public function export($pamId, $month)
-    {
-        // Initialize variables for error handling
-        $monthDisplay = $month;
-        $pam = null;
-
-        try {
-            // Validate that PAM exists
-            $pam = Pam::findOrFail($pamId);
-
-            // Validate month format
-            if (!preg_match('/^\d{4}-\d{2}$/', $month)) {
-                return back()->with('error', 'Format bulan tidak valid');
-            }
-
-            $monthCarbon = Carbon::createFromFormat('Y-m', $month . '-01');
-            $monthDisplay = $monthCarbon->format('F Y');
-
-            // Get meter readings for export with proper relationships
-            $meterReadings = MeterReading::with(['meter' => function ($query) {
-                $query->select('id', 'meter_number', 'customer_id');
-            }, 'meter.customer:id,name,customer_number', 'readingBy:id,name'])
-                ->where('pam_id', $pamId)
-                ->whereMonth('reading_at', $monthCarbon->month)
-                ->whereYear('reading_at', $monthCarbon->year)
-                ->orderBy('reading_at')
-                ->orderBy('meter_id')
-                ->get();
-
-            // Prepare export data
-            $exportData = [];
-            foreach ($meterReadings as $reading) {
-                $customer = $reading->meter && $reading->meter->customer ? $reading->meter->customer : null;
-                $exportData[] = [
-                    'Tanggal Baca' => $reading->reading_at ? $reading->reading_at->format('d/m/Y') : '-',
-                    'No. Pelanggan' => $customer ? $customer->customer_number : '-',
-                    'Nama Pelanggan' => $customer ? $customer->name : '-',
-                    'No. Meter' => $reading->meter ? $reading->meter->meter_number : '-',
-                    'Angka Awal (m³)' => $reading->previous_reading ?? 0,
-                    'Angka Akhir (m³)' => $reading->current_reading ?? 0,
-                    'Pemakaian (m³)' => $reading->volume_usage ?? 0,
-                    'Petugas Baca' => $reading->readingBy ? $reading->readingBy->name : '-',
-                    'Status' => $reading->status === 'verified' ? 'Terverifikasi' : 'Menunggu Verifikasi',
-                    'Catatan' => $reading->notes ?? '-'
-                ];
-            }
-
-            // Check if there's data to export
-            if (empty($exportData)) {
-                return back()->with('error', 'Tidak ada data pembacaan meter untuk diekspor pada bulan ' . $monthDisplay);
-            }
-
-            // Generate filename
-            $filename = 'pembacaan_meter_' . ($pam->code ?? 'pam') . '_' . $month . '.xlsx';
-
-            return Excel::download(new MeterReadingsExport($exportData), $filename);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $th) {
-            Log::error('PAM not found for export: ' . $th->getMessage());
-            return back()->with('error', 'PAM tidak ditemukan');
-        } catch (\Carbon\Exceptions\InvalidFormatException $th) {
-            Log::error('Invalid month format for export: ' . $th->getMessage());
-            return back()->with('error', 'Format bulan tidak valid');
-        } catch (\Maatwebsite\Excel\Exceptions\NoFilePathGivenException $th) {
-            Log::error('Export file path error: ' . $th->getMessage());
-            return back()->with('error', 'Gagal membuat file export');
-        } catch (\Throwable $th) {
-            Log::error('Failed to export meter readings: ' . $th->getMessage());
-            return back()->with('error', 'Gagal mengekspor data pembacaan meter untuk bulan ' . $monthDisplay);
         }
     }
 
@@ -322,12 +247,12 @@ class MeterReadingByMonthController extends Controller
     }
 
     /**
-     * Change status of meter reading
+     * Delete meter reading
      */
-    public function changeStatus(Request $request, $pamId, $meterReadingId)
+    public function deleteMeterReading(Request $request, $pamId, $meterReadingId)
     {
         try {
-            // Find meter reading
+            // Find meter reading with relationships
             $meterReading = MeterReading::with([
                 'meter.customer',
                 'registeredMonth'
@@ -335,221 +260,104 @@ class MeterReadingByMonthController extends Controller
                 ->where('pam_id', $pamId)
                 ->firstOrFail();
 
-            // Validate request data
-            $validated = $request->validate([
-                'new_status' => 'required|in:draft,pending,paid',
-                'current_status' => 'required|in:draft,pending,paid'
-            ]);
-
-            $originalStatus = $validated['current_status'];
-            $newStatus = $validated['new_status'];
-
-            // Validate status transition
-            if ($originalStatus !== $meterReading->status) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Status tidak valid. Silakan refresh halaman dan coba lagi.'
-                ], 422);
-            }
-
-            // Check if status actually changed
-            if ($originalStatus === $newStatus) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Status baru tidak boleh sama dengan status saat ini.'
-                ], 422);
-            }
-
-            // Validate allowed transitions
-            $allowedTransitions = [
-                'draft' => ['pending', 'paid'],
-                'pending' => ['paid', 'draft'],
-                'paid' => ['pending', 'draft'],
-            ];
-
-            if (!in_array($newStatus, $allowedTransitions[$originalStatus])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Perubahan status dari {$originalStatus} ke {$newStatus} tidak diizinkan."
-                ], 422);
-            }
-
             DB::beginTransaction();
 
             try {
-                // Update meter reading status
-                $meterReading->update(['status' => $newStatus]);
+                // Store meter reading info for logging
+                $readingInfo = [
+                    'id' => $meterReading->id,
+                    'customer_name' => $meterReading->meter->customer->name ?? '-',
+                    'meter_number' => $meterReading->meter->meter_number ?? '-',
+                    'reading_at' => $meterReading->reading_at
+                ];
 
-                // Handle bill management based on status change
-                switch (true) {
-                    case $originalStatus === 'draft' && $newStatus === 'pending':
-                        // Submit to pending
-                        if (isset($this->meterReadingService)) {
-                            $this->meterReadingService->submitMeterReadingToPending($meterReadingId);
-                        }
-                        Log::info("Meter reading submitted to pending: {$meterReadingId}");
-                        break;
-
-                    case $originalStatus === 'draft' && $newStatus === 'paid':
-                        // Direct to paid - create bill
-                        $this->createBillForMeterReading($meterReading);
-                        Log::info("Meter reading set to paid directly: {$meterReadingId}");
-                        break;
-
-                    case $originalStatus === 'pending' && $newStatus === 'paid':
-                        // Update existing bill to paid
-                        $bill = Bill::where('meter_reading_id', $meterReading->id)->first();
-                        if ($bill) {
-                            $bill->update(['status' => 'paid']);
-                        } else {
-                            // Create bill if doesn't exist
-                            $this->createBillForMeterReading($meterReading);
-                        }
-                        Log::info("Meter reading set to paid: {$meterReadingId}");
-                        break;
-
-                    case $originalStatus === 'pending' && $newStatus === 'draft':
-                        // Back to draft - delete bill
-                        $this->deleteBillForMeterReading($meterReading);
-                        Log::info("Meter reading reverted to draft: {$meterReadingId}");
-                        break;
-
-                    case $originalStatus === 'paid' && $newStatus === 'pending':
-                        // Back to pending - update bill status
-                        $bill = Bill::where('meter_reading_id', $meterReading->id)->first();
-                        if ($bill) {
-                            $bill->update(['status' => 'pending']);
-                        }
-                        Log::info("Meter reading reverted to pending: {$meterReadingId}");
-                        break;
-
-                    case $originalStatus === 'paid' && $newStatus === 'draft':
-                        // Back to draft - delete bill
-                        $this->deleteBillForMeterReading($meterReading);
-                        Log::info("Meter reading reverted to draft from paid: {$meterReadingId}");
-                        break;
+                // Delete associated bill if exists
+                $bill = Bill::where('meter_reading_id', $meterReading->id)->first();
+                if ($bill) {
+                    $billId = $bill->id;
+                    $bill->delete();
+                    Log::info("Associated bill {$billId} deleted for meter reading {$meterReadingId}");
                 }
 
-                Log::info("✅ MeterReading status changed from {$originalStatus} to {$newStatus}: {$meterReadingId}");
+                // Delete the meter reading
+                $meterReading->delete();
+
+                Log::info("Meter reading {$meterReadingId} deleted", $readingInfo);
 
                 DB::commit();
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Status pembacaan meter berhasil diubah',
-                    'data' => [
-                        'old_status' => $originalStatus,
-                        'new_status' => $newStatus
-                    ]
+                    'message' => 'Pencatatan meter berhasil dihapus',
+                    'data' => $readingInfo
                 ]);
-
             } catch (\Exception $e) {
                 DB::rollBack();
                 throw $e;
             }
-
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $th) {
-            Log::error('Meter reading not found for status change: ' . $th->getMessage());
+            Log::error('Meter reading not found for delete: ' . $th->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Data pembacaan meter tidak ditemukan'
+                'message' => 'Pencatatan meter tidak ditemukan'
             ], 404);
-        } catch (\Illuminate\Validation\ValidationException $th) {
-            Log::error('Validation failed for status change: ' . $th->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal: ' . implode(', ', $th->validator->errors()->all())
-            ], 422);
         } catch (\Throwable $th) {
-            Log::error('Failed to change meter reading status: ' . $th->getMessage());
+            Log::error('Failed to delete meter reading: ' . $th->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengubah status pembacaan meter'
+                'message' => 'Gagal menghapus pencatatan meter'
             ], 500);
         }
     }
 
     /**
-     * Create bill for meter reading
+     * Publish meter reading - change status from draft to pending and create bill using service
      */
-    private function createBillForMeterReading($meterReading)
+    public function publishMeterReading(Request $request, $pamId, $meterReadingId)
     {
         try {
-            // Check if bill already exists
-            $existingBill = Bill::where('meter_reading_id', $meterReading->id)->first();
-            if ($existingBill) {
-                return $existingBill;
+            // Find meter reading with basic validation
+            $meterReading = MeterReading::where('id', $meterReadingId)
+                ->where('pam_id', $pamId)
+                ->firstOrFail();
+
+            // Validate that meter reading is in draft status
+            if ($meterReading->status !== 'draft') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya pencatatan meter dengan status Draft yang dapat diterbitkan'
+                ], 422);
             }
 
-            // Generate bill number
-            $billNumber = 'BILL-' . $meterReading->pam_id . '-' . date('Ymd') . '-' . $meterReading->id;
-
-            // Calculate total bill (this would typically use tariff calculation)
-            $totalBill = $this->calculateBillAmount($meterReading);
-
-            // Create bill
-            $bill = Bill::create([
-                'pam_id' => $meterReading->pam_id,
-                'customer_id' => $meterReading->meter->customer_id,
-                'meter_reading_id' => $meterReading->id,
-                'bill_number' => $billNumber,
-                'reference_number' => $billNumber,
-                'volume_usage' => $meterReading->volume_usage,
-                'total_bill' => $totalBill,
-                'status' => 'pending',
-                'due_date' => Carbon::now()->addDays(30),
-                'issued_at' => Carbon::now(),
-                'paid_by' => Auth::check() ? Auth::id() : null
+            // Use MeterReadingService to handle the submission
+            $result = $this->meterReadingService->submitMeterReadingToPending($meterReadingId, [
+                'user_id' => Auth::check() ? Auth::id() : null,
+                'pam_id' => $pamId
             ]);
 
-            Log::info('Bill created for meter reading', [
-                'meter_reading_id' => $meterReading->id,
-                'bill_id' => $bill->id,
-                'amount' => $totalBill
-            ]);
-
-            return $bill;
-
+            if ($result && $result['success']) {
+                return response()->json($result);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'] ?? 'Gagal menerbitkan pencatatan meter'
+                ], 422);
+            }
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $th) {
+            Log::error('Meter reading not found for publish: ' . $th->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Pencatatan meter tidak ditemukan'
+            ], 404);
         } catch (\Throwable $th) {
-            Log::error('Failed to create bill for meter reading: ' . $th->getMessage());
-            throw $th;
+            Log::error('Failed to publish meter reading: ' . $th->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menerbitkan pencatatan meter'
+            ], 500);
         }
     }
 
-    /**
-     * Delete bill for meter reading
-     */
-    private function deleteBillForMeterReading($meterReading)
-    {
-        try {
-            $bill = Bill::where('meter_reading_id', $meterReading->id)->first();
-            if ($bill) {
-                $billId = $bill->id;
-                $bill->delete();
-
-                Log::info('Bill deleted for meter reading', [
-                    'meter_reading_id' => $meterReading->id,
-                    'bill_id' => $billId
-                ]);
-            }
-        } catch (\Throwable $th) {
-            Log::error('Failed to delete bill for meter reading: ' . $th->getMessage());
-            throw $th;
-        }
-    }
-
-    /**
-     * Calculate bill amount (placeholder - would typically use tariff calculation)
-     */
-    private function calculateBillAmount($meterReading)
-    {
-        // This is a simplified calculation
-        // In a real implementation, this would use the tariff system
-        $baseRate = 5000; // Base rate per m³
-        $administrativeFee = 10000; // Administrative fee
-
-        return ($meterReading->volume_usage * $baseRate) + $administrativeFee;
-    }
 
     /**
      * Get available months for navigation
@@ -578,7 +386,210 @@ class MeterReadingByMonthController extends Controller
         }
     }
 
+    /**
+     * Process bill payment - change status of pending bills to paid with meter reading updates
+     */
+    public function payBilling(Request $request, $pamId)
+    {
+        try {
+            // Validate request data
+            $validatedData = $request->validate([
+                'bill_ids' => 'required|array|min:1',
+                'bill_ids.*' => 'integer|exists:bills,id',
+                'payment_method' => 'nullable|string|in:cash,transfer,ewallet'
+            ]);
 
+            $billIds = $validatedData['bill_ids'];
+            $paymentMethod = $validatedData['payment_method'] ?? 'cash';
+            $updatedBills = [];
+            $errors = [];
+
+            // Verify bills belong to the specified PAM and are pending
+            $bills = Bill::where('pam_id', $pamId)
+                ->whereIn('id', $billIds)
+                ->where('status', 'pending')
+                ->with(['meterReading', 'customer'])
+                ->get();
+
+            if ($bills->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada tagihan pending yang ditemukan untuk ID yang dipilih'
+                ], 404);
+            }
+
+            // Check if all requested bills exist and belong to the PAM
+            $foundBillIds = $bills->pluck('id')->toArray();
+            $missingBillIds = array_diff($billIds, $foundBillIds);
+
+            if (!empty($missingBillIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Beberapa tagihan tidak ditemukan atau sudah dibayar: ' . implode(', ', $missingBillIds)
+                ], 404);
+            }
+
+            DB::beginTransaction();
+
+            try {
+                // Update each bill
+                foreach ($bills as $bill) {
+                    try {
+                        $bill->update([
+                            'status' => 'paid',
+                            'paid_at' => now()->format('Y-m-d H:i:s'),
+                            'paid_by' => Auth::check() ? Auth::id() : null,
+                            'payment_method' => $paymentMethod
+                        ]);
+
+                        // Update meter reading status if exists
+                        if ($bill->meterReading) {
+                            $bill->meterReading->update([
+                                'status' => 'paid',
+                            ]);
+                        }
+
+                        $updatedBills[] = [
+                            'id' => $bill->id,
+                            'bill_number' => $bill->bill_number,
+                            'customer_name' => $bill->customer->name ?? 'Tidak diketahui',
+                            'total_bill' => $bill->total_bill,
+                            'paid_at' => $bill->paid_at
+                        ];
+
+                        Log::info("Bill {$bill->id} marked as paid by user " . (Auth::check() ? Auth::id() : 'unknown'));
+                    } catch (\Exception $e) {
+                        $errors[] = [
+                            'bill_id' => $bill->id,
+                            'error' => $e->getMessage()
+                        ];
+                        Log::error("Failed to process payment for bill {$bill->id}: " . $e->getMessage());
+                    }
+                }
+
+                DB::commit();
+
+                if (!empty($errors)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Beberapa tagihan berhasil diproses dengan error',
+                        'updated_bills' => $updatedBills,
+                        'errors' => $errors
+                    ], 207); // 207 Multi-Status
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => count($updatedBills) . ' tagihan berhasil dibayar',
+                    'data' => [
+                        'updated_bills' => $updatedBills,
+                        'total_amount' => $bills->sum('total_bill'),
+                        'pam_id' => $pamId
+                    ]
+                ], 200);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $th) {
+            Log::error('PAM not found for payBilling: ' . $th->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'PAM tidak ditemukan'
+            ], 404);
+        } catch (\Illuminate\Validation\ValidationException $th) {
+            Log::error('Validation failed for payBilling: ' . $th->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal: ' . implode(', ', $th->validator->errors()->all())
+            ], 422);
+        } catch (\Throwable $th) {
+            Log::error('Failed to process bill payment: ' . $th->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses pembayaran tagihan'
+            ], 500);
+        }
+    }
+
+    /**
+     * Cancel billing - change meter reading status to draft and delete associated bill
+     */
+    public function cancelBilling(Request $request, $pamId, $meterReadingId)
+    {
+        try {
+            // Find meter reading with bill relationship
+            $meterReading = MeterReading::with(['latestBill', 'meter.customer'])
+                ->where('id', $meterReadingId)
+                ->where('pam_id', $pamId)
+                ->firstOrFail();
+
+            // Validate that meter reading is in pending status
+            if ($meterReading->status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya pembacaan meter dengan status Menunggu yang dapat dibatalkan'
+                ], 422);
+            }
+
+            // Validate that bill exists
+            if (!$meterReading->latestBill) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada tagihan yang terkait dengan pembacaan meter ini'
+                ], 404);
+            }
+
+            DB::beginTransaction();
+
+            try {
+                // Store information for logging and response
+                $billingInfo = [
+                    'meter_reading_id' => $meterReading->id,
+                    'customer_name' => $meterReading->meter->customer->name ?? 'Tidak diketahui',
+                    'bill_id' => $meterReading->latestBill->id,
+                    'bill_number' => $meterReading->latestBill->bill_number,
+                    'total_bill' => $meterReading->latestBill->total_bill
+                ];
+
+                // Delete the bill
+                $billId = $meterReading->latestBill->id;
+                $meterReading->latestBill->delete();
+
+                // Update meter reading status to draft
+                $meterReading->update(['status' => 'draft']);
+
+                Log::info("Billing cancelled and bill {$billId} deleted for meter reading {$meterReadingId}", $billingInfo);
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Tagihan berhasil dibatalkan dan status pembacaan meter diubah menjadi Draft',
+                    'data' => $billingInfo
+                ], 200);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $th) {
+            Log::error('Meter reading not found for cancel billing: ' . $th->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Pembacaan meter tidak ditemukan'
+            ], 404);
+        } catch (\Throwable $th) {
+            Log::error('Failed to cancel billing: ' . $th->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membatalkan tagihan'
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle image upload for meter reading update
+     */
     private function handleImageUpload($file, int $customerId): ?string
     {
         try {

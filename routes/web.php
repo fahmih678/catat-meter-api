@@ -86,6 +86,10 @@ Route::middleware('auth', 'role:superadmin')->group(function () {
             Route::put('/meters/{meterId}/readings/{readingId}', [MeterReadingController::class, 'update'])->name('meters.readings.update');
             Route::delete('/meters/{meterId}/readings/{readingId}', [MeterReadingController::class, 'destroy'])->name('meters.readings.destroy');
 
+            // Meter reading delete by month - using MeterReadingByMonthController
+            Route::delete('/meter-readings/{meterReadingId}', [MeterReadingByMonthController::class, 'deleteMeterReading'])->name('meter-readings.delete');
+            Route::post('/meter-readings/{meterReadingId}/publish', [MeterReadingByMonthController::class, 'publishMeterReading'])->name('meter-readings.publish');
+
             // Areas within PAM - using AreaController
             Route::get('/areas', [AreaController::class, 'index'])->name('areas');
             Route::post('/areas', [AreaController::class, 'store'])->name('areas.store')->middleware('role:superadmin');
@@ -124,6 +128,10 @@ Route::middleware('auth', 'role:superadmin')->group(function () {
             Route::post('/bills/{billId}/mark-as-paid', [BillController::class, 'markAsPaid'])->name('bills.mark-as-paid');
             Route::post('/bills/{billId}/cancel-payment', [BillController::class, 'cancelPayment'])->name('bills.cancel-payment');
             Route::delete('/bills/{billId}', [BillController::class, 'deleteBill'])->name('bills.delete');
+
+            // Bulk billing operations using MeterReadingByMonthController
+            Route::post('/bills/pay-bulk', [MeterReadingByMonthController::class, 'payBilling'])->name('bills.pay-bulk');
+            Route::post('/meter-readings/{meterReadingId}/cancel-billing', [MeterReadingByMonthController::class, 'cancelBilling'])->name('meter-readings.cancel-billing');
         });
 
         // PAM CRUD - Superadmin only for create, update, delete

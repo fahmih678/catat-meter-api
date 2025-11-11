@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
@@ -57,6 +58,11 @@ class MeterReading extends Model
     public function bills(): HasMany
     {
         return $this->hasMany(Bill::class, 'meter_reading_id');
+    }
+
+    public function latestBill(): HasOne
+    {
+        return $this->hasOne(Bill::class, 'meter_reading_id')->latestOfMany('issued_at');
     }
 
     // Optimized relationships through joins

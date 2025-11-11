@@ -1,7 +1,7 @@
 <!-- Edit Meter Reading Modal -->
 <div class="modal fade" id="editMeterReadingModal" tabindex="-1" aria-labelledby="editMeterReadingModalLabel"
     aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-md">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editMeterReadingModalLabel">
@@ -110,7 +110,7 @@
                         </div>
                     </div>
 
-                  </div>
+                </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -148,10 +148,14 @@
                 document.getElementById('edit_current_reading').value = data.current_reading;
 
                 // Populate information fields
-                document.getElementById('info_customer_name').textContent = data.customer_name || '-';
-                document.getElementById('info_meter_number').textContent = data.meter_number || '-';
-                document.getElementById('info_previous_reading').textContent = number_format(data.previous_reading, 1) + ' m³';
-                document.getElementById('info_volume_usage').textContent = number_format(data.volume_usage, 1) + ' m³';
+                document.getElementById('info_customer_name').textContent = data
+                    .customer_name || '-';
+                document.getElementById('info_meter_number').textContent = data.meter_number ||
+                    '-';
+                document.getElementById('info_previous_reading').textContent = number_format(
+                    data.previous_reading, 1) + ' m³';
+                document.getElementById('info_volume_usage').textContent = number_format(data
+                    .volume_usage, 1) + ' m³';
                 document.getElementById('info_reading_at').textContent = data.reading_at || '-';
 
                 // Notes field
@@ -234,7 +238,8 @@
             const previousReading = parseFloat(this.dataset.previousReading);
 
             if (currentReading < previousReading) {
-                alert('Angka akhir tidak boleh lebih kecil dari angka awal (' + previousReading + ' m³)');
+                alert('Angka akhir tidak boleh lebih kecil dari angka awal (' + previousReading +
+                    ' m³)');
                 return;
             }
 
@@ -244,55 +249,56 @@
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Menyimpan...';
 
-            const url = `{{ route('pam.meter-readings.update', ['pamId' => $pam->id, 'meterReadingId' => ':id']) }}`
+            const url =
+                `{{ route('pam.meter-readings.update', ['pamId' => $pam->id, 'meterReadingId' => ':id']) }}`
                 .replace(':id', formData.get('meter_reading_id'));
 
             fetch(url, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Show success message
-                    const successAlert = document.createElement('div');
-                    successAlert.className = 'alert alert-success alert-dismissible fade show';
-                    successAlert.innerHTML = `
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        const successAlert = document.createElement('div');
+                        successAlert.className = 'alert alert-success alert-dismissible fade show';
+                        successAlert.innerHTML = `
                         <i class="bi bi-check-circle me-2"></i>
                         ${data.message || 'Data berhasil diperbarui'}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     `;
 
-                    // Insert alert before the modal
-                    const modalDialog = document.querySelector('.modal-dialog');
-                    modalDialog.parentNode.insertBefore(successAlert, modalDialog);
+                        // Insert alert before the modal
+                        const modalDialog = document.querySelector('.modal-dialog');
+                        modalDialog.parentNode.insertBefore(successAlert, modalDialog);
 
-                    // Auto hide modal and reload
-                    setTimeout(() => {
-                        editModal.hide();
-                        location.reload();
-                    }, 1000);
-                } else {
-                    alert(data.message || 'Terjadi kesalahan saat menyimpan data');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan saat menyimpan data. Silakan coba lagi.');
-            })
-            .finally(() => {
-                submitButton.disabled = false;
-                submitButton.innerHTML = originalText;
-            });
+                        // Auto hide modal and reload
+                        setTimeout(() => {
+                            editModal.hide();
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        alert(data.message || 'Terjadi kesalahan saat menyimpan data');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan saat menyimpan data. Silakan coba lagi.');
+                })
+                .finally(() => {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalText;
+                });
         });
     });
 </script>
