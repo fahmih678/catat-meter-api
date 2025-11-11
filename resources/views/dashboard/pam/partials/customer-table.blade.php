@@ -159,18 +159,20 @@
     @endif
 </div>
 
-{{-- JavaScript for customer table functionality --}}
-<script>
-    // Set PAM ID for JavaScript
-    @php
-        $pamId = request()->route('pamId') ?? (request()->segment(3) ?? (isset($pam) ? $pam->id : 0));
-    @endphp
-    window.currentPamId = {{ $pamId }};
+@push('scripts')
+    {{-- JavaScript for customer table functionality --}}
+    <script>
+        // Set PAM ID for JavaScript
+        @php
+            $pamId = request()->route('pamId') ?? (request()->segment(3) ?? (isset($pam) ? $pam->id : 0));
+        @endphp
+        window.currentPamId = {{ $pamId }};
 
-    // Debug: Log the PAM ID
-    console.log('PAM ID set to:', window.currentPamId);
-    console.log('Current URL:', window.location.pathname);
-</script>
+        // Debug: Log the PAM ID
+        console.log('PAM ID set to:', window.currentPamId);
+        console.log('Current URL:', window.location.pathname);
+    </script>
 
-<script src="{{ asset('js/customer-table.js') }}"></script>
-<script src="{{ asset('js/customer-modals.js') }}"></script>
+    <script src="{{ asset('js/customer-table.js') }}"></script>
+    <script src="{{ asset('js/customer-modals.js') }}"></script>
+@endpush

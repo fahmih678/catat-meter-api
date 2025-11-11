@@ -1391,7 +1391,7 @@ function loadCustomerFormData() {
 
             if (data.success) {
                 const areas = data.data?.areas || data.areas || [];
-                const tariffGroups = data.data?.tariff_groups || data.tariffGroups || data.tariff_groups || [];
+                const tariffGroups = data.data?.tariffGroups || data.tariffGroups || [];
                 const users = data.data?.users || data.users || [];
 
                 console.log('Areas:', areas);
