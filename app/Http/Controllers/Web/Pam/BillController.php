@@ -142,8 +142,8 @@ class BillController extends Controller
             $pam = Pam::findOrFail($pamId);
 
             // Get selected period from request, default to current month
-            $selectedPeriod = $request->input('period', now()->format('Y-m'));
-            $selectedUser = $request->input('user');
+            $selectedPeriod = $request->month;
+            $selectedUser = $request->user;
 
             // Get payment data for selected period (paid bills only)
             $paymentDataQuery = Bill::select(
@@ -166,12 +166,7 @@ class BillController extends Controller
                 ->leftJoin('users', 'bills.paid_by', '=', 'users.id')
                 ->where('bills.status', 'paid')
                 ->where('bills.pam_id', $pamId)
-                ->when($selectedPeriod, function ($query, $period) {
-                    $year = substr($period, 0, 4);
-                    $month = substr($period, 5, 2);
-                    return $query->whereMonth('bills.paid_at', $month)
-                        ->whereYear('bills.paid_at', $year);
-                })
+                ->whereRaw('DATE_FORMAT(paid_at, "%Y-%m") = ?', [$selectedPeriod])
                 ->when($selectedUser, function ($query, $userId) {
                     return $query->where('bills.paid_by', $userId);
                 })

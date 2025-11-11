@@ -24,7 +24,7 @@
                     <div>
                         <h3 class="mb-1">
                             <i class="bi bi-receipt text-primary me-2"></i>
-                            Daftar Tagihan
+                            Daftar Pembayaran
                         </h3>
                         <p class="text-muted mb-0">PAM: {{ $pam->name }} ({{ $pam->code }})</p>
                     </div>
@@ -112,8 +112,7 @@
                                 @endif
                                 <!-- Download Report Button -->
                                 <a href="{{ route('pam.bills.download.payment-report', ['pamId' => $pam->id, 'month' => $selectedMonth, 'user' => request('user')]) }}"
-                                    class="btn btn-success"
-                                    title="Download Laporan Pembayaran">
+                                    class="btn btn-success" title="Download Laporan Pembayaran">
                                     <i class="bi bi-file-earmark-pdf me-1"></i>Download
                                 </a>
                             </div>
