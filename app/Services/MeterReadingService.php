@@ -317,12 +317,20 @@ class MeterReadingService
             $meterReading->load(['meter.customer.tariffGroup.tariffTiers', 'meter.customer.tariffGroup.fixedFees', 'meter.customer.pam']);
 
             // Validate meter reading has all required data
-            if (!$meterReading->meter || !$meterReading->meter->customer || count($meterReading->meter->customer->tariffGroup->tariffTiers) < 1) {
-                throw new \Exception('Data meter reading tidak valid: missing meter, customer, atau tariff data.');
+            if (!$meterReading->meter || !$meterReading->meter->customer) {
+                throw new \Exception('Data meter reading tidak valid: missing meter atau customer.');
+            }
+
+            if (!$meterReading->meter->customer->tariffGroup) {
+                throw new \Exception('Customer tidak memiliki tariff group yang valid.');
+            }
+
+            $tariffGroup = $meterReading->meter->customer->tariffGroup;
+            if ($tariffGroup->tariffTiers->isEmpty()) {
+                throw new \Exception('Tariff group tidak memiliki tariff tiers yang valid.');
             }
 
             $customer = $meterReading->meter->customer;
-            $tariffGroup = $customer->tariffGroup;
 
             // Update meter reading status to pending
             $oldData = $meterReading->toArray();
@@ -337,58 +345,108 @@ class MeterReadingService
                 'tariff_tiers' => [],
                 'fixed_fees' => [],
                 'total_fixed_fees' => 0,
+                'total_tier_charge' => 0,
+                'total_bill' => 0,
             ];
 
-            // Add tariff tiers if available
-            if ($tariffGroup && $tariffGroup->tariffTiers->isNotEmpty() && $meterReading->volume_usage !== null) {
-                // Filter active tiers (status = 'active' and within effective dates)
-                $activeTiers = $tariffGroup->tariffTiers->filter(function ($tier) use ($meterReading) {
-                    $isActive = $tier->is_active;
-                    $isEffective = (!$tier->effective_to || $tier->effective_to >= now()->toDateString())
-                        && ($tier->effective_from <= now()->toDateString());
-                    $isTierInRange = ($tier->meter_min <= $meterReading->volume_usage) && ($meterReading->volume_usage <= $tier->meter_max);
-                    return $isActive && $isEffective && $isTierInRange;
+            $volumeUsage = round(max(0, $meterReading->volume_usage), 1);
+
+            // === Handle Tiered Tariffs ===
+            if ($tariffGroup && $tariffGroup->tariffTiers->isNotEmpty() && $volumeUsage > 0) {
+
+                // Filter hanya tier yang aktif dan efektif sekarang
+                $activeTiers = $tariffGroup->tariffTiers->filter(function ($tier) {
+                    $isActive = $tier->is_active ?? false;
+                    $effectiveFrom = $tier->effective_from ?? null;
+                    $effectiveTo = $tier->effective_to ?? null;
+
+                    // Skip tier tanpa tanggal efektif
+                    if (!$effectiveFrom) {
+                        return false;
+                    }
+
+                    $isEffective = (!$effectiveTo || $effectiveTo >= now()->toDateString())
+                        && ($effectiveFrom <= now()->toDateString());
+
+                    return $isActive && $isEffective;
                 });
 
-                // Get only the latest/newest active tier (limit to 1)
                 if ($activeTiers->count() > 0) {
-                    // Sort by effective_from desc, then by id desc to get the most recent tier
-                    $latestTier = $activeTiers->sortByDesc(function ($tier) {
-                        return [$tier->effective_from, $tier->id];
-                    })->first();
+                    // Urutkan berdasarkan meter_min ascending
+                    $sortedTiers = $activeTiers->sortBy('meter_min')->values();
 
-                    $tariffSnapshot['tariff_tiers'] =
-                        [
-                            'range' => $latestTier->meter_min . ' - ' . $latestTier->meter_max,
-                            'amount' => $latestTier->amount,
+                    $remainingVolume = $volumeUsage;
+                    $totalTierCharge = 0;
+                    $tierDetails = [];
+
+                    foreach ($sortedTiers as $tier) {
+                        // Hitung batas volume tier saat ini
+                        $tierMin = $tier->meter_min;
+                        $tierMax = $tier->meter_max;
+                        $tierRange = $tierMax - $tierMin;
+
+                        // Tentukan berapa volume yang termasuk di tier ini
+                        $tierVolume = round(min($remainingVolume, $tierRange), 1);
+                        if ($tierVolume <= 0) continue;
+
+                        // Hitung biaya tier ini
+                        $tierAmount = (int) round($tierVolume * $tier->amount);
+                        $totalTierCharge += $tierAmount;
+
+                        $tierDetails[] = [
+                            'range' => "{$tierMin} - {$tierMax}",
+                            'rate' => $tier->amount,
+                            'volume_used' => $tierVolume,
+                            'subtotal' => $tierAmount,
                         ];
+
+                        $remainingVolume -= $tierVolume;
+                        if ($remainingVolume <= 0) break;
+                    }
+
+                    $tariffSnapshot['tariff_tiers'] = $tierDetails;
+                    $tariffSnapshot['total_tier_charge'] = $totalTierCharge;
                 }
             }
-            // Add fixed fees if available
+
+            // === Handle Fixed Fees ===
             if ($tariffGroup && $tariffGroup->fixedFees->isNotEmpty()) {
-                // Filter active fees (status = 'active' and within effective dates)
                 $activeFees = $tariffGroup->fixedFees->filter(function ($fee) {
-                    $isActive = $fee->is_active;
-                    $isEffective = (!$fee->effective_to || $fee->effective_to >= now()->toDateString())
-                        && ($fee->effective_from <= now()->toDateString());
+                    $isActive = $fee->is_active ?? false;
+                    $effectiveFrom = $fee->effective_from ?? null;
+                    $effectiveTo = $fee->effective_to ?? null;
+
+                    // Skip fee tanpa tanggal efektif
+                    if (!$effectiveFrom) {
+                        return false;
+                    }
+
+                    $isEffective = (!$effectiveTo || $effectiveTo >= now()->toDateString())
+                        && ($effectiveFrom <= now()->toDateString());
+
                     return $isActive && $isEffective;
                 });
 
                 if ($activeFees->count() > 0) {
                     $tariffSnapshot['fixed_fees'] = $activeFees->map(function ($fee) {
                         return [
-                            'fee_name' => $fee->name ?? $fee->fee_name,
+                            'fee_name' => $fee->name,
                             'amount' => $fee->amount,
                             'description' => $fee->description,
                         ];
                     })->values()->toArray();
                 }
-                // Calculate total fixed fees
+
                 $tariffSnapshot['total_fixed_fees'] = $activeFees->sum('amount');
             }
 
-            // Determine base rate from tariff tiers if available
-            $totalBill = ($meterReading->volume_usage * $tariffSnapshot['tariff_tiers']['amount']) + $tariffSnapshot['total_fixed_fees'];
+            // === Total Akhir ===
+            $tariffSnapshot['total_bill'] = $tariffSnapshot['total_tier_charge'] + $tariffSnapshot['total_fixed_fees'];
+            $dueDate = now()->startOfMonth()->addDays(9); // Standard payment term
+            if (now()->gt($dueDate)) {
+                // jika sudah lewat tanggal 10, pindahkan ke bulan depan
+                $dueDate = now()->addMonthNoOverflow()->startOfMonth()->addDays(9);
+            }
 
             // Create bill record
             $bill = Bill::create([
@@ -398,9 +456,9 @@ class MeterReadingService
                 'bill_number' => $this->generateBillNumber($customer->pam_id),
                 'reference_number' => null,
                 'volume_usage' => $meterReading->volume_usage,
-                'total_bill' => $totalBill,
+                'total_bill' => $tariffSnapshot['total_bill'],
                 'status' => 'pending',
-                'due_date' => now()->addDays(10), // Standard 10 days payment term
+                'due_date' => $dueDate, // Standard payment term
                 'payment_method' => null,
                 'paid_at' => null,
                 'issued_at' => now(),
@@ -408,12 +466,16 @@ class MeterReadingService
                 'tariff_snapshot' => json_encode($tariffSnapshot),
             ]);
 
-            $totalUsageInMonth =  MeterReading::where('registered_month_id', $registeredMonth->id)->sum('volume_usage');
+            // Optimize queries to prevent N+1 issues in bulk operations
+            $totalUsageInMonth = MeterReading::where('registered_month_id', $registeredMonth->id)
+                ->sum('volume_usage');
+
             $totalBillInMonth = Bill::whereHas('meterReading', function ($q) use ($registeredMonth) {
                 $q->where('registered_month_id', $registeredMonth->id);
             })->sum('total_bill');
-            $meter->total_usage += $totalUsageInMonth;
-            $meter->save();
+
+            // Update meter and registered month statistics in single query
+            $meter->increment('total_usage', $totalUsageInMonth);
 
             $registeredMonth->update([
                 'total_usage' => $totalUsageInMonth,
@@ -432,19 +494,12 @@ class MeterReadingService
                 'message' => 'Meter reading berhasil disubmit ke status pending dan billing telah dibuat.',
                 'data' => [
                     'customer' => [
-                        'id' => $customer->id,
                         'name' => $customer->name,
-                        'customer_number' => $customer->customer_number,
-                    ],
-                    'meter_reading' => [
-                        'id' => $meterReading->id,
-                        'status' => $meterReading->status,
                     ],
                     'bill' => [
-                        'id' => $bill->id,
-                        'status' => $bill->status,
                         'bill_number' => $bill->bill_number,
                         'total_bill' => $bill->total_bill,
+                        'due_date' => $bill->due_date,
                     ],
                 ],
             ];
@@ -452,38 +507,41 @@ class MeterReadingService
     }
 
     /**
-     * Generate unique bill number for PAM
+     * Generate unique bill number for PAM (thread-safe)
      *
      * @param int $pamId
      * @return string
      */
     private function generateBillNumber(int $pamId): string
     {
-        $prefix = 'BILL';
-        $year = date('Y');
-        $month = date('m');
+        return DB::transaction(function () use ($pamId) {
+            $prefix = 'BILL';
+            $year = date('Y');
+            $month = date('m');
+            $pattern = "{$prefix}-{$pamId}-{$year}{$month}-%";
 
-        // Get last bill number for this PAM and month
-        $lastBill = Bill::where('pam_id', $pamId)
-            ->where('bill_number', 'LIKE', "{$prefix}-{$pamId}-{$year}{$month}-%")
-            ->orderBy('bill_number', 'desc')
-            ->first();
+            // Use lockForUpdate to prevent race conditions
+            $lastBill = Bill::where('pam_id', $pamId)
+                ->where('bill_number', 'LIKE', $pattern)
+                ->lockForUpdate()
+                ->orderBy('bill_number', 'desc')
+                ->first();
 
-        if ($lastBill) {
-            // Extract sequence number and increment
-            $lastSequence = (int) substr($lastBill->bill_number, -4);
-            $newSequence = $lastSequence + 1;
-        } else {
-            $newSequence = 1;
-        }
+            if ($lastBill) {
+                // Extract sequence number and increment
+                $lastSequence = (int) substr($lastBill->bill_number, -4);
+                $newSequence = $lastSequence + 1;
+            } else {
+                $newSequence = 1;
+            }
 
-        return sprintf('%s-%d-%s%s-%04d', $prefix, $pamId, $year, $month, $newSequence);
+            return sprintf('%s-%d-%s%s-%04d', $prefix, $pamId, $year, $month, $newSequence);
+        });
     }
 
     /**
      * Log meter reading status change activity
      *
-     * @param MeterReading $meterReading
      * @param array $oldData
      * @param Bill $bill
      * @param array $requestData
@@ -493,7 +551,7 @@ class MeterReadingService
     {
         ActivityLog::create([
             'pam_id' => $meterReading->meter->customer->pam_id,
-            'user_id' => $requestData['user_id'],
+            'user_id' => $requestData['user_id'] ?? Auth::id(),
             'action' => 'status_change',
             'activity_type' => 'meter_reading_submitted_to_pending',
             'description' => "Meter reading {$meterReading->meter->meter_number} diubah status dari draft ke pending. Bill {$bill->bill_number} dibuat dengan amount Rp " . number_format($bill->total_bill, 0, ',', '.'),

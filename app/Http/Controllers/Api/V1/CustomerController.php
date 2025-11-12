@@ -266,13 +266,11 @@ class CustomerController extends Controller
     {
         try {
             $user = $request->user();
-            $userId = $request->user()->id;
             // Validate query parameters
             $validated = $request->validate([
                 'customer_id' => 'nullable|integer|exists:customers,id',
                 'status' => 'nullable|in:pending,paid',
                 'per_page' => 'nullable|integer|min:5|max:50',
-                'page' => 'nullable|integer|min:1',
             ]);
 
             $perPage = $validated['per_page'] ?? 10;
@@ -302,7 +300,7 @@ class CustomerController extends Controller
                 ->join('meter_readings', 'bills.meter_reading_id', '=', 'meter_readings.id')
                 ->join('meters', 'meter_readings.meter_id', '=', 'meters.id')
                 ->join('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
-                ->where('customers.user_id', $userId)
+                ->where('customers.user_id', $user->id)
                 ->where('customers.is_active', true)
                 ->orderByDesc('bills.created_at');
 
@@ -321,16 +319,17 @@ class CustomerController extends Controller
             // Format response data
             $formattedData = $bills->getCollection()->map(function ($bill) {
                 return [
-                    'nama_pelanggan' => $bill->customer_name,
-                    'nomor_pelanggan' => $bill->customer_number,
+                    'customer_name' => $bill->customer_name,
+                    'customer_number' => $bill->customer_number,
+                    'meter_number' => $bill->meter_number,
                     'area' => $bill->area_name,
                     'periode' => $bill->bill_period,
-                    'jatuh_tempo' => Carbon::parse($bill->due_date)->format('Y-m-d'),
+                    'due_date' => Carbon::parse($bill->due_date)->format('Y-m-d'),
                     'status' => $bill->status,
-                    'bacaan_awal' => (float) $bill->previous_reading,
-                    'bacaan_akhir' => (float) $bill->current_reading,
-                    'pemakaian' => (float) $bill->volume_usage,
-                    'total_tagihan' => (float) $bill->total_bill,
+                    'previous_reading' => (float) $bill->previous_reading,
+                    'current_reading' => (float) $bill->current_reading,
+                    'volume_usage' => (float) $bill->volume_usage,
+                    'total_bill' => (float) $bill->total_bill,
                     'bill_number' => $bill->bill_number,
                     'payment_method' => $bill->payment_method ?: '-',
                     'paid_at' => $bill->paid_at ? Carbon::parse($bill->paid_at)->format('Y-m-d H:i:s') : null,
@@ -338,18 +337,19 @@ class CustomerController extends Controller
                 ];
             });
 
-            $userCustomers = Customer::where('user_id', $userId)
+            $userCustomers = Customer::where('user_id', $user->id)
                 ->where('is_active', true)
                 ->get(['id', 'name', 'customer_number']);
 
-            return response()->json([
-                'data' => $formattedData,
+            $data = [
+                'items' => $formattedData,
                 'customers' => $userCustomers,
                 'pagination' => [
                     'total' => $bills->total(),
                     'has_more_page' => $bills->hasMorePages(),
                 ],
-            ], 200);
+            ];
+            return $this->successResponse($data, 'Bills retrieved successfully');
         } catch (\Exception $e) {
             Log::error('Error fetching bills by user: ' . $e->getMessage(), [
                 'user_id' => $request->user()->id,

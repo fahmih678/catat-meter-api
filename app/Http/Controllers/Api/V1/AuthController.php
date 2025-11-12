@@ -142,6 +142,7 @@ class AuthController extends Controller
                     'phone' => $user->phone,
                     'roles' => $user->getRoleNames(),
                     'pam_id' => $user->pam_id,
+                    'photo_url' => $user->photo_url,
                 ]
             ]
         ], 200);
@@ -152,34 +153,47 @@ class AuthController extends Controller
      */
     public function updateProfile(Request $request)
     {
-        $user = $request->user();
+        try {
+            $user = User::findOrFail($request->user()->id);
 
-        $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
-            'phone' => ['sometimes', 'string', 'max:20'],
-            'password' => ['sometimes', 'string', 'min:8', 'confirmed'],
-        ]);
+            $request->validate([
+                'name' => ['sometimes', 'string', 'max:255'],
+                'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
+                'phone' => ['sometimes', 'string', 'max:20'],
+                'password' => ['sometimes', 'string', 'min:8', 'confirmed'],
+            ]);
 
-        $user->name = $request->name;
-        $user->email = $request->email;
+            // Update user information
+            if ($request->has('name')) {
+                $user->name = $request->name;
+            }
+            if ($request->has('email')) {
+                $user->email = $request->email;
+            }
+            if ($request->has('phone')) {
+                $user->phone = $request->phone;
+            }
 
-        if ($request->password) {
-            $user->password = Hash::make($request->password);
-        }
+            // Update password if provided
+            if ($request->filled('password')) {
+                $user->password = Hash::make($request->password);
+            }
 
-        $user->save();
+            $user->save();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Profile updated successfully',
-            'data' => [
+            $data = [
                 'user' => [
                     'name' => $user->name,
-                    'updated_at' => $user->updated_at
-                ]
-            ]
-        ], 200);
+                    'updated_at' => $user->updated_at->format('Y-m-d H:i:s'),
+                ],
+            ];
+
+            return $this->successResponse($data, 'Profile updated successfully');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to update profile', 500);
+        }
     }
 
     /**

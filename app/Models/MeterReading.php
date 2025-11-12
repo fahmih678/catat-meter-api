@@ -62,7 +62,7 @@ class MeterReading extends Model
 
     public function latestBill(): HasOne
     {
-        return $this->hasOne(Bill::class, 'meter_reading_id')->latestOfMany('issued_at');
+        return $this->hasOne(Bill::class, 'meter_reading_id')->whereNull('deleted_at')->latestOfMany('issued_at');
     }
 
     // Optimized relationships through joins

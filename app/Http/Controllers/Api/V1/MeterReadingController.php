@@ -258,6 +258,15 @@ class MeterReadingController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            $request->validate([
+                'customer_id' => 'required|integer|exists:customers,id',
+                'registered_month_id' => 'required|integer|exists:registered_months,id',
+                'current_reading' => 'required|decimal:2',
+                'notes' => 'nullable|string|max:1000',
+                'reading_by' => 'nullable|integer|exists:users,id',
+                'photo_url' => 'nullable|file',
+            ]);
+
             $user = $request->user();
 
             // Get meter data
@@ -331,16 +340,27 @@ class MeterReadingController extends Controller
                     'reading_at' => $record->reading_at,
                 ]
             ], 201);
-        } catch (\Exception $e) {
-            Log::error('Error creating meter reading: ' . $e->getMessage(), [
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->errorInfo[1] === 1062) {
+                // Duplicate entry
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Meter reading sudah terdaftar untuk bulan ini.'
+                ], 409);
+            }
+
+            // Log detail error ke server (aman karena tidak dikirim ke client)
+            Log::error('Error creating meter reading', [
+                'error' => $e->getMessage(),
                 'customer_id' => $request->customer_id ?? null,
                 'user_id' => $user->id ?? null,
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
+            // Pesan yang dikirim ke client hanya yang aman & umum
             return response()->json([
                 'status' => 'error',
-                'message' => 'Terjadi kesalahan saat menyimpan data meter reading: ' . $e->getMessage()
+                'message' => 'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
             ], 500);
         }
     }

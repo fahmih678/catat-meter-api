@@ -79,7 +79,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::post('/customers/{customerId}/bills/pay', [V1PaymentController::class, 'payBills'])->name('pay-bills');
         Route::delete('/bills/{billId}', [V1PaymentController::class, 'destroy'])->name('bills.destroy');
 
-        // Get Bills for Customer
+        // Get Bills for User
         Route::get('/me/bills', [V1CustomerController::class, 'getMyBills'])->name('customers.my-bills');
 
         // Bill Monthly Reports

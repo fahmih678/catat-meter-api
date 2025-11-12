@@ -10,6 +10,7 @@ use App\Models\MeterReading;
 use App\Models\RegisteredMonth;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class RegisteredMonthController extends Controller
 {
@@ -86,6 +87,16 @@ class RegisteredMonthController extends Controller
     {
         try {
             $user = $request->user();
+            $periodMonth = date('Y-m', strtotime($request->period));
+
+            $exists = RegisteredMonth::where('pam_id', $user->pam_id)
+                ->whereRaw('DATE_FORMAT(period, "%Y-%m") = ?', [$periodMonth])
+                ->exists();
+
+            if ($exists) {
+                return $this->errorResponse('Month already exists', 400);
+            }
+
             $totalCustomers = Customer::where(['pam_id' => $user->pam_id, 'is_active' => true])->count();
             // Validate request data
             $request->merge([
@@ -110,7 +121,7 @@ class RegisteredMonthController extends Controller
 
             return $this->successResponse($month, 'Month created successfully');
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to create month' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to create month ' . $e->getMessage(), 500);
         }
     }
 }
