@@ -155,12 +155,10 @@ class PaymentController extends Controller
             }
 
             if (!empty($errors)) {
-                return response()->json([
-                    'status' => 'partial_success',
-                    'message' => 'Some bills were updated with errors',
+                return $this->errorResponse('Some bills were updated with errors', 207, [
                     'updated_bills' => $updatedBills,
                     'errors' => $errors
-                ], 207); // 207 Multi-Status
+                ]);
             }
 
             return $this->successResponse([

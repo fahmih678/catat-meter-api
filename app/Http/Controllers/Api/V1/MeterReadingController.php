@@ -4,18 +4,14 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Helpers\RoleHelper;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\MeterReadingRequest;
 use App\Http\Traits\HasPamFiltering;
-use App\Models\Area;
-use App\Models\Bill;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\Customer;
-use App\Models\Meter;
 use App\Models\MeterReading;
 use App\Services\MeterReadingService;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -56,32 +52,40 @@ class MeterReadingController extends Controller
             // Build optimized query using indexes
             $query = MeterReading::query()
                 ->select([
+                    // Meter reading fields
                     'meter_readings.id',
-                    'meter_readings.meter_id',
-                    'meter_readings.registered_month_id',
                     'meter_readings.previous_reading',
                     'meter_readings.current_reading',
                     'meter_readings.volume_usage',
                     'meter_readings.photo_url',
                     'meter_readings.status',
                     'meter_readings.notes',
-                    'meter_readings.reading_by',
                     'meter_readings.reading_at',
+                    // Customer fields
                     'customers.id as customer_id',
                     'customers.name as customer_name',
                     'customers.customer_number',
-                    'customers.phone as customer_phone',
+                    // Related fields
                     'meters.meter_number',
-                    'tariff_groups.name as tariff_group_name',
-                    'areas.id as area_id',
                     'areas.name as area_name',
-                    'registered_months.period'
+                    'registered_months.period',
+                    'users.name as reading_by_name',
+                    // Bill fields (fix N+1 query)
+                    'bills.id as bill_id',
+                    'bills.total_bill as bill_total',
+                    'bills.due_date as bill_due_date'
                 ])
                 ->join('meters', 'meter_readings.meter_id', '=', 'meters.id')
                 ->join('customers', 'meters.customer_id', '=', 'customers.id')
-                ->join('tariff_groups', 'customers.tariff_group_id', '=', 'tariff_groups.id')
                 ->join('areas', 'customers.area_id', '=', 'areas.id')
                 ->join('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
+                ->leftJoin('users', function ($join) use ($pamId) {
+                    $join->on('meter_readings.reading_by', '=', 'users.id')
+                        ->where('users.pam_id', '=', $pamId);
+                })
+                ->leftJoin('bills', function ($join) {
+                    $join->on('meter_readings.id', '=', 'bills.meter_reading_id');
+                })
                 ->where('meter_readings.pam_id', $pamId);
 
             // Apply filters with index optimization
@@ -121,35 +125,28 @@ class MeterReadingController extends Controller
             // Execute paginated query
             $meterReadings = $query->paginate($perPage);
 
-            // Format response for mobile UI
+            // Format response for mobile UI (N+1 Query Fixed)
             $formattedData = $meterReadings->getCollection()->map(function ($reading) {
-                $periodDate = $reading->period;
-                $bill = Bill::where('meter_reading_id', $reading->id)->first();
-
                 return [
                     'id' => $reading->id,
-                    'period' => $periodDate,
+                    'period' => $reading->period,
                     'customer' => [
                         'id' => $reading->customer_id,
                         'name' => $reading->customer_name,
                         'number' => $reading->customer_number,
-                        'phone' => $reading->customer_phone ?? null,
-                        'tariff_group_name' => $reading->tariff_group_name,
                         'area_name' => $reading->area_name,
                     ],
                     'meter_number' => $reading->meter_number,
-                    'previous_reading' => $reading->previous_reading,
-                    'current_reading' => $reading->current_reading,
-                    'volume_usage' => $reading->volume_usage,
+                    'current_reading' => (float) $reading->current_reading,
+                    'volume_usage' => (float) $reading->volume_usage,
                     'bill' => [
-                        'id' => $bill ? $bill->id : null,
-                        'total_bill' => $bill ? $bill->total_bill : null,
-                        'due_date' => $bill ? $bill->due_date : null,
+                        'id' => $reading->bill_id,
+                        'total_bill' => $reading->bill_total,
+                        'due_date' => $reading->bill_due_date,
                     ],
                     'notes' => $reading->notes,
-                    'photo_url' => $reading->photo_url,
-                    'status' =>  $reading->status,
-                    'reading_by' => $reading->readingBy->name,
+                    'status' => $reading->status,
+                    'reading_by' => $reading->reading_by_name,
                     'reading_at' => $reading->reading_at,
                 ];
             });
@@ -255,7 +252,7 @@ class MeterReadingController extends Controller
             $request->validate([
                 'customer_id' => 'required|integer|exists:customers,id',
                 'registered_month_id' => 'required|integer|exists:registered_months,id',
-                'current_reading' => 'required|decimal:2',
+                'current_reading' => 'required|decimal:2|min:0',
                 'notes' => 'nullable|string|max:1000',
                 'reading_by' => 'nullable|integer|exists:users,id',
                 'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
@@ -263,32 +260,47 @@ class MeterReadingController extends Controller
 
             $user = $request->user();
 
-            // Get meter data
-            $meter = Meter::select('id', 'initial_installed_meter')->where('customer_id', $request->customer_id)
-                ->where('is_active', true)
-                ->latest('id')
+            // OPTIMIZED: Single query with PAM security + soft delete handling
+            $customerData = Customer::select([
+                    'customers.id',
+                    'customers.pam_id',
+                    'meters.id as meter_id',
+                    'meters.initial_installed_meter',
+                    'meters.is_active as meter_active',
+                    // Subquery for existing reading (soft delete safe)
+                    DB::raw('(SELECT 1 FROM meter_readings
+                              WHERE meter_id = meters.id
+                              AND registered_month_id = ' . $request->registered_month_id . '
+                              AND deleted_at IS NULL
+                              LIMIT 1) as reading_exists'),
+                    // Subquery for previous reading (soft delete safe)
+                    DB::raw('(SELECT current_reading FROM meter_readings
+                              WHERE meter_id = meters.id
+                              AND deleted_at IS NULL
+                              ORDER BY created_at DESC
+                              LIMIT 1) as previous_reading')
+                ])
+                ->join('meters', 'customers.id', '=', 'meters.customer_id')
+                ->where('customers.id', $request->customer_id)
+                ->where('customers.pam_id', $user->pam_id) // SECURITY: PAM validation
+                ->where('customers.is_active', true)
+                ->where('meters.is_active', true)
                 ->first();
 
-            if (!$meter) {
-                return $this->notFoundResponse('Meter tidak ditemukan atau tidak aktif');
+            if (!$customerData) {
+                return $this->notFoundResponse('Customer atau meter tidak ditemukan atau tidak sesuai dengan PAM Anda');
             }
 
-            // cek apakah meter sudah dilakukan pencatatan
-            $exists = MeterReading::where('meter_id', $meter->id)
-                ->where('registered_month_id', $request->registered_month_id)
-                ->exists();
-
-            if ($exists) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Customer sudah dilakukan pencatatan untuk bulan ini.'
-                ], 409);
+            if (!$customerData->meter_active) {
+                return $this->notFoundResponse('Meter tidak aktif untuk customer ini');
             }
 
-            // Get previous reading
-            $previousReading = MeterReading::where('meter_id', $meter->id)
-                ->orderBy('created_at', 'desc')
-                ->first();
+            if ($customerData->reading_exists) {
+                return $this->errorResponse('Customer sudah dilakukan pencatatan untuk bulan ini', 409);
+            }
+
+            // Determine previous reading value
+            $previousReadingValue = $customerData->previous_reading ?? $customerData->initial_installed_meter;
 
             // Handle image upload
             $photoUrl = null;
@@ -304,13 +316,12 @@ class MeterReadingController extends Controller
             }
 
             // Calculate volume usage
-            $previousReadingValue = $previousReading ? $previousReading->current_reading : $meter->initial_installed_meter;
             $volumeUsage = max(0, $request->current_reading - $previousReadingValue);
 
             // Prepare data for creating meter reading
             $meterReadingData = [
                 'pam_id' => $user->pam_id,
-                'meter_id' => $meter->id,
+                'meter_id' => $customerData->meter_id,
                 'registered_month_id' => $request->registered_month_id,
                 'previous_reading' => $previousReadingValue,
                 'current_reading' => $request->current_reading,
@@ -318,20 +329,37 @@ class MeterReadingController extends Controller
                 'notes' => $request->notes,
                 'photo_url' => $photoUrl,
                 'reading_by' => $user->id,
-                'reading_at' => Carbon::parse($request->reading_at)->format('Y-m-d'),
+                'reading_at' => now()->format('Y-m-d H:i:s'),
                 'status' => 'draft' // Default status
             ];
 
             // Validate current reading is not less than previous
             if ($meterReadingData['current_reading'] < $meterReadingData['previous_reading']) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Pembacaan saat ini tidak boleh lebih kecil dari pembacaan sebelumnya'
-                ], 422);
+                return $this->errorResponse('Pembacaan saat ini tidak boleh lebih kecil dari pembacaan sebelumnya', 422);
             }
 
-            // Create meter reading record directly using Eloquent
-            $record = MeterReading::create($meterReadingData);
+            // Use transaction to prevent race conditions
+            DB::beginTransaction();
+            try {
+                // Double-check for race condition before creating
+                $finalCheck = MeterReading::where('meter_id', $customerData->meter_id)
+                    ->where('registered_month_id', $request->registered_month_id)
+                    ->lockForUpdate()
+                    ->exists();
+
+                if ($finalCheck) {
+                    DB::rollBack();
+                    return $this->errorResponse('Customer sudah dilakukan pencatatan untuk bulan ini', 409);
+                }
+
+                // Create meter reading record within transaction
+                $record = MeterReading::create($meterReadingData);
+                DB::commit();
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
 
             return $this->createdResponse([
                 'id' => $record->id,
@@ -473,10 +501,7 @@ class MeterReadingController extends Controller
             $deleted = $this->meterReadingService->deleteRecord($meterReadingId);
 
             if (!$deleted) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Meter reading tidak ditemukan atau tidak berstatus draft'
-                ], 404);
+                return $this->notFoundResponse('Meter reading tidak ditemukan atau tidak berstatus draft');
             }
 
             return $this->deletedResponse('Meter reading berhasil dihapus');

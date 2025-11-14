@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Customer;
 use App\Models\RegisteredMonth;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 
 class CustomerController extends Controller
 {
@@ -45,7 +47,7 @@ class CustomerController extends Controller
                 ->first();
 
             if (!$registeredMonth) {
-                $this->notFoundResponse('Registered month not found');
+                return $this->notFoundResponse('Registered month not found');
             }
 
             // Set defaults
@@ -323,15 +325,14 @@ class CustomerController extends Controller
                 ->where('is_active', true)
                 ->get(['id', 'name', 'customer_number']);
 
-            $data = [
+            return $this->successResponse([
                 'items' => $formattedData,
                 'customers' => $userCustomers,
                 'pagination' => [
                     'total' => $bills->total(),
-                    'has_more_page' => $bills->hasMorePages(),
+                    'has_more_pages' => $bills->hasMorePages(),
                 ],
-            ];
-            return $this->successResponse($data, 'Bills retrieved successfully');
+            ], 'Bills retrieved successfully');
         } catch (\Exception $e) {
             Log::error('Error fetching bills by user: ' . $e->getMessage(), [
                 'user_id' => $request->user()->id,

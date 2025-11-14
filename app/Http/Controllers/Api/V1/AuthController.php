@@ -34,44 +34,17 @@ class AuthController extends Controller
 
             // Check if user exists
             if (!$user) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Authentication failed',
-                    'error_code' => 'USER_NOT_FOUND',
-                    'errors' => [
-                        'email' => ['No account found with this email address.']
-                    ],
-                    'data' => null,
-                    'timestamp' => now()->toISOString()
-                ], 404);
+                return $this->notFoundResponse('Login failed - User not found');
             }
 
             // Check if password is correct
             if (!Hash::check($request->password, $user->password)) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Authentication failed',
-                    'error_code' => 'INVALID_CREDENTIALS',
-                    'errors' => [
-                        'email' => ['The provided credentials are incorrect.']
-                    ],
-                    'data' => null,
-                    'timestamp' => now()->toISOString()
-                ], 401);
+                return $this->errorResponse('Login failed - Invalid credentials', 401);
             }
 
             // Check if user is active (if the field exists)
             if (isset($user->is_active) && !$user->is_active) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Account access denied',
-                    'error_code' => 'ACCOUNT_INACTIVE',
-                    'errors' => [
-                        'account' => ['Your account has been deactivated. Please contact support.']
-                    ],
-                    'data' => null,
-                    'timestamp' => now()->toISOString()
-                ], 403);
+                return $this->forbiddenResponse('Login failed - Account is inactive');
             }
 
             // Delete old tokens for this device to prevent multiple sessions
@@ -82,48 +55,36 @@ class AuthController extends Controller
             // Create new token
             $token = $user->createToken($request->device_name ?? 'mobile-app')->plainTextToken;
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Login successful',
-                'data' => [
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'roles' => $user->getRoleNames(),
-                        'pam_id' => $user->pam_id,
-                    ],
-                    'token' => $token,
-                    'token_type' => 'Bearer',
-                ]
-            ], 200);
+            return $this->successResponse([
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'roles' => $user->getRoleNames(),
+                    'pam_id' => $user->pam_id,
+                ],
+                'token' => $token,
+                'token_type' => 'Bearer',
+            ], 'Login successful');
         } catch (ValidationException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'error_code' => 'VALIDATION_ERROR',
-                'errors' => $e->errors(),
-                'data' => null,
-                'timestamp' => now()->toISOString()
-            ], 422);
+            Log::error('Login validation error: ' . $e->getMessage(), [
+                'email' => $request->email,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'errors' => $e->errors()
+            ]);
+
+            return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             // Log the error for debugging
             Log::error('Login error: ' . $e->getMessage(), [
                 'email' => $request->email,
                 'ip' => $request->ip(),
-                'user_agent' => $request->userAgent()
+                'user_agent' => $request->userAgent(),
+                'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Internal server error',
-                'error_code' => 'SERVER_ERROR',
-                'errors' => [
-                    'server' => ['An unexpected error occurred. Please try again.']
-                ],
-                'data' => null,
-                'timestamp' => now()->toISOString()
-            ], 500);
+            return $this->errorResponse('Login failed - Internal server error', 500);
         }
     }
 
@@ -232,10 +193,7 @@ class AuthController extends Controller
             $request->user()->tokens()->where('id', $token->id)->delete();
         }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Logout successful'
-        ], 200);
+        return $this->successResponse(null, 'Logout successful');
     }
 
     /**
@@ -246,10 +204,7 @@ class AuthController extends Controller
         // Revoke all tokens
         $request->user()->tokens()->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Logged out from all devices'
-        ], 200);
+        return $this->successResponse(null, 'Logged out from all devices');
     }
 
     /**
@@ -269,14 +224,10 @@ class AuthController extends Controller
         // Create new token
         $token = $user->createToken($deviceName)->plainTextToken;
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Token refreshed successfully',
-            'data' => [
-                'token' => $token,
-                'token_type' => 'Bearer'
-            ]
-        ], 200);
+        return $this->successResponse([
+            'token' => $token,
+            'token_type' => 'Bearer'
+        ], 'Token refreshed successfully');
     }
 
     /**
@@ -286,26 +237,21 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Token is valid',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->getRoleNames()->first()
-                ],
-                'token_name' => $request->user()->currentAccessToken()->name,
-                'expires_at' => $request->user()->currentAccessToken()->expires_at
-            ]
-        ], 200);
+        return $this->successResponse([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->getRoleNames()->first()
+            ],
+            'token_name' => $request->user()->currentAccessToken()->name,
+            'expires_at' => $request->user()->currentAccessToken()->expires_at
+        ], 'Token is valid');
     }
 
     private function handleImageUpload($file, int $userId): ?string
     {
         try {
-
             if (!$file->isValid()) {
                 return null;
             }
@@ -326,7 +272,7 @@ class AuthController extends Controller
             $filename = "users_{$userId}_" . time() . "_" . Str::random(10) . '.' . $extension;
 
             // Folder
-            $directory = "users/{$userId}";
+            $directory = "users";
 
             // Store in /storage/app/public/users/{id}
             $path = $file->storeAs($directory, $filename, 'public');

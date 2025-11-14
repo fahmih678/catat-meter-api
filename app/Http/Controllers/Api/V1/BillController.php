@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Traits\HasPamFiltering;
 use App\Models\RegisteredMonth;
 use App\Models\Bill;
 use Illuminate\Http\Request;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 
 class BillController extends Controller
 {
+    use HasPamFiltering;
+
     public function __construct()
     {
         // Apply PAM scope middleware to all methods
@@ -76,11 +79,15 @@ class BillController extends Controller
                 'users.name as paid_by_name',
                 'registered_months.period as bill_period',
             )
-                ->join('customers', 'bills.customer_id', '=', 'customers.id')
-                ->join('meter_readings', 'bills.meter_reading_id', '=', 'meter_readings.id')
-                ->join('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
+                ->leftJoin('customers', 'bills.customer_id', '=', 'customers.id')
+                ->leftJoin('meter_readings', 'bills.meter_reading_id', '=', 'meter_readings.id')
+                ->leftJoin('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
                 ->leftJoin('users', 'bills.paid_by', '=', 'users.id')
                 ->where('bills.status', 'paid')
+                ->whereNull('bills.deleted_at')
+                ->whereNull('customers.deleted_at')
+                ->whereNull('meter_readings.deleted_at')
+                ->whereNull('registered_months.deleted_at')
                 ->when($selectedPeriod, function ($query, $period) {
                     $year = substr($period, 0, 4);
                     $month = substr($period, 5, 2);
@@ -136,7 +143,7 @@ class BillController extends Controller
                 'summary' => $summary,
             ], 'Laporan pembayaran bulanan berhasil diambil');
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to retrieve payment data' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to retrieve payment data: ' . $e->getMessage(), 500);
         }
     }
 
@@ -165,15 +172,19 @@ class BillController extends Controller
                 'customers.name as customer_name',
                 'customers.customer_number',
                 'users.name as paid_by_name',
-                DB::raw("DATE_FORMAT(registered_months.period, '%b %Y') as period_formatted"),
-                DB::raw("DATE_FORMAT(bills.issued_at, '%b %Y') as issued_at_formatted"),
-                DB::raw("DATE_FORMAT(bills.paid_at, '%d %b %Y') as paid_at_formatted"),
+                'registered_months.period',
+                'bills.issued_at',
+                'bills.paid_at',
             )
                 ->leftJoin('customers', 'bills.customer_id', '=', 'customers.id')
-                ->join('meter_readings', 'bills.meter_reading_id', '=', 'meter_readings.id')
-                ->join('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
+                ->leftJoin('meter_readings', 'bills.meter_reading_id', '=', 'meter_readings.id')
+                ->leftJoin('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
                 ->leftJoin('users', 'bills.paid_by', '=', 'users.id')
                 ->where('bills.status', 'paid')
+                ->whereNull('bills.deleted_at')
+                ->whereNull('customers.deleted_at')
+                ->whereNull('meter_readings.deleted_at')
+                ->whereNull('registered_months.deleted_at')
                 ->when($selectedPeriod, function ($query, $period) {
                     $year = substr($period, 0, 4);
                     $month = substr($period, 5, 2);
@@ -190,10 +201,7 @@ class BillController extends Controller
             $paymentData = $paymentDataQuery->get();
 
             if ($paymentData->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Tidak ada data pembayaran untuk periode ' . $selectedPeriod,
-                ], 404);
+                return $this->notFoundResponse('No payment data found for period ' . $selectedPeriod);
             }
 
             // Calculate summary
@@ -209,6 +217,21 @@ class BillController extends Controller
                 $pamName = $pam ? $pam->name : 'PDAM';
             }
 
+            // Transform payment data for PDF
+            $transformedPaymentData = $paymentData->map(function ($item) {
+                return (object)[
+                    'bill_number' => $item->bill_number,
+                    'customer_name' => $item->customer_name,
+                    'customer_number' => $item->customer_number,
+                    'total_bill' => $item->total_bill,
+                    'payment_method' => $item->payment_method ?? '-',
+                    'period_formatted' => \Carbon\Carbon::createFromFormat('Y-m-d', $item->period)->format('M Y'),
+                    'issued_at_formatted' => \Carbon\Carbon::parse($item->issued_at)->format('d M Y'),
+                    'paid_at_formatted' => $item->paid_at ? \Carbon\Carbon::parse($item->paid_at)->format('d M Y') : '-',
+                    'paid_by_name' => $item->paid_by_name ?? '-',
+                ];
+            });
+
             // Generate PDF
             $options = new Options();
             $options->set('defaultFont', 'Arial');
@@ -218,7 +241,7 @@ class BillController extends Controller
             $dompdf = new Dompdf($options);
 
             // Create HTML content
-            $html = $this->generatePaymentReportHtml($paymentData, $selectedPeriod, $totalPayments, $totalAmounts, $pamName);
+            $html = $this->generatePaymentReportHtml($transformedPaymentData, $selectedPeriod, $totalPayments, $totalAmounts, $pamName);
 
             $dompdf->loadHtml($html);
             $dompdf->setPaper('A4', 'portrait');
@@ -235,7 +258,7 @@ class BillController extends Controller
                 'Pragma' => 'public',
             ]);
         } catch (\Throwable $e) {
-            $this->errorResponse('Failed to generate payment report' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to generate payment report: ' . $e->getMessage(), 500);
         }
     }
 
@@ -249,7 +272,7 @@ class BillController extends Controller
      * @param string $pamName
      * @return string
      */
-    private function generatePaymentReportHtml($paymentData, $period, $totalPayments, $totalAmounts, $pamName)
+    private function generatePaymentReportHtml(\Illuminate\Support\Collection $paymentData, string $period, int $totalPayments, float $totalAmounts, string $pamName): string
     {
         $periodName = Carbon::createFromFormat('Y-m', $period)->format('F Y');
 

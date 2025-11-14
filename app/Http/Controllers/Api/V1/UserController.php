@@ -29,7 +29,7 @@ class UserController extends Controller
     {
         try {
             if (!RoleHelper::hasManagementAccess()) {
-                return $this->forbiddenResponse('You do not have permission to access users.');
+                return $this->forbiddenResponse('User access forbidden - Insufficient permissions');
             }
 
             $query = User::with(['pam', 'roles']);
@@ -47,7 +47,7 @@ class UserController extends Controller
                     // For non-superadmin, only allow filtering their own PAM
                     $userPamId = RoleHelper::getUserPamId();
                     if ($requestedPamId != $userPamId) {
-                        return $this->forbiddenResponse('Cannot filter by PAM that is not assigned to you.');
+                        return $this->forbiddenResponse('PAM filter forbidden - Cannot filter by PAM not assigned to you');
                     }
                 }
                 $query->where('pam_id', $requestedPamId);
@@ -136,13 +136,13 @@ class UserController extends Controller
     {
         try {
             if (!RoleHelper::hasManagementAccess()) {
-                return $this->forbiddenResponse('You do not have permission to access users.');
+                return $this->forbiddenResponse('User access forbidden - Insufficient permissions');
             }
 
             $user = User::with(['pam', 'roles'])->findOrFail($id);
 
             if (!RoleHelper::isSuperAdmin() && RoleHelper::getUserPamId() !== $user->pam_id) {
-                return $this->forbiddenResponse('You are not allowed to view this user. You can only view users from your own PAM.');
+                return $this->forbiddenResponse('User view forbidden - Cannot view user from different PAM');
             }
 
             return $this->successResponse([
@@ -168,13 +168,13 @@ class UserController extends Controller
     {
         try {
             if (!RoleHelper::hasManagementAccess()) {
-                return $this->forbiddenResponse('You do not have permission to update users.');
+                return $this->forbiddenResponse('User update forbidden - Insufficient permissions');
             }
 
             $user = User::findOrFail($id);
 
             if (!RoleHelper::isSuperAdmin() && RoleHelper::getUserPamId() !== $user->pam_id) {
-                return $this->forbiddenResponse('You are not allowed to update to this user. You can only update to users from your own PAM.');
+                return $this->forbiddenResponse('User update forbidden - Cannot update user from different PAM');
             }
 
             // Validation rules
@@ -249,7 +249,6 @@ class UserController extends Controller
                 'photo' => $user->photo_url,
                 'updated_at' => $user->updated_at->toDateTimeString(),
             ], 'User updated successfully');
-            return $this->successResponse('disin');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
         } catch (\Exception $e) {
@@ -265,13 +264,13 @@ class UserController extends Controller
         try {
             // Check if user has management access
             if (!RoleHelper::hasManagementAccess()) {
-                return $this->forbiddenResponse('You are not allowed to assign role to this user.');
+                return $this->forbiddenResponse('Role assignment forbidden - Insufficient permissions');
             }
 
             $user = User::findOrFail($id);
 
             if (!RoleHelper::isSuperAdmin() && RoleHelper::getUserPamId() !== $user->pam_id) {
-                return $this->forbiddenResponse('You are not allowed to assign role to this user. You can only assign role to users from your own PAM.');
+                return $this->forbiddenResponse('Role assignment forbidden - Cannot assign role to user from different PAM');
             }
 
             $validator = Validator::make($request->all(), [
@@ -283,7 +282,7 @@ class UserController extends Controller
             }
 
             if ($request->role === 'superadmin' && !RoleHelper::isSuperAdmin()) {
-                return $this->forbiddenResponse('You are not allowed to assign Super Admin role.');
+                return $this->forbiddenResponse('Super Admin role assignment forbidden - Insufficient permissions');
             }
 
             if ($user->hasRole($request->role)) {
@@ -311,13 +310,13 @@ class UserController extends Controller
     {
         try {
             if (!RoleHelper::hasManagementAccess()) {
-                return $this->forbiddenResponse('You are not allowed to remove role from this user');
+                return $this->forbiddenResponse('Role removal forbidden - Insufficient permissions');
             }
 
             $user = User::findOrFail($id);
 
             if (!RoleHelper::isSuperAdmin() && RoleHelper::getUserPamId() !== $user->pam_id) {
-                return $this->forbiddenResponse('You are not allowed to remove role from this user. You can only remove role from users from your own PAM.');
+                return $this->forbiddenResponse('Role removal forbidden - Cannot remove role from user from different PAM');
             }
 
             $validator = Validator::make($request->all(), [
@@ -341,14 +340,14 @@ class UserController extends Controller
                 $rolesToRemove = $request->roles;
             }
 
-            // Prevent self superadmin role deletation
+            // Prevent self superadmin role deletion
             $authUser = $request->user();
             if (
                 $authUser->id === (int) $id &&
                 in_array('superadmin', $rolesToRemove, true) &&
                 $authUser->hasRole('superadmin')
             ) {
-                return $this->forbiddenResponse('You cannot remove your own Super Admin role.');
+                return $this->forbiddenResponse('Self role removal forbidden - Cannot remove your own Super Admin role');
             }
 
             foreach ($rolesToRemove as $role) {
@@ -391,7 +390,7 @@ class UserController extends Controller
         try {
             // Check if user is superadmin
             if (!RoleHelper::isSuperAdmin()) {
-                return $this->forbiddenResponse('You are not allowed to delete this user.');
+                return $this->forbiddenResponse('User deletion forbidden - Insufficient permissions');
             }
 
             $user = User::findOrFail($id);
@@ -399,7 +398,7 @@ class UserController extends Controller
 
             // Prevent self-deletion
             if (Auth::user()->id === $user->id) {
-                return $this->forbiddenResponse('You are not allowed to delete yourself.');
+                return $this->forbiddenResponse('Self deletion forbidden - Cannot delete your own account');
             }
             $user->delete();
 
@@ -435,7 +434,7 @@ class UserController extends Controller
             $filename = "users_{$userId}_" . time() . "_" . Str::random(10) . '.' . $extension;
 
             // Folder
-            $directory = "users/{$userId}";
+            $directory = "users";
 
             // Store in /storage/app/public/users/{id}
             $path = $file->storeAs($directory, $filename, 'public');
