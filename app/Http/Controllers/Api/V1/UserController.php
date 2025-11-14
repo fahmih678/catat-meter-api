@@ -11,8 +11,12 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -187,6 +191,7 @@ class UserController extends Controller
                 'status' => 'sometimes|boolean',
                 'password' => 'sometimes|string|min:6',
                 'pam_id' => 'sometimes|nullable|exists:pams,id',
+                'photo' => 'sometimes|image|mimes:jpg,jpeg,png|max:5120',
             ]);
 
             if ($validator->fails()) {
@@ -217,6 +222,21 @@ class UserController extends Controller
                 $user->password = Hash::make($request->password);
             }
 
+            if ($request->hasFile('photo')) {
+
+                if ($user->photo_url) {
+                    $oldPath = parse_url($user->photo_url, PHP_URL_PATH);
+                    $oldPath = ltrim(str_replace('/storage/', '', $oldPath), '/');
+                    Storage::disk('public')->delete($oldPath);
+                }
+
+                $photoUrl = $this->handleImageUpload($request->file('photo'), $user->id);
+
+                if ($photoUrl) {
+                    $user->photo_url = $photoUrl;
+                }
+            }
+
             $user->save();
 
             return $this->successResponse([
@@ -226,8 +246,10 @@ class UserController extends Controller
                 'phone' => $user->phone,
                 'status' => $user->is_active ? 'active' : 'inactive',
                 'pam_id' => $user->pam_id,
+                'photo' => $user->photo_url,
                 'updated_at' => $user->updated_at->toDateTimeString(),
             ], 'User updated successfully');
+            return $this->successResponse('disin');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
         } catch (\Exception $e) {
@@ -386,6 +408,48 @@ class UserController extends Controller
             return $this->errorResponse('User not found', 404);
         } catch (\Exception $e) {
             return $this->errorResponse('Error deleting user: ' . $e->getMessage());
+        }
+    }
+
+    private function handleImageUpload($file, int $userId): ?string
+    {
+        try {
+
+            if (!$file->isValid()) {
+                return null;
+            }
+
+            // Allowed file types
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg'];
+            if (!in_array($file->getClientMimeType(), $allowedMimes)) {
+                return null;
+            }
+
+            // Max 5MB
+            if ($file->getSize() > 5 * 1024 * 1024) {
+                return null;
+            }
+
+            // Create unique filename
+            $extension = $file->getClientOriginalExtension();
+            $filename = "users_{$userId}_" . time() . "_" . Str::random(10) . '.' . $extension;
+
+            // Folder
+            $directory = "users/{$userId}";
+
+            // Store in /storage/app/public/users/{id}
+            $path = $file->storeAs($directory, $filename, 'public');
+
+            return $path ? Storage::url($path) : null;
+        } catch (\Exception $e) {
+
+            Log::error('Error uploading user image', [
+                'user_id' => $userId,
+                'original_filename' => $file->getClientOriginalName(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
         }
     }
 }

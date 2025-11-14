@@ -12,12 +12,8 @@ use App\Http\Controllers\Api\ReportController;
 // V1 API Controllers
 use App\Http\Controllers\Api\V1\AuthController as V1AuthController;
 use App\Http\Controllers\Api\V1\BillController as V1BillController;
-use App\Http\Controllers\Api\V1\MeterController as V1MeterController;
 use App\Http\Controllers\Api\V1\CustomerController as V1CustomerController;
 use App\Http\Controllers\Api\V1\PaymentController as V1PaymentController;
-use App\Http\Controllers\Api\V1\DashboardController as V1DashboardController;
-use App\Http\Controllers\Api\V1\ReportController as V1ReportController;
-use App\Http\Controllers\Api\V1\CatatMeterController as V1CatatMeterController;
 use App\Http\Controllers\Api\V1\MeterReadingController as V1MeterReadingController;
 use App\Http\Controllers\Api\V1\UserController as V1UserController;
 use App\Http\Controllers\Api\V1\PamController as V1PamController;
@@ -59,41 +55,47 @@ Route::prefix('v1')->name('v1.')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
-        // Route for catat meter : month -> list meter reading -> customer -> input meter
-        // month
-        Route::get('/registered-months/list/{year}', [V1RegisteredMonthController::class, 'monthList'])->name('registered-month');
-        Route::post('/registered-months/store', [V1RegisteredMonthController::class, 'store'])->name('registered-month-store');
+        Route::middleware('role:admin,catat_meter,loket', 'pam.scope')->group(function () {
+            // Route for catat meter : month -> list meter reading -> customer -> input meter
+            // month
+            Route::get('/registered-months/list/{year}', [V1RegisteredMonthController::class, 'monthList'])->name('registered-month');
+            Route::post('/registered-months/store', [V1RegisteredMonthController::class, 'store'])->name('registered-month-store');
 
-        // list meter reading
-        Route::get('/meter-readings/list', [V1MeterReadingController::class, 'meterReadingList'])->name('meter-reading-list');
+            // list meter reading
+            Route::get('/meter-readings/list', [V1MeterReadingController::class, 'meterReadingList'])->name('meter-reading-list');
 
-        // Meter Reading Operations
-        Route::get('/customers/unrecorded', [V1CustomerController::class, 'unrecordedList'])->name('customers-unrecorded');
-        Route::get('/customers/{id}/meter-reading-form', [V1MeterReadingController::class, 'getMeterReadingForm'])->name('customers-meter-reading-form');
-        Route::post('/meter-readings/store', [V1MeterReadingController::class, 'store'])->name('meter-reading-store');
-        Route::post('/meter-readings/{meterReadingId}/destroy', [V1MeterReadingController::class, 'destroy'])->name('meter-reading-destroy');
+            // Meter Reading Operations
+            Route::get('/customers/unrecorded', [V1CustomerController::class, 'unrecordedList'])->name('customers-unrecorded');
+            Route::get('/customers/{id}/meter-reading-form', [V1MeterReadingController::class, 'getMeterReadingForm'])->name('customers-meter-reading-form');
+            Route::post('/meter-readings/store', [V1MeterReadingController::class, 'store'])->name('meter-reading-store');
+            Route::post('/meter-readings/{meterReadingId}/destroy', [V1MeterReadingController::class, 'destroy'])->name('meter-reading-destroy');
 
-        // Pay Operations
-        Route::put('/meter-readings/{meterReadingId}/submit-to-pending', [V1MeterReadingController::class, 'submitToPending'])->name('meter-reading-pending');
-        Route::get('/customers/{customerId}/bills', [V1PaymentController::class, 'getBills'])->name('get-bills');
-        Route::post('/customers/{customerId}/bills/pay', [V1PaymentController::class, 'payBills'])->name('pay-bills');
-        Route::delete('/bills/{billId}', [V1PaymentController::class, 'destroy'])->name('bills.destroy');
+            // Pay Operations
+            Route::put('/meter-readings/{meterReadingId}/submit-to-pending', [V1MeterReadingController::class, 'submitToPending'])->name('meter-reading-pending');
+            Route::get('/customers/{customerId}/bills', [V1PaymentController::class, 'getBills'])->name('get-bills');
+            Route::post('/customers/{customerId}/bills/pay', [V1PaymentController::class, 'payBills'])->name('pay-bills');
+            Route::delete('/bills/{billId}', [V1PaymentController::class, 'destroy'])->name('bills.destroy');
 
-        // Get Bills for User
-        Route::get('/me/bills', [V1CustomerController::class, 'getMyBills'])->name('customers.my-bills');
+            // Bill Monthly Reports
+            Route::get('/reports/monthly-payment-report', [V1BillController::class, 'monthlyPaymentReport'])->name('monthly-payment-report');
+            Route::get('/reports/download-payment-report', [V1BillController::class, 'downloadPaymentReport'])->name('download-payment-report');
+        });
 
-        // Bill Monthly Reports
-        Route::get('/reports/monthly-payment-report', [V1BillController::class, 'monthlyPaymentReport'])->name('monthly-payment-report');
-        Route::get('/reports/download-payment-report', [V1BillController::class, 'downloadPaymentReport'])->name('download-payment-report');
+        Route::middleware('role:superadmin,admin')->group(function () {
+            Route::get('/pams', [V1PamController::class, 'getPams'])->name('get-pams');
+            // User Management
+            Route::get('/users', [V1UserController::class, 'index'])->name('users.index');
+            Route::get('/users/{id}', [V1UserController::class, 'show'])->name('users.show');
+            Route::put('/users/{id}', [V1UserController::class, 'update'])->name('users.update');
+            Route::post('/users/{id}/assign-role', [V1UserController::class, 'assignRole'])->name('users.assign-role');
+            Route::delete('/users/{id}/remove-role', [V1UserController::class, 'removeRole'])->name('users.remove-role');
+            Route::delete('/users/{id}', [V1UserController::class, 'destroy'])->name('users.destroy');
+        });
 
-        // User Management
-        Route::get('/pams', [V1PamController::class, 'getPams'])->name('get-pams');
-        Route::get('/users', [V1UserController::class, 'index'])->name('users.index');
-        Route::get('/users/{id}', [V1UserController::class, 'show'])->name('users.show');
-        Route::put('/users/{id}', [V1UserController::class, 'update'])->name('users.update');
-        Route::post('/users/{id}/assign-role', [V1UserController::class, 'assignRole'])->name('users.assign-role');
-        Route::delete('/users/{id}/remove-role', [V1UserController::class, 'removeRole'])->name('users.remove-role');
-        Route::delete('/users/{id}', [V1UserController::class, 'destroy'])->name('users.destroy');
+        Route::middleware('role:customer')->group(function () {
+            // Get Bills for User
+            Route::get('/me/bills', [V1CustomerController::class, 'getMyBills'])->name('customers.my-bills');
+        });
     });
 });
 

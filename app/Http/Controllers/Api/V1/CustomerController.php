@@ -45,16 +45,7 @@ class CustomerController extends Controller
                 ->first();
 
             if (!$registeredMonth) {
-                return response()->json([
-                    'data' => [],
-                    'pagination' => [
-                        'total' => 0,
-                        'hasNextPage' => false,
-                    ],
-                    'summary' => [
-                        'unrecorded' => 0,
-                    ],
-                ], 404);
+                $this->notFoundResponse('Registered month not found');
             }
 
             // Set defaults
@@ -152,13 +143,13 @@ class CustomerController extends Controller
             // Get summary statistics
             $summary = $this->getUnrecordedSummary($pamId, $validated['registered_month_id'], $validated['area_id'] ?? null);
 
-            return response()->json([
-                'data' => $formattedData,
+            return $this->successResponse([
+                'items' => $formattedData,
                 'registered_month_id' => $registeredMonth->id,
                 'month' => $registeredMonth->period,
                 'pagination' => [
                     'total' => $customers->total(),
-                    'hasNextPage' => $customers->hasMorePages(),
+                    'has_more_pages' => $customers->hasMorePages(),
                 ],
                 'summary' => [
                     'unrecorded' => $summary['unrecorded'],
@@ -171,16 +162,7 @@ class CustomerController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'data' => [],
-                'pagination' => [
-                    'total' => 0,
-                    'hasNextPage' => false,
-                ],
-                'summary' => [
-                    'unrecorded' => 0,
-                ],
-            ], 500);
+            return $this->errorResponse('Failed to retrieve unrecorded customer data', 500);
         }
     }
 

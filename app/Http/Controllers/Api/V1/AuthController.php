@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
@@ -142,7 +145,7 @@ class AuthController extends Controller
                     'phone' => $user->phone,
                     'roles' => $user->getRoleNames(),
                     'pam_id' => $user->pam_id,
-                    'photo_url' => $user->photo_url,
+                    'photo' => $user->photo_url,
                 ]
             ]
         ], 200);
@@ -157,10 +160,17 @@ class AuthController extends Controller
             $user = User::findOrFail($request->user()->id);
 
             $request->validate([
-                'name' => ['sometimes', 'string', 'max:255'],
-                'email' => ['sometimes', 'email', Rule::unique('users')->ignore($user->id)],
-                'phone' => ['sometimes', 'string', 'max:20'],
-                'password' => ['sometimes', 'string', 'min:8', 'confirmed'],
+                'name' => 'sometimes|string|max:50',
+                'email' => [
+                    'sometimes',
+                    'string',
+                    'email',
+                    'max:150',
+                    Rule::unique('users')->ignore($user->id),
+                ],
+                'phone' => 'sometimes|string|max:20',
+                'password' => 'sometimes|string|min:6',
+                'photo' => 'sometimes|image|mimes:jpg,jpeg,png|max:5120',
             ]);
 
             // Update user information
@@ -179,16 +189,29 @@ class AuthController extends Controller
                 $user->password = Hash::make($request->password);
             }
 
+            if ($request->hasFile('photo')) {
+                if ($user->photo_url) {
+                    $oldPath = parse_url($user->photo_url, PHP_URL_PATH);
+                    $oldPath = ltrim(str_replace('/storage/', '', $oldPath), '/');
+                    Storage::disk('public')->delete($oldPath);
+                }
+
+                $photoUrl = $this->handleImageUpload($request->file('photo'), $user->id);
+
+                if ($photoUrl) {
+                    $user->photo_url = $photoUrl;
+                }
+            }
             $user->save();
 
-            $data = [
+            return $this->successResponse([
                 'user' => [
                     'name' => $user->name,
                     'updated_at' => $user->updated_at->format('Y-m-d H:i:s'),
                 ],
-            ];
-
-            return $this->successResponse($data, 'Profile updated successfully');
+            ], 'Profile updated successfully');
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('User not found', 404);
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
@@ -277,5 +300,47 @@ class AuthController extends Controller
                 'expires_at' => $request->user()->currentAccessToken()->expires_at
             ]
         ], 200);
+    }
+
+    private function handleImageUpload($file, int $userId): ?string
+    {
+        try {
+
+            if (!$file->isValid()) {
+                return null;
+            }
+
+            // Allowed file types
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg'];
+            if (!in_array($file->getClientMimeType(), $allowedMimes)) {
+                return null;
+            }
+
+            // Max 5MB
+            if ($file->getSize() > 5 * 1024 * 1024) {
+                return null;
+            }
+
+            // Create unique filename
+            $extension = $file->getClientOriginalExtension();
+            $filename = "users_{$userId}_" . time() . "_" . Str::random(10) . '.' . $extension;
+
+            // Folder
+            $directory = "users/{$userId}";
+
+            // Store in /storage/app/public/users/{id}
+            $path = $file->storeAs($directory, $filename, 'public');
+
+            return $path ? Storage::url($path) : null;
+        } catch (\Exception $e) {
+
+            Log::error('Error uploading user image', [
+                'user_id' => $userId,
+                'original_filename' => $file->getClientOriginalName(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
     }
 }

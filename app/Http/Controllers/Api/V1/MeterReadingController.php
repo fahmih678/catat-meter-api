@@ -123,7 +123,7 @@ class MeterReadingController extends Controller
 
             // Format response for mobile UI
             $formattedData = $meterReadings->getCollection()->map(function ($reading) {
-                $periodDate = Carbon::createFromFormat('Y-m-d', $reading->period);
+                $periodDate = $reading->period;
                 $bill = Bill::where('meter_reading_id', $reading->id)->first();
 
                 return [
@@ -141,7 +141,11 @@ class MeterReadingController extends Controller
                     'previous_reading' => $reading->previous_reading,
                     'current_reading' => $reading->current_reading,
                     'volume_usage' => $reading->volume_usage,
-                    'bill_amount' => $bill ? $bill->total_bill : null,
+                    'bill' => [
+                        'id' => $bill ? $bill->id : null,
+                        'total_bill' => $bill ? $bill->total_bill : null,
+                        'due_date' => $bill ? $bill->due_date : null,
+                    ],
                     'notes' => $reading->notes,
                     'photo_url' => $reading->photo_url,
                     'status' =>  $reading->status,
@@ -150,14 +154,13 @@ class MeterReadingController extends Controller
                 ];
             });
 
-            $data = [
+            return $this->successResponse([
                 'items' => $formattedData,
                 'pagination' => [
                     'total' => $meterReadings->total(),
                     'has_more_pages' => $meterReadings->hasMorePages(),
                 ]
-            ];
-            return $this->successResponse($data, 'Data pencatatan meter berhasil diambil');
+            ], 'Data pencatatan meter berhasil diambil');
         } catch (\Exception $e) {
             Log::error('Error fetching meter reading list: ' . $e->getMessage(), [
                 'pam_id' => $user->pam_id ?? null,
@@ -165,11 +168,7 @@ class MeterReadingController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengambil data pencatatan meter',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
-            ], 500);
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data pencatatan meter', 500, config('app.debug') ? $e->getMessage() : 'Internal server error');
         }
     }
 
@@ -238,10 +237,7 @@ class MeterReadingController extends Controller
                 'photo_url' => $lastReading?->photo_url ?? null,
             ];
 
-            return response()->json([
-                'status' => 'success',
-                'data' => $responseData
-            ]);
+            return $this->successResponse($responseData, 'Data berhasil diambil');
         } catch (\Exception $e) {
             Log::error('Error fetching meter input data: ' . $e->getMessage(), [
                 'customer_id' => $customerId,
@@ -253,8 +249,6 @@ class MeterReadingController extends Controller
         }
     }
 
-
-
     public function store(Request $request): JsonResponse
     {
         try {
@@ -264,7 +258,7 @@ class MeterReadingController extends Controller
                 'current_reading' => 'required|decimal:2',
                 'notes' => 'nullable|string|max:1000',
                 'reading_by' => 'nullable|integer|exists:users,id',
-                'photo_url' => 'nullable|file',
+                'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
             $user = $request->user();
@@ -272,13 +266,23 @@ class MeterReadingController extends Controller
             // Get meter data
             $meter = Meter::select('id', 'initial_installed_meter')->where('customer_id', $request->customer_id)
                 ->where('is_active', true)
+                ->latest('id')
                 ->first();
 
             if (!$meter) {
+                return $this->notFoundResponse('Meter tidak ditemukan atau tidak aktif');
+            }
+
+            // cek apakah meter sudah dilakukan pencatatan
+            $exists = MeterReading::where('meter_id', $meter->id)
+                ->where('registered_month_id', $request->registered_month_id)
+                ->exists();
+
+            if ($exists) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Meter tidak ditemukan atau tidak aktif'
-                ], 404);
+                    'message' => 'Customer sudah dilakukan pencatatan untuk bulan ini.'
+                ], 409);
             }
 
             // Get previous reading
@@ -329,17 +333,13 @@ class MeterReadingController extends Controller
             // Create meter reading record directly using Eloquent
             $record = MeterReading::create($meterReadingData);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Meter reading berhasil disimpan',
-                'data' => [
-                    'id' => $record->id,
-                    'current_reading' => $record->current_reading,
-                    'volume_usage' => $record->volume_usage,
-                    'photo_url' => $record->photo_url, // This will use the accessor to get full URL
-                    'reading_at' => $record->reading_at,
-                ]
-            ], 201);
+            return $this->createdResponse([
+                'id' => $record->id,
+                'current_reading' => $record->current_reading,
+                'volume_usage' => $record->volume_usage,
+                'photo_url' => $record->photo_url, // This will use the accessor to get full URL
+                'reading_at' => $record->reading_at,
+            ], 'Meter reading berhasil disimpan');
         } catch (\Illuminate\Database\QueryException $e) {
             if ($e->errorInfo[1] === 1062) {
                 // Duplicate entry
@@ -444,17 +444,10 @@ class MeterReadingController extends Controller
             $result = $this->meterReadingService->submitMeterReadingToPending($meterReadingId, $requestData);
 
             if (!$result) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Meter reading tidak ditemukan'
-                ], 404);
+                return $this->notFoundResponse('Meter reading tidak ditemukan');
             }
 
-            return response()->json([
-                'status' => 'success',
-                'message' => $result['message'],
-                'data' => $result['data']
-            ], 200);
+            return $this->successResponse($result['data'], $result['message']);
         } catch (\Exception $e) {
             Log::error('Error submitting meter reading to pending: ' . $e->getMessage(), [
                 'meter_reading_id' => $meterReadingId,
@@ -462,10 +455,7 @@ class MeterReadingController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
-            ], 400);
+            return $this->errorResponse('Terjadi kesalahan saat mengubah status meter reading', 500);
         }
     }
 
@@ -474,10 +464,7 @@ class MeterReadingController extends Controller
         try {
             // Check if user can access billing features
             if (!RoleHelper::isAdminPam() && !RoleHelper::canAccessPam($request->user()->pam_id)) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Access denied. You do not have permission to access meter reading features.'
-                ], 403);
+                return $this->forbiddenResponse('Akses ditolak. Anda tidak memiliki izin untuk mengakses fitur meter reading.');
             }
 
             $user = $request->user();
@@ -492,10 +479,7 @@ class MeterReadingController extends Controller
                 ], 404);
             }
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Meter reading berhasil dihapus'
-            ], 200);
+            return $this->deletedResponse('Meter reading berhasil dihapus');
         } catch (\Exception $e) {
             Log::error('Error deleting meter reading: ' . $e->getMessage(), [
                 'meter_reading_id' => $meterReadingId,
@@ -503,10 +487,7 @@ class MeterReadingController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Terjadi kesalahan saat menghapus meter reading'
-            ], 500);
+            return $this->errorResponse('Terjadi kesalahan saat menghapus meter reading', 500);
         }
     }
 }

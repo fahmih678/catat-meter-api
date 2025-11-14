@@ -129,23 +129,14 @@ class BillController extends Controller
                 }),
             ];
 
-            $response = [
+            return $this->successResponse([
                 'available_registered_months' => $availableMonths,
                 'period' => $selectedPeriod,
                 'payment_data' => $paymentData,
                 'summary' => $summary,
-            ];
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Laporan pembayaran bulanan berhasil diambil',
-                'data' => $response,
-            ], 200);
+            ], 'Laporan pembayaran bulanan berhasil diambil');
         } catch (\Throwable $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to retrieve payment data: ' . $e->getMessage(),
-            ], 500);
+            return $this->errorResponse('Failed to retrieve payment data' . $e->getMessage(), 500);
         }
     }
 
@@ -244,10 +235,7 @@ class BillController extends Controller
                 'Pragma' => 'public',
             ]);
         } catch (\Throwable $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to generate payment report: ' . $e->getMessage(),
-            ], 500);
+            $this->errorResponse('Failed to generate payment report' . $e->getMessage(), 500);
         }
     }
 
