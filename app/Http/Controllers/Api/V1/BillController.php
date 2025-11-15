@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class BillController extends Controller
 {
@@ -143,7 +143,11 @@ class BillController extends Controller
                 'summary' => $summary,
             ], 'Laporan pembayaran bulanan berhasil diambil');
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to retrieve payment data: ' . $e->getMessage(), 500);
+            Log::error('Error in monthly payment report', [
+                'error_type' => get_class($e),
+                'period' => $selectedPeriod ?? null,
+            ]);
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data pembayaran', 500);
         }
     }
 
@@ -153,7 +157,7 @@ class BillController extends Controller
      * @param Request $request
      * @return JsonResponse|\Illuminate\Http\Response
      */
-    public function downloadPaymentReport(Request $request)
+    public function downloadPaymentReport(Request $request): JsonResponse|\Illuminate\Http\Response
     {
         try {
             // Get selected period from request, default to current month
@@ -258,7 +262,11 @@ class BillController extends Controller
                 'Pragma' => 'public',
             ]);
         } catch (\Throwable $e) {
-            return $this->errorResponse('Failed to generate payment report: ' . $e->getMessage(), 500);
+            Log::error('Error generating payment report PDF', [
+                'error_type' => get_class($e),
+                'period' => $selectedPeriod ?? null,
+            ]);
+            return $this->errorResponse('Terjadi kesalahan saat membuat laporan pembayaran', 500);
         }
     }
 

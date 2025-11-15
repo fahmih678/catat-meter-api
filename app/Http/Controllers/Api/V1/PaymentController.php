@@ -6,9 +6,7 @@ use App\Helpers\RoleHelper;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Customer;
-use App\Models\Meter;
 use App\Models\Bill;
-use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use App\Http\Traits\HasPamFiltering;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -75,7 +73,7 @@ class PaymentController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse('Customer not found');
         } catch (\Exception $e) {
-            return $this->errorResponse('Error retrieving bills: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data tagihan', 500);
         }
     }
 
@@ -149,7 +147,7 @@ class PaymentController extends Controller
                 } catch (\Exception $e) {
                     $errors[] = [
                         'bill_id' => $bill->id,
-                        'error' => $e->getMessage()
+                        'error' => 'Terjadi kesalahan internal saat memproses tagihan'
                     ];
                 }
             }
@@ -169,7 +167,7 @@ class PaymentController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse('Customer not found');
         } catch (\Exception $e) {
-            return $this->errorResponse('Error paying bills: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Terjadi kesalahan saat memproses pembayaran', 500);
         }
     }
 
@@ -211,7 +209,7 @@ class PaymentController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse('Bill not found');
         } catch (\Exception $e) {
-            return $this->errorResponse('Error removing bill: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Terjadi kesalahan saat menghapus tagihan', 500);
         }
     }
 }

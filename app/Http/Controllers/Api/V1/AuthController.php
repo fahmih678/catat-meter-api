@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
@@ -13,13 +12,14 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Http\JsonResponse;
 
 class AuthController extends Controller
 {
     /**
      * Login user and create token
      */
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         try {
             // Validate input
@@ -67,21 +67,19 @@ class AuthController extends Controller
                 'token_type' => 'Bearer',
             ], 'Login successful');
         } catch (ValidationException $e) {
-            Log::error('Login validation error: ' . $e->getMessage(), [
+            Log::error('Login validation error', [
                 'email' => $request->email,
                 'ip' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'errors' => $e->errors()
             ]);
 
             return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             // Log the error for debugging
-            Log::error('Login error: ' . $e->getMessage(), [
+            Log::error('Login error', [
                 'email' => $request->email,
                 'ip' => $request->ip(),
                 'user_agent' => $request->userAgent(),
-                'trace' => $e->getTraceAsString()
             ]);
 
             return $this->errorResponse('Login failed - Internal server error', 500);
@@ -91,7 +89,7 @@ class AuthController extends Controller
     /**
      * Get authenticated user profile
      */
-    public function profile(Request $request)
+    public function profile(Request $request): JsonResponse
     {
         $user = $request->user();
 
@@ -115,7 +113,7 @@ class AuthController extends Controller
     /**
      * Update user profile
      */
-    public function updateProfile(Request $request)
+    public function updateProfile(Request $request): JsonResponse
     {
         try {
             $user = User::findOrFail($request->user()->id);
@@ -183,7 +181,7 @@ class AuthController extends Controller
     /**
      * Logout user (revoke token)
      */
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         // Get current access token
         $token = $request->user()->currentAccessToken();
@@ -199,7 +197,7 @@ class AuthController extends Controller
     /**
      * Logout from all devices (revoke all tokens)
      */
-    public function logoutAll(Request $request)
+    public function logoutAll(Request $request): JsonResponse
     {
         // Revoke all tokens
         $request->user()->tokens()->delete();
@@ -210,7 +208,7 @@ class AuthController extends Controller
     /**
      * Refresh token (create new token and revoke old one)
      */
-    public function refreshToken(Request $request)
+    public function refreshToken(Request $request): JsonResponse
     {
         $user = $request->user();
         $deviceName = $request->device_name ?? 'mobile-app';
@@ -233,7 +231,7 @@ class AuthController extends Controller
     /**
      * Check token validity
      */
-    public function checkToken(Request $request)
+    public function checkToken(Request $request): JsonResponse
     {
         $user = $request->user();
 
@@ -281,9 +279,9 @@ class AuthController extends Controller
         } catch (\Exception $e) {
 
             Log::error('Error uploading user image', [
+                'error_type' => get_class($e),
                 'user_id' => $userId,
                 'original_filename' => $file->getClientOriginalName(),
-                'error' => $e->getMessage(),
             ]);
 
             return null;

@@ -125,7 +125,7 @@ class UserController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
         } catch (\Exception $e) {
-            return $this->errorResponse('Error retrieving users: ' . $e->getMessage());
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data pengguna', 500);
         }
     }
 
@@ -157,7 +157,7 @@ class UserController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
         } catch (\Throwable $e) {
-            return $this->errorResponse('Error retrieving user details: ' . $e->getMessage());
+            return $this->errorResponse('Terjadi kesalahan saat mengambil detail pengguna', 500);
         }
     }
 
@@ -252,7 +252,7 @@ class UserController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
         } catch (\Exception $e) {
-            return $this->errorResponse('Error updating user: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Terjadi kesalahan saat memperbarui pengguna', 500);
         }
     }
 
@@ -299,7 +299,7 @@ class UserController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
         } catch (\Exception $e) {
-            return $this->errorResponse('Error assigning role: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Terjadi kesalahan saat menetapkan role', 500);
         }
     }
 
@@ -378,7 +378,7 @@ class UserController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
         } catch (\Exception $e) {
-            return $this->errorResponse('Error removing role: ' . $e->getMessage());
+            return $this->errorResponse('Terjadi kesalahan saat menghapus role', 500);
         }
     }
 
@@ -406,7 +406,7 @@ class UserController extends Controller
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
         } catch (\Exception $e) {
-            return $this->errorResponse('Error deleting user: ' . $e->getMessage());
+            return $this->errorResponse('Terjadi kesalahan saat menghapus pengguna', 500);
         }
     }
 
@@ -445,7 +445,6 @@ class UserController extends Controller
             Log::error('Error uploading user image', [
                 'user_id' => $userId,
                 'original_filename' => $file->getClientOriginalName(),
-                'error' => $e->getMessage(),
             ]);
 
             return null;

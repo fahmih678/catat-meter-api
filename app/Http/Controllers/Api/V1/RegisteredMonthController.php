@@ -10,13 +10,16 @@ use App\Models\RegisteredMonth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Http\JsonResponse;
 
 class RegisteredMonthController extends Controller
 {
     use HasPamFiltering;
 
-    public function monthList(Request $request, $year)
+    public function monthList(Request $request, $year): JsonResponse
     {
         try {
             $validator = Validator::make(['year' => $year], [
@@ -29,7 +32,7 @@ class RegisteredMonthController extends Controller
 
             $user = $request->user();
 
-            // OPTIMIZED: Single query with subquery for customer counts
+            // Get registered months with customer counts using subquery
             $registeredMonths = RegisteredMonth::select([
                 'registered_months.id',
                 'registered_months.period',
@@ -37,7 +40,7 @@ class RegisteredMonthController extends Controller
                 'registered_months.total_usage',
                 'registered_months.total_bills',
                 'registered_months.status',
-                // Subquery to fix N+1 problem
+                // Subquery to get recorded customer count
                 DB::raw('(SELECT COUNT(*) FROM meter_readings
                               WHERE pam_id = registered_months.pam_id
                               AND registered_month_id = registered_months.id
@@ -48,17 +51,20 @@ class RegisteredMonthController extends Controller
                 ->orderBy('registered_months.period', 'asc')
                 ->get();
 
-            // OPTIMIZED: Single query for available years using CTE/common table
-            $registeredYears = RegisteredMonth::where('pam_id', $user->pam_id)
-                ->selectRaw('DISTINCT YEAR(period) as year')
-                ->orderBy('year', 'desc')
-                ->pluck('year')
-                ->toArray();
+            // Get available years for filtering with caching
+            $cacheKey = "registered_years_pam_{$user->pam_id}";
+            $registeredYears = Cache::remember($cacheKey, 3600, function () use ($user) {
+                return RegisteredMonth::where('pam_id', $user->pam_id)
+                    ->selectRaw('DISTINCT YEAR(period) as year')
+                    ->orderBy('year', 'desc')
+                    ->pluck('year')
+                    ->toArray();
+            });
 
             // Indonesian month names (extracted to helper)
             $monthNames = $this->getIndonesianMonthNames();
 
-            // Transform data (now N+1 free!)
+            // Transform data for response
             $monthlyData = $registeredMonths->map(function ($month) use ($monthNames) {
                 $periodDate = \Carbon\Carbon::createFromFormat('Y-m-d', $month->period);
 
@@ -81,11 +87,16 @@ class RegisteredMonthController extends Controller
             ];
             return $this->successResponse($data, 'Month list retrieved successfully');
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve month list: ' . $e->getMessage(), 500);
+            Log::error('Error in month list', [
+                'error_type' => get_class($e),
+                'year' => $year ?? null,
+                'pam_id' => $user->pam_id ?? null,
+            ]);
+            return $this->errorResponse('Terjadi kesalahan saat mengambil daftar bulan', 500);
         }
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         try {
             $user = $request->user();
@@ -135,6 +146,10 @@ class RegisteredMonthController extends Controller
 
                 // Create within transaction
                 $month = RegisteredMonth::create($monthData);
+
+                // Invalidate cache for this PAM
+                Cache::forget("registered_years_pam_{$validateData['pam_id']}");
+
                 DB::commit();
             } catch (\Exception $e) {
                 DB::rollBack();
@@ -147,9 +162,9 @@ class RegisteredMonthController extends Controller
             if ($e->errorInfo[1] === 1062) {
                 return $this->errorResponse('Failed to create month. The period already exists.', 409);
             }
-            return $this->errorResponse('Failed to create month: Database error occurred.', 500);
+            return $this->errorResponse('Terjadi kesalahan database saat membuat bulan', 500);
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to create month: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Terjadi kesalahan saat membuat bulan registrasi', 500);
         }
     }
 

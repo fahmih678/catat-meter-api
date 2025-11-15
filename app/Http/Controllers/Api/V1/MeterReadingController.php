@@ -26,6 +26,15 @@ class MeterReadingController extends Controller
         $this->meterReadingService = $meterReadingService;
     }
 
+    /**
+     * Get meter reading list with filters and pagination
+     *
+     * PERFORMANCE NOTES:
+     * - Recommended indexes: (pam_id, registered_month_id), (meter_id), (customer_id, area_id)
+     * - Uses selective column loading to reduce memory usage
+     * - Pagination prevents large dataset loading
+     * - N+1 queries prevented with proper joins
+     */
     public function meterReadingList(Request $request): JsonResponse
     {
         try {
@@ -70,7 +79,7 @@ class MeterReadingController extends Controller
                     'areas.name as area_name',
                     'registered_months.period',
                     'users.name as reading_by_name',
-                    // Bill fields (fix N+1 query)
+                    // Bill fields
                     'bills.id as bill_id',
                     'bills.total_bill as bill_total',
                     'bills.due_date as bill_due_date'
@@ -125,7 +134,7 @@ class MeterReadingController extends Controller
             // Execute paginated query
             $meterReadings = $query->paginate($perPage);
 
-            // Format response for mobile UI (N+1 Query Fixed)
+            // Format response for mobile UI
             $formattedData = $meterReadings->getCollection()->map(function ($reading) {
                 return [
                     'id' => $reading->id,
@@ -159,13 +168,12 @@ class MeterReadingController extends Controller
                 ]
             ], 'Data pencatatan meter berhasil diambil');
         } catch (\Exception $e) {
-            Log::error('Error fetching meter reading list: ' . $e->getMessage(), [
+            Log::error('Error fetching meter reading list', [
                 'pam_id' => $user->pam_id ?? null,
                 'filters' => $request->all(),
-                'trace' => $e->getTraceAsString()
-            ]);
+                            ]);
 
-            return $this->errorResponse('Terjadi kesalahan saat mengambil data pencatatan meter', 500, config('app.debug') ? $e->getMessage() : 'Internal server error');
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data pencatatan meter', 500, 'Internal server error');
         }
     }
 
@@ -236,11 +244,10 @@ class MeterReadingController extends Controller
 
             return $this->successResponse($responseData, 'Data berhasil diambil');
         } catch (\Exception $e) {
-            Log::error('Error fetching meter input data: ' . $e->getMessage(), [
+            Log::error('Error fetching meter input data', [
                 'customer_id' => $customerId,
                 'pam_id' => $user->pam_id ?? null,
-                'trace' => $e->getTraceAsString()
-            ]);
+                            ]);
 
             return $this->errorResponse('Terjadi kesalahan saat mengambil data meter input');
         }
@@ -260,26 +267,26 @@ class MeterReadingController extends Controller
 
             $user = $request->user();
 
-            // OPTIMIZED: Single query with PAM security + soft delete handling
+            // Get customer data with PAM security and soft delete handling
             $customerData = Customer::select([
-                    'customers.id',
-                    'customers.pam_id',
-                    'meters.id as meter_id',
-                    'meters.initial_installed_meter',
-                    'meters.is_active as meter_active',
-                    // Subquery for existing reading (soft delete safe)
-                    DB::raw('(SELECT 1 FROM meter_readings
+                'customers.id',
+                'customers.pam_id',
+                'meters.id as meter_id',
+                'meters.initial_installed_meter',
+                'meters.is_active as meter_active',
+                // Subquery for existing reading (soft delete safe)
+                DB::raw('(SELECT 1 FROM meter_readings
                               WHERE meter_id = meters.id
                               AND registered_month_id = ' . $request->registered_month_id . '
                               AND deleted_at IS NULL
                               LIMIT 1) as reading_exists'),
-                    // Subquery for previous reading (soft delete safe)
-                    DB::raw('(SELECT current_reading FROM meter_readings
+                // Subquery for previous reading (soft delete safe)
+                DB::raw('(SELECT current_reading FROM meter_readings
                               WHERE meter_id = meters.id
                               AND deleted_at IS NULL
                               ORDER BY created_at DESC
                               LIMIT 1) as previous_reading')
-                ])
+            ])
                 ->join('meters', 'customers.id', '=', 'meters.customer_id')
                 ->where('customers.id', $request->customer_id)
                 ->where('customers.pam_id', $user->pam_id) // SECURITY: PAM validation
@@ -355,7 +362,6 @@ class MeterReadingController extends Controller
                 // Create meter reading record within transaction
                 $record = MeterReading::create($meterReadingData);
                 DB::commit();
-
             } catch (\Exception $e) {
                 DB::rollBack();
                 throw $e;
@@ -377,12 +383,10 @@ class MeterReadingController extends Controller
                 ], 409);
             }
 
-            // Log detail error ke server (aman karena tidak dikirim ke client)
+            // Log error ke server (tanpa sensitive information)
             Log::error('Error creating meter reading', [
-                'error' => $e->getMessage(),
                 'customer_id' => $request->customer_id ?? null,
                 'user_id' => $user->id ?? null,
-                'trace' => $e->getTraceAsString(),
             ]);
 
             // Pesan yang dikirim ke client hanya yang aman & umum
@@ -435,11 +439,10 @@ class MeterReadingController extends Controller
 
             return null;
         } catch (\Exception $e) {
-            Log::error('Error uploading meter reading image: ' . $e->getMessage(), [
+            Log::error('Error uploading meter reading image', [
                 'customer_id' => $customerId,
                 'original_filename' => $file->getClientOriginalName(),
-                'trace' => $e->getTraceAsString()
-            ]);
+                            ]);
 
             return null;
         }
@@ -477,11 +480,10 @@ class MeterReadingController extends Controller
 
             return $this->successResponse($result['data'], $result['message']);
         } catch (\Exception $e) {
-            Log::error('Error submitting meter reading to pending: ' . $e->getMessage(), [
+            Log::error('Error submitting meter reading to pending', [
                 'meter_reading_id' => $meterReadingId,
                 'user_id' => $user->id ?? null,
-                'trace' => $e->getTraceAsString()
-            ]);
+                            ]);
 
             return $this->errorResponse('Terjadi kesalahan saat mengubah status meter reading', 500);
         }
@@ -506,11 +508,10 @@ class MeterReadingController extends Controller
 
             return $this->deletedResponse('Meter reading berhasil dihapus');
         } catch (\Exception $e) {
-            Log::error('Error deleting meter reading: ' . $e->getMessage(), [
+            Log::error('Error deleting meter reading', [
                 'meter_reading_id' => $meterReadingId,
                 'user_id' => $user->id ?? null,
-                'trace' => $e->getTraceAsString()
-            ]);
+                            ]);
 
             return $this->errorResponse('Terjadi kesalahan saat menghapus meter reading', 500);
         }

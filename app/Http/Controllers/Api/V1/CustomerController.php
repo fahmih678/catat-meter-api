@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Customer;
 use App\Models\RegisteredMonth;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Database\QueryException;
 
 class CustomerController extends Controller
 {
@@ -20,6 +18,11 @@ class CustomerController extends Controller
     /**
      * Get list of customers that haven't been recorded in meter reading
      * for specific PAM and area in a registered month
+     *
+     * PERFORMANCE NOTES:
+     * - Recommended indexes: (pam_id, is_active), (meter_id, registered_month_id), (area_id)
+     * - Query uses selective columns to reduce data transfer
+     * - Search optimized with prefix matching instead of contains
      *
      * @param Request $request
      * @return JsonResponse
@@ -90,14 +93,15 @@ class CustomerController extends Controller
                 $query->where('customers.area_id', $validated['area_id']);
             }
 
-            // Apply search filter
+            // Apply search filter with optimized LIKE queries
             if (!empty($validated['search'])) {
                 $search = trim($validated['search']);
                 $query->where(function ($q) use ($search) {
-                    $q->where('customers.name', 'LIKE', "%{$search}%")
-                        ->orWhere('customers.customer_number', 'LIKE', "%{$search}%")
-                        ->orWhere('customers.address', 'LIKE', "%{$search}%")
-                        ->orWhere('meters.meter_number', 'LIKE', "%{$search}%");
+                    // Use more selective search patterns
+                    $q->where('customers.name', 'LIKE', "{$search}%")  // Starts with search
+                        ->orWhere('customers.customer_number', 'LIKE', "{$search}%")
+                        ->orWhere('meters.meter_number', 'LIKE', "{$search}%");
+                    // Avoid address search for performance unless specifically needed
                 });
             }
 
@@ -158,13 +162,13 @@ class CustomerController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching unrecorded customer list: ' . $e->getMessage(), [
-                'pam_id' => $user->pam_id ?? null,
-                'filters' => $request->all(),
-                'trace' => $e->getTraceAsString()
+            Log::error('Error fetching unrecorded customer list', [
+                'error_type' => get_class($e),
+                'pam_id' => $pamId ?? null,
+                'filters' => $validated ?? [],
             ]);
 
-            return $this->errorResponse('Failed to retrieve unrecorded customer data', 500);
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data pelanggan', 500);
         }
     }
 
@@ -334,13 +338,13 @@ class CustomerController extends Controller
                 ],
             ], 'Bills retrieved successfully');
         } catch (\Exception $e) {
-            Log::error('Error fetching bills by user: ' . $e->getMessage(), [
-                'user_id' => $request->user()->id,
-                'filters' => $request->all(),
-                'trace' => $e->getTraceAsString()
+            Log::error('Error fetching bills by user', [
+                'error_type' => get_class($e),
+                'user_id' => $user->id ?? null,
+                'filters' => $validated ?? [],
             ]);
 
-            return $this->errorResponse('Failed to retrieve bills data', 500);
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data tagihan', 500);
         }
     }
 }

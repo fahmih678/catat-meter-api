@@ -9,6 +9,7 @@ use App\Models\Pam;
 use App\Services\PamService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class PamController extends Controller
 {
@@ -23,23 +24,28 @@ class PamController extends Controller
     public function getPams(): JsonResponse
     {
         try {
-            // Apply PAM filtering based on user role
+            // Apply PAM filtering based on user role with caching
             if (RoleHelper::isSuperAdmin()) {
-                // SuperAdmin can see all PAMs
-                $pams = $this->pamService->getActiveOnly(['id', 'name']);
+                // SuperAdmin can see all PAMs (cached for 1 hour)
+                $pams = Cache::remember('active_pams_all', 3600, function () {
+                    return $this->pamService->getActiveOnly(['id', 'name']);
+                });
             } else {
-                // Other roles can only see their own PAM
+                // Other roles can only see their own PAM (cached for 30 minutes)
                 $userPamId = RoleHelper::getUserPamId();
                 if (!$userPamId) {
                     return $this->forbiddenResponse('User is not associated with any PAM');
                 }
-                $pam = $this->pamService->findById($userPamId, ['id', 'name']);
+                $cacheKey = "pam_user_{$userPamId}";
+                $pam = Cache::remember($cacheKey, 1800, function () use ($userPamId) {
+                    return $this->pamService->findById($userPamId, ['id', 'name']);
+                });
                 $pams = $pam ? [$pam] : [];
             }
 
             return $this->successResponse($pams, 'PAMs retrieved successfully');
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to retrieve PAMs: ' . $e->getMessage());
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data PAM', 500);
         }
     }
 }
