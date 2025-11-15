@@ -499,7 +499,7 @@ class MeterReadingService
                     'bill' => [
                         'bill_number' => $bill->bill_number,
                         'total_bill' => $bill->total_bill,
-                        'due_date' => $bill->due_date,
+                        'due_date' => $bill->due_date->format('Y-m-d'),
                     ],
                 ],
             ];

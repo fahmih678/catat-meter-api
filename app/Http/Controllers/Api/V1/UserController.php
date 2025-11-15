@@ -101,13 +101,15 @@ class UserController extends Controller
             // Transform the data to match required format
             $transformedUsers = $users->getCollection()->map(function ($user) {
                 return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'roles' => $user->roles->pluck('name'),
-                    'status' => $user->is_active ? 'active' : 'inactive',
-                    'photo' => $user->photo_url,
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'phone' => $user->phone,
+                        'roles' => $user->roles->pluck('name'),
+                        'status' => $user->is_active ? 'active' : 'inactive',
+                        'photo' => $user->photo_url ? asset($user->photo_url) : null,
+                    ],
                     'pam' => [
                         'id' => $user->pam?->id,
                         'name' => $user->pam?->name,
@@ -146,13 +148,19 @@ class UserController extends Controller
             }
 
             return $this->successResponse([
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'roles' => $user->roles->pluck('name'),
-                'status' => $user->is_active ? 'active' : 'inactive',
-                'photo' => $user->photo_url
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'roles' => $user->roles->pluck('name'),
+                    'status' => $user->is_active ? 'active' : 'inactive',
+                    'photo' => $user->photo_url ? asset($user->photo_url) : null,
+                ],
+                'pam' => [
+                    'id' => $user->pam?->id,
+                    'name' => $user->pam?->name,
+                ],
             ], 'User details retrieved successfully');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
@@ -240,14 +248,10 @@ class UserController extends Controller
             $user->save();
 
             return $this->successResponse([
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'status' => $user->is_active ? 'active' : 'inactive',
-                'pam_id' => $user->pam_id,
-                'photo' => $user->photo_url,
-                'updated_at' => $user->updated_at->toDateTimeString(),
+                'user' => [
+                    'name' => $user->name,
+                    'updated_at' => $user->updated_at->format('Y-m-d H:i:s'),
+                ],
             ], 'User updated successfully');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);

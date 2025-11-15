@@ -3,7 +3,6 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PamController;
 use App\Http\Controllers\Api\CustomerController;
-use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\MeterController;
 use App\Http\Controllers\Api\MeterReadingController;
 use App\Http\Controllers\Api\BillController;

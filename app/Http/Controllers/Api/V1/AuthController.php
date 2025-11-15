@@ -13,9 +13,11 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
+use App\Http\Traits\ApiResponseTrait;
 
 class AuthController extends Controller
 {
+    use ApiResponseTrait;
     /**
      * Login user and create token
      */
@@ -61,7 +63,13 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'roles' => $user->getRoleNames(),
-                    'pam_id' => $user->pam_id,
+                    'status' => $user->is_active ? 'active' : 'inactive',
+                    'photo' => $user->photo_url ? asset($user->photo_url) : null,
+                ],
+                'pam' => [
+                    'id' => $user->pam?->id,
+                    'name' => $user->pam?->name,
+                    'logo' => $user->pam?->logo_url ? asset($user->pam?->logo_url) : null,
                 ],
                 'token' => $token,
                 'token_type' => 'Bearer',
@@ -93,21 +101,21 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'User profile retrieved successfully',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'roles' => $user->getRoleNames(),
-                    'pam_id' => $user->pam_id,
-                    'photo' => $user->photo_url,
-                ]
-            ]
-        ], 200);
+        return $this->successResponse([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'roles' => $user->getRoleNames(),
+                'status' => $user->is_active ? 'active' : 'inactive',
+                'photo' => $user->photo_url ? asset($user->photo_url) : null,
+            ],
+            'pam' => [
+                'id' => $user->pam?->id,
+                'name' => $user->pam?->name,
+            ],
+        ], 'Profile retrieved successfully');
     }
 
     /**
@@ -191,7 +199,7 @@ class AuthController extends Controller
             $request->user()->tokens()->where('id', $token->id)->delete();
         }
 
-        return $this->successResponse(null, 'Logout successful');
+        return $this->successResponse(null, 'Logged out successfully');
     }
 
     /**

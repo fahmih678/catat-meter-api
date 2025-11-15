@@ -171,7 +171,7 @@ class MeterReadingController extends Controller
             Log::error('Error fetching meter reading list', [
                 'pam_id' => $user->pam_id ?? null,
                 'filters' => $request->all(),
-                            ]);
+            ]);
 
             return $this->errorResponse('Terjadi kesalahan saat mengambil data pencatatan meter', 500, 'Internal server error');
         }
@@ -239,7 +239,6 @@ class MeterReadingController extends Controller
                     'number' => $customer->meter->meter_number,
                     'last_reading' => $lastReadingValue,
                 ],
-                'photo_url' => $lastReading?->photo_url ?? null,
             ];
 
             return $this->successResponse($responseData, 'Data berhasil diambil');
@@ -247,7 +246,7 @@ class MeterReadingController extends Controller
             Log::error('Error fetching meter input data', [
                 'customer_id' => $customerId,
                 'pam_id' => $user->pam_id ?? null,
-                            ]);
+            ]);
 
             return $this->errorResponse('Terjadi kesalahan saat mengambil data meter input');
         }
@@ -371,7 +370,6 @@ class MeterReadingController extends Controller
                 'id' => $record->id,
                 'current_reading' => $record->current_reading,
                 'volume_usage' => $record->volume_usage,
-                'photo_url' => $record->photo_url, // This will use the accessor to get full URL
                 'reading_at' => $record->reading_at,
             ], 'Meter reading berhasil disimpan');
         } catch (\Illuminate\Database\QueryException $e) {
@@ -442,7 +440,7 @@ class MeterReadingController extends Controller
             Log::error('Error uploading meter reading image', [
                 'customer_id' => $customerId,
                 'original_filename' => $file->getClientOriginalName(),
-                            ]);
+            ]);
 
             return null;
         }
@@ -483,7 +481,7 @@ class MeterReadingController extends Controller
             Log::error('Error submitting meter reading to pending', [
                 'meter_reading_id' => $meterReadingId,
                 'user_id' => $user->id ?? null,
-                            ]);
+            ]);
 
             return $this->errorResponse('Terjadi kesalahan saat mengubah status meter reading', 500);
         }
@@ -511,7 +509,7 @@ class MeterReadingController extends Controller
             Log::error('Error deleting meter reading', [
                 'meter_reading_id' => $meterReadingId,
                 'user_id' => $user->id ?? null,
-                            ]);
+            ]);
 
             return $this->errorResponse('Terjadi kesalahan saat menghapus meter reading', 500);
         }

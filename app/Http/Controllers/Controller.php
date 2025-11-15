@@ -13,25 +13,36 @@ abstract class Controller extends BaseController
 
     protected function successResponse($data = null, string $message = 'Success', int $statusCode = 200): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'data' => $data,
-        ], $statusCode);
+        $response = [
+            'status' => 'success',
+            'message' => $message
+        ];
+
+        if ($data !== null) {
+            $response['data'] = $data;
+        }
+
+        return response()->json($response, $statusCode, [
+            'Content-Type' => 'application/json; charset=UTF-8',
+            'Cache-Control' => 'no-cache, private'
+        ]);
     }
 
     protected function errorResponse(string $message = 'Error', int $statusCode = 400, $errors = null): JsonResponse
     {
         $response = [
-            'success' => false,
-            'message' => $message,
+            'status' => 'error',
+            'message' => $message
         ];
 
         if ($errors !== null) {
             $response['errors'] = $errors;
         }
 
-        return response()->json($response, $statusCode);
+        return response()->json($response, $statusCode, [
+            'Content-Type' => 'application/json; charset=UTF-8',
+            'Cache-Control' => 'no-cache, private'
+        ]);
     }
 
     protected function validationErrorResponse($errors): JsonResponse

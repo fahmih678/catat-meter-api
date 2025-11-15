@@ -140,7 +140,6 @@ class CustomerController extends Controller
                     'customer_id' => $customer->id,
                     'name' => $customer->customer_name,
                     'number' => $customer->customer_number,
-                    'address' => $customer->address,
                     'area_name' => $customer->area_name,
                     'meter_number' => $customer->meter_number,
                 ];
@@ -148,11 +147,13 @@ class CustomerController extends Controller
 
             // Get summary statistics
             $summary = $this->getUnrecordedSummary($pamId, $validated['registered_month_id'], $validated['area_id'] ?? null);
+            $periodDate = Carbon::parse($registeredMonth->period)->format('Y-m');
+
 
             return $this->successResponse([
                 'items' => $formattedData,
                 'registered_month_id' => $registeredMonth->id,
-                'month' => $registeredMonth->period,
+                'month' => $periodDate,
                 'pagination' => [
                     'total' => $customers->total(),
                     'has_more_pages' => $customers->hasMorePages(),
@@ -160,7 +161,7 @@ class CustomerController extends Controller
                 'summary' => [
                     'unrecorded' => $summary['unrecorded'],
                 ],
-            ]);
+            ], 'Pelanggan yang belum tercatat berhasil diambil');
         } catch (\Exception $e) {
             Log::error('Error fetching unrecorded customer list', [
                 'error_type' => get_class($e),
@@ -336,7 +337,7 @@ class CustomerController extends Controller
                     'total' => $bills->total(),
                     'has_more_pages' => $bills->hasMorePages(),
                 ],
-            ], 'Bills retrieved successfully');
+            ], 'Tagihan berhasil diambil');
         } catch (\Exception $e) {
             Log::error('Error fetching bills by user', [
                 'error_type' => get_class($e),

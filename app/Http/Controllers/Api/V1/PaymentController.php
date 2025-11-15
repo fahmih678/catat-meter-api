@@ -142,7 +142,7 @@ class PaymentController extends Controller
                         'id' => $bill->id,
                         'bill_number' => $bill->bill_number,
                         'total_bill' => $bill->total_bill,
-                        'paid_at' => $bill->paid_at
+                        'paid_at' => $bill->paid_at->format('Y-m-d H:i:s')
                     ];
                 } catch (\Exception $e) {
                     $errors[] = [
