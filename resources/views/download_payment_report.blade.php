@@ -161,12 +161,12 @@
             <thead>
                 <tr>
                     <th width="5%">NO</th>
-                    <th width="12%">BLN TAGIH</th>
-                    <th width="12%">NOPEL</th>
-                    <th width="28%">PELANGGAN</th>
-                    <th width="15%">TAGIHAN</th>
+                    <th width="12%">PERIODE</th>
+                    <th width="12%">NO PEL</th>
+                    <th width="28%">NAMA PELANGGAN</th>
+                    <th width="15%">TOTAL TAGIHAN</th>
                     <th width="12%">TGL BAYAR</th>
-                    <th width="16%">LOKET</th>
+                    <th width="16%">DIBAYAR OLEH</th>
                 </tr>
             </thead>
             <tbody>
@@ -175,14 +175,14 @@
                     <tr>
                         <td class="text-center">{{ $no++ }}</td>
                         <td class="text-center">
-                            {{ $payment->period_formatted ? $payment->period_formatted : '-' }}</td>
+                            {{ $payment->period_formatted ?: '-' }}
+                        </td>
                         <td class="text-center">{{ htmlspecialchars($payment->customer_number ?? '-') }}</td>
                         <td class="text-left">{{ htmlspecialchars($payment->customer_name ?? '-') }}</td>
                         <td class="text-right">Rp {{ number_format($payment->total_bill, 0, ',', '.') }}</td>
-                        <td class="text-center">{{ $payment->paid_at_formatted ? $payment->paid_at_formatted : '-' }}
-                        </td>
+                        <td class="text-center">{{ $payment->paid_at_formatted ?: '-' }}</td>
                         <td class="text-left">
-                            {{ strlen($payment->paid_by_name ?? '') > 12 ? substr($payment->paid_by_name ?? '-', 0, 12) . '...' : $payment->paid_by_name ?? '-' }}
+                            {{ htmlspecialchars($payment->paid_by_name ?: '-') }}
                         </td>
                     </tr>
                 @endforeach

@@ -123,8 +123,7 @@ class MeterReadingByMonthController extends Controller
             }
 
             // Get meter readings with ordering and pagination
-            $meterReadings = $query->orderBy('reading_at')->paginate(10);
-
+            $meterReadings = $query->orderBy('meter_id', 'asc')->paginate(10);
             // Preserve query parameters in pagination
             $meterReadings->appends($request->query());
 

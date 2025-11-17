@@ -649,7 +649,8 @@ Content-Type: application/json
 ```json
 {
   "bill_ids": "array|required|min:1",
-  "bill_ids.*": "integer|exists:bills,id"
+  "bill_ids.*": "integer|exists:bills,id",
+  "payment_method": "required|in:cash,transfer,ewallet"
 }
 ```
 
@@ -659,7 +660,8 @@ curl -X POST "http://localhost:8000/api/v1/customers/1/bills/pay" \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
-    "bill_ids": [1, 2, 3]
+    "bill_ids": [1, 2, 3],
+    "payment_method": "cash"
   }'
 ```
 
@@ -677,7 +679,6 @@ curl -X POST "http://localhost:8000/api/v1/customers/1/bills/pay" \
                 "paid_at": "2025-11-15 13:17:42"
             }
         ],
-        "total_amount": 30100,
         "customer_id": 10
     }
 }
@@ -1495,7 +1496,7 @@ Non-superadmin users can only access data from their own PAM. This is enforced a
 
 ### Supported File Types
 - **Images**: `.jpg`, `.jpeg`, `.png`
-- **Maximum Size**: 2MB for meter photos, 5MB for profile photos
+- **Maximum Size**: 2MB for meter photos, 2MB for profile photos
 
 ### Upload Format
 Use `multipart/form-data` for file uploads:

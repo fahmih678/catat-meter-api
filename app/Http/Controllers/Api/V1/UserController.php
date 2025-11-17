@@ -199,7 +199,7 @@ class UserController extends Controller
                 'status' => 'sometimes|boolean',
                 'password' => 'sometimes|string|min:6',
                 'pam_id' => 'sometimes|nullable|exists:pams,id',
-                'photo' => 'sometimes|image|mimes:jpg,jpeg,png|max:5120',
+                'photo' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
             if ($validator->fails()) {

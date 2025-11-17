@@ -137,7 +137,7 @@ class AuthController extends Controller
                 ],
                 'phone' => 'sometimes|string|max:20',
                 'password' => 'sometimes|string|min:6',
-                'photo' => 'sometimes|image|mimes:jpg,jpeg,png|max:5120',
+                'photo' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
             // Update user information

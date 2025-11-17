@@ -18,6 +18,9 @@ class RegisteredMonth extends Model
         'total_customers',
         'total_usage',
         'total_bills',
+        'total_payment',
+        'total_paid_customers',
+        'status',
         'registered_by',
     ];
 
@@ -44,6 +47,17 @@ class RegisteredMonth extends Model
     public function paidMeterReadings(): HasMany
     {
         return $this->hasMany(MeterReading::class, 'registered_month_id')
+            ->where('status', 'paid');
+    }
+
+    public function bills(): HasMany
+    {
+        return $this->hasMany(Bill::class);
+    }
+
+    public function paidBills(): HasMany
+    {
+        return $this->hasMany(Bill::class, 'registered_month_id')
             ->where('status', 'paid');
     }
 }

@@ -15,6 +15,7 @@ class Bill extends Model
         'pam_id',
         'customer_id',
         'meter_reading_id',
+        'registered_month_id',
         'bill_number',
         'reference_number',
         'volume_usage',
@@ -53,5 +54,10 @@ class Bill extends Model
     public function paidBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'paid_by');
+    }
+
+    public function registeredMonth(): BelongsTo
+    {
+        return $this->belongsTo(RegisteredMonth::class);
     }
 }

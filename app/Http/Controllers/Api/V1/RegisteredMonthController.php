@@ -168,6 +168,53 @@ class RegisteredMonthController extends Controller
         }
     }
 
+    public function getAvailableMonthsReport(Request $request): JsonResponse
+    {
+        try {
+            // Get user's PAM ID from middleware
+            $userPamId = $request->attributes->get('user_pam_id');
+            $isSuperAdmin = $request->attributes->get('is_superadmin', false);
+            // Get available registered months for user's PAM with enhanced data
+            $availableMonthsQuery = RegisteredMonth::select(
+                'id',
+                'period',
+                'status',
+                'total_payment',
+                'total_paid_customers'
+            )
+                ->orderBy('period', 'desc');
+
+            // Apply PAM filtering (non-superadmin only)
+            if (!$isSuperAdmin && $userPamId) {
+                $availableMonthsQuery->where('pam_id', $userPamId);
+            }
+            $availableMonths = $availableMonthsQuery->get()
+                ->map(function ($month) {
+                    try {
+                        return [
+                            'id' => $month->id,
+                            'period' => Carbon::parse($month->period)->translatedFormat('F Y'),
+                            'status' => $month->status,
+                            'total_payment' => (float) $month->total_payment,
+                            'total_paid_customers' => (int) $month->total_paid_customers,
+                        ];
+                    } catch (\Exception) {
+                        return [
+                            'id' => $month->id,
+                            'period' => $month->period,
+                            'status' => $month->status,
+                            'total_payment' => (float) $month->total_payment,
+                            'total_paid_customers' => (int) $month->total_paid_customers,
+                        ];
+                    }
+                });
+
+            return $this->successResponse($availableMonths, 'Available registered months retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Terjadi kesalahan saat mengambil daftar bulan aktif', 500);
+        }
+    }
+
     /**
      * Get Indonesian month names
      *

@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\ReportController;
 
 // V1 API Controllers
 use App\Http\Controllers\Api\V1\AuthController as V1AuthController;
-use App\Http\Controllers\Api\V1\BillController as V1BillController;
+use App\Http\Controllers\Api\V1\ReportController as V1ReportController;
 use App\Http\Controllers\Api\V1\CustomerController as V1CustomerController;
 use App\Http\Controllers\Api\V1\PaymentController as V1PaymentController;
 use App\Http\Controllers\Api\V1\MeterReadingController as V1MeterReadingController;
@@ -57,7 +57,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::middleware('role:admin,catat_meter,loket', 'pam.scope')->group(function () {
             // Route for catat meter : month -> list meter reading -> customer -> input meter
             // month
-            Route::get('/registered-months/list/{year}', [V1RegisteredMonthController::class, 'monthList'])->name('registered-month');
+            Route::get('/registered-months/list/{year}', [V1RegisteredMonthController::class, 'monthList'])->name('registered-month-year');
             Route::post('/registered-months/store', [V1RegisteredMonthController::class, 'store'])->name('registered-month-store');
 
             // list meter reading
@@ -76,8 +76,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::delete('/bills/{billId}', [V1PaymentController::class, 'destroy'])->name('bills.destroy');
 
             // Bill Monthly Reports
-            Route::get('/reports/monthly-payment-report', [V1BillController::class, 'monthlyPaymentReport'])->name('monthly-payment-report');
-            Route::get('/reports/download-payment-report', [V1BillController::class, 'downloadPaymentReport'])->name('download-payment-report');
+            Route::get('/registered-months/available-months-report', [V1RegisteredMonthController::class, 'getAvailableMonthsReport'])->name('registered-month-list');
+            Route::get('/reports/monthly-payment-report', [V1ReportController::class, 'monthlyPaymentReport'])->name('monthly-payment-report');
+            Route::get('/reports/download-payment-report', [V1ReportController::class, 'downloadPaymentReport'])->name('download-payment-report');
         });
 
         Route::middleware('role:superadmin,admin')->group(function () {
@@ -89,6 +90,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/users/{id}/assign-role', [V1UserController::class, 'assignRole'])->name('users.assign-role');
             Route::delete('/users/{id}/remove-role', [V1UserController::class, 'removeRole'])->name('users.remove-role');
             Route::delete('/users/{id}', [V1UserController::class, 'destroy'])->name('users.destroy');
+
+            // Sync Payment Summary Data
+            Route::post('/sync/payment-summary/{registeredMonthId}', [V1ReportController::class, 'syncPaymentSummaryForMonth'])->name('sync.payment-summary.month');
         });
 
         Route::middleware('role:customer')->group(function () {

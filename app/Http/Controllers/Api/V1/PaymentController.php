@@ -7,16 +7,25 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Customer;
 use App\Models\Bill;
+use App\Models\RegisteredMonth;
 use Carbon\Carbon;
 use App\Http\Traits\HasPamFiltering;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PaymentController extends Controller
 {
     use HasPamFiltering;
 
-    public function getBills(Request $request, $customerId): JsonResponse
+    /**
+     * Get all pending bills for a customer
+     *
+     * @param int $customerId
+     * @return JsonResponse
+     */
+    public function getBills($customerId): JsonResponse
     {
         try {
             // Check if user can access billing features
@@ -77,6 +86,13 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * Process payment for multiple bills of a customer
+     *
+     * @param Request $request
+     * @param int $customerId
+     * @return JsonResponse
+     */
     public function payBills(Request $request, int $customerId): JsonResponse
     {
         try {
@@ -88,6 +104,7 @@ class PaymentController extends Controller
             $validatedData = $request->validate([
                 'bill_ids' => 'required|array|min:1',
                 'bill_ids.*' => 'integer|exists:bills,id',
+                'payment_method' => 'required|in:cash,transfer,ewallet',
             ]);
 
             // Check if customer exists
@@ -100,14 +117,14 @@ class PaymentController extends Controller
             }
 
             $billIds = $validatedData['bill_ids'];
-            $updatedBills = [];
-            $errors = [];
+            $paymentMethod = $validatedData['payment_method'] ?? 'cash';
 
             // Verify bills belong to the specified customer
             $bills = Bill::where('customer_id', $customerId)
                 ->whereIn('id', $billIds)
                 ->where('status', 'pending')
                 ->with('meterReading')
+                ->lockForUpdate() // Prevent race conditions
                 ->get();
 
             if ($bills->isEmpty()) {
@@ -122,56 +139,90 @@ class PaymentController extends Controller
                 return $this->notFoundResponse('Some bills not found or already paid: ' . implode(', ', $missingBillIds));
             }
 
-            // Update each bill
-            foreach ($bills as $bill) {
-                try {
-                    $bill->status = 'paid';
-                    $bill->paid_at = Carbon::now()->format('Y-m-d H:i:s');
-                    $bill->paid_by = $request->user()->id;
-                    $bill->payment_method = 'cash';
-                    $bill->save();
+            $paymentTime = Carbon::now();
+            $registeredMonth = RegisteredMonth::where('pam_id', $customer->pam_id)
+                ->whereYear('period', $paymentTime->year)
+                ->whereMonth('period', $paymentTime->month)
+                ->first();
 
-                    // Update meter reading status if exists
-                    if ($bill->meterReading) {
-                        $bill->meterReading->update([
+            if (!$registeredMonth) {
+                return $this->errorResponse('Registered month tidak ditemukan', 404);
+            }
+
+            // Start database transaction for data consistency
+            return DB::transaction(function () use ($bills, $paymentTime, $registeredMonth, $paymentMethod, $request, $customerId) {
+                $updatedBills = [];
+                $errors = [];
+
+                // Update each bill within transaction
+                foreach ($bills as $bill) {
+                    try {
+                        $bill->update([
+                            'registered_month_id' => $registeredMonth->id,
+                            'paid_at' => $paymentTime->format('Y-m-d H:i:s'),
                             'status' => 'paid',
+                            'paid_by' => $request->user()->id,
+                            'payment_method' => $paymentMethod,
                         ]);
+
+                        if ($bill->meterReading) {
+                            $bill->meterReading->update([
+                                'status' => 'paid',
+                            ]);
+                        }
+
+                        $updatedBills[] = [
+                            'id' => $bill->id,
+                            'bill_number' => $bill->bill_number,
+                            'total_bill' => $bill->total_bill,
+                            'paid_at' => $bill->paid_at
+                        ];
+                    } catch (\Exception $e) {
+                        $errors[] = [
+                            'bill_id' => $bill->id,
+                            'error' => 'Terjadi kesalahan internal saat memproses tagihan'
+                        ];
                     }
-
-                    $updatedBills[] = [
-                        'id' => $bill->id,
-                        'bill_number' => $bill->bill_number,
-                        'total_bill' => $bill->total_bill,
-                        'paid_at' => $bill->paid_at->format('Y-m-d H:i:s')
-                    ];
-                } catch (\Exception $e) {
-                    $errors[] = [
-                        'bill_id' => $bill->id,
-                        'error' => 'Terjadi kesalahan internal saat memproses tagihan'
-                    ];
                 }
-            }
 
-            if (!empty($errors)) {
-                return $this->errorResponse('Some bills were updated with errors', 207, [
-                    'updated_bills' => $updatedBills,
-                    'errors' => $errors
+                // 🔥 Hitung total payment SEKALI SAJA (efisien)
+                $newTotalPayment = $registeredMonth->bills()
+                    ->where('status', 'paid')
+                    ->selectRaw('COALESCE(SUM(total_bill), 0) as total_payment, COUNT(*) as total_paid_customers')
+                    ->first();
+
+                // 🔥 Update registeredMonth sekali saja
+                $registeredMonth->update([
+                    'total_payment' => $newTotalPayment->total_payment,
+                    'total_paid_customers' => $newTotalPayment->total_paid_customers,
                 ]);
-            }
 
-            return $this->successResponse([
-                'updated_bills' => $updatedBills,
-                'total_amount' => $bills->sum('total_bill'),
-                'customer_id' => $customerId
-            ], count($updatedBills) . ' bills paid successfully');
+                if (!empty($errors)) {
+                    // Transaction will be rolled back automatically when exception is thrown
+                    throw new \Exception('Some bills failed to update');
+                }
+
+                return $this->successResponse([
+                    'updated_bills' => $updatedBills,
+                    'customer_id' => $customerId
+                ], count($updatedBills) . ' bills paid successfully');
+            });
         } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse('Customer not found');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             return $this->errorResponse('Terjadi kesalahan saat memproses pembayaran', 500);
         }
     }
 
-    public function destroy(Request $request, int $billId): JsonResponse
+    /**
+     * Remove a paid bill (refund/reversal)
+     *
+     * @param int $billId
+     * @return JsonResponse
+     */
+    public function destroy(int $billId): JsonResponse
     {
         try {
             // Check if user can access billing features
@@ -194,6 +245,13 @@ class PaymentController extends Controller
                 return $pamAccess;
             }
 
+            // Store bill info for registered month update
+            $periodDate = Carbon::parse($bill->paid_at);
+            $registeredMonth = RegisteredMonth::where('pam_id', $bill->pam_id)
+                ->whereYear('period', $periodDate->year)
+                ->whereMonth('period', $periodDate->month)
+                ->first();
+
             // Update meter reading status to pending if exists
             if ($bill->meterReading) {
                 $bill->meterReading->update([
@@ -203,9 +261,23 @@ class PaymentController extends Controller
 
             $bill->forceDelete();
 
+            // 🔥 Recalculate total payment seperti di payBills (efisien dan konsisten)
+            if ($registeredMonth) {
+                $newTotalPayment = $registeredMonth->bills()
+                    ->where('status', 'paid')
+                    ->selectRaw('COALESCE(SUM(total_bill), 0) as total_payment, COUNT(*) as total_paid_customers')
+                    ->first();
+
+                // 🔥 Update registeredMonth sekali saja
+                $registeredMonth->update([
+                    'total_payment' => $newTotalPayment->total_payment,
+                    'total_paid_customers' => $newTotalPayment->total_paid_customers,
+                ]);
+            }
+
             return $this->successResponse([
                 'bill_id' => $billId
-            ], 'Bill removed successfully and meter reading status updated to pending');
+            ], 'Bill removed successfully, meter reading status updated to draft, and registered month totals updated');
         } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse('Bill not found');
         } catch (\Exception $e) {

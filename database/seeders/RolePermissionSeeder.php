@@ -64,6 +64,7 @@ class RolePermissionSeeder extends Seeder
             'bill.delete',
             'bill.generate',
             'bill.mark-paid',
+            'bill.sync-payment-summary',
 
             // Reporting
             'report.view',
@@ -143,6 +144,7 @@ class RolePermissionSeeder extends Seeder
             'bill.edit',
             'bill.generate',
             'bill.mark-paid',
+            'bill.sync-payment-summary',
 
             // Reporting (full)
             'report.view',
@@ -208,6 +210,7 @@ class RolePermissionSeeder extends Seeder
             'bill.view',
             'bill.edit',
             'bill.mark-paid',
+            'bill.sync-payment-summary',
 
             // Basic reporting
             'report.view',
