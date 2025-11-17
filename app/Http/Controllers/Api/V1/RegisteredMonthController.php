@@ -14,11 +14,21 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\ValidationException;
+
+use function Pest\Laravel\call;
 
 class RegisteredMonthController extends Controller
 {
     use HasPamFiltering;
 
+    /**
+     * Get registered month list
+     *
+     * @param Request $request
+     * @param int $year
+     * @return JsonResponse
+     */
     public function monthList(Request $request, $year): JsonResponse
     {
         try {
@@ -66,7 +76,7 @@ class RegisteredMonthController extends Controller
 
             // Transform data for response
             $monthlyData = $registeredMonths->map(function ($month) use ($monthNames) {
-                $periodDate = \Carbon\Carbon::createFromFormat('Y-m-d', $month->period);
+                $periodDate = Carbon::createFromFormat('Y-m-d', $month->period);
 
                 return [
                     'id' => $month->id,
@@ -96,6 +106,12 @@ class RegisteredMonthController extends Controller
         }
     }
 
+    /**
+     * Store registered month
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function store(Request $request): JsonResponse
     {
         try {
@@ -163,11 +179,19 @@ class RegisteredMonthController extends Controller
                 return $this->errorResponse('Failed to create month. The period already exists.', 409);
             }
             return $this->errorResponse('Terjadi kesalahan database saat membuat bulan', 500);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             return $this->errorResponse('Terjadi kesalahan saat membuat bulan registrasi', 500);
         }
     }
 
+    /**
+     * Get available registered months report
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function getAvailableMonthsReport(Request $request): JsonResponse
     {
         try {

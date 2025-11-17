@@ -172,10 +172,8 @@ class AuthController extends Controller
             $user->save();
 
             return $this->successResponse([
-                'user' => [
-                    'name' => $user->name,
-                    'updated_at' => $user->updated_at->format('Y-m-d H:i:s'),
-                ],
+                'updated_data' => $request->only(['name', 'email', 'phone']),
+                'updated_at' => $user->updated_at->format('Y-m-d H:i:s'),
             ], 'Profile updated successfully');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
@@ -203,58 +201,8 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout from all devices (revoke all tokens)
+     * Handle image upload for user profile
      */
-    public function logoutAll(Request $request): JsonResponse
-    {
-        // Revoke all tokens
-        $request->user()->tokens()->delete();
-
-        return $this->successResponse(null, 'Logged out from all devices');
-    }
-
-    /**
-     * Refresh token (create new token and revoke old one)
-     */
-    public function refreshToken(Request $request): JsonResponse
-    {
-        $user = $request->user();
-        $deviceName = $request->device_name ?? 'mobile-app';
-
-        // Get current token and revoke it
-        $currentToken = $request->user()->currentAccessToken();
-        if ($currentToken) {
-            $request->user()->tokens()->where('id', $currentToken->id)->delete();
-        }
-
-        // Create new token
-        $token = $user->createToken($deviceName)->plainTextToken;
-
-        return $this->successResponse([
-            'token' => $token,
-            'token_type' => 'Bearer'
-        ], 'Token refreshed successfully');
-    }
-
-    /**
-     * Check token validity
-     */
-    public function checkToken(Request $request): JsonResponse
-    {
-        $user = $request->user();
-
-        return $this->successResponse([
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->getRoleNames()->first()
-            ],
-            'token_name' => $request->user()->currentAccessToken()->name,
-            'expires_at' => $request->user()->currentAccessToken()->expires_at
-        ], 'Token is valid');
-    }
-
     private function handleImageUpload($file, int $userId): ?string
     {
         try {

@@ -24,6 +24,8 @@ class UserController extends Controller
 
     /**
      * Display a listing of users with filters and pagination.
+     * @param Request $request
+     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -133,6 +135,8 @@ class UserController extends Controller
 
     /**
      * Display the specified user.
+     * @param int $id
+     * @return JsonResponse
      */
     public function show($id): JsonResponse
     {
@@ -171,6 +175,8 @@ class UserController extends Controller
 
     /**
      * Update user data (nama, email, phone, status, password, pam_id).
+     * @param Request $request
+     * @param int $id
      */
     public function update(Request $request, $id): JsonResponse
     {
@@ -248,10 +254,8 @@ class UserController extends Controller
             $user->save();
 
             return $this->successResponse([
-                'user' => [
-                    'name' => $user->name,
-                    'updated_at' => $user->updated_at->format('Y-m-d H:i:s'),
-                ],
+                'updated_data' => $request->only(['name', 'email', 'phone', 'status']),
+                'updated_at' => $user->updated_at->format('Y-m-d H:i:s'),
             ], 'User updated successfully');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
@@ -262,6 +266,8 @@ class UserController extends Controller
 
     /**
      * Assign role to user.
+     * @param Request $request
+     * @param int $id
      */
     public function assignRole(Request $request, $id): JsonResponse
     {
@@ -309,6 +315,8 @@ class UserController extends Controller
 
     /**
      * Remove role(s) from user.
+     * @param Request $request
+     * @param int $id
      */
     public function removeRole(Request $request, $id): JsonResponse
     {
@@ -388,6 +396,8 @@ class UserController extends Controller
 
     /**
      * Delete user (soft delete).
+     * @param int $id
+     * @return JsonResponse
      */
     public function destroy($id): JsonResponse
     {
@@ -414,6 +424,12 @@ class UserController extends Controller
         }
     }
 
+    /**
+     * Handle image upload for user profile
+     * @param File $file
+     * @param int $userId
+     * @return ?string
+     */
     private function handleImageUpload($file, int $userId): ?string
     {
         try {

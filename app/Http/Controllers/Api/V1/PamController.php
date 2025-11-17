@@ -21,6 +21,12 @@ class PamController extends Controller
         $this->pamService = $pamService;
     }
 
+    /**
+     * Get PAM list
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function getPams(): JsonResponse
     {
         try {

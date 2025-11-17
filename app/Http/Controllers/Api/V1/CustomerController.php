@@ -16,14 +16,9 @@ class CustomerController extends Controller
 {
     use HasPamFiltering;
     /**
-     * Get list of customers that haven't been recorded in meter reading
-     * for specific PAM and area in a registered month
+     * Get unrecorded customer list
      *
-     * PERFORMANCE NOTES:
-     * - Recommended indexes: (pam_id, is_active), (meter_id, registered_month_id), (area_id)
-     * - Query uses selective columns to reduce data transfer
-     * - Search optimized with prefix matching instead of contains
-     *
+     *  
      * @param Request $request
      * @return JsonResponse
      */

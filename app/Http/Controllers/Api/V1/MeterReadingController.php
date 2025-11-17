@@ -29,11 +29,8 @@ class MeterReadingController extends Controller
     /**
      * Get meter reading list with filters and pagination
      *
-     * PERFORMANCE NOTES:
-     * - Recommended indexes: (pam_id, registered_month_id), (meter_id), (customer_id, area_id)
-     * - Uses selective column loading to reduce memory usage
-     * - Pagination prevents large dataset loading
-     * - N+1 queries prevented with proper joins
+     * @param Request $request
+     * @return JsonResponse
      */
     public function meterReadingList(Request $request): JsonResponse
     {
@@ -252,6 +249,12 @@ class MeterReadingController extends Controller
         }
     }
 
+    /**
+     * Store meter reading
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function store(Request $request): JsonResponse
     {
         try {
@@ -396,6 +399,82 @@ class MeterReadingController extends Controller
     }
 
     /**
+     * Submit meter reading from draft to pending status and create billing
+     *
+     * @param Request $request
+     * @param int $meterReadingId
+     * @return JsonResponse
+     */
+    public function submitToPending(Request $request, int $meterReadingId): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            // Validate request data (optional fields only)
+            $validated = $request->validate([
+                'notes' => 'nullable|string|max:1000',
+            ]);
+
+            // Prepare request data for service
+            $requestData = [
+                'user_id' => $user->id,
+                'pam_id' => $user->pam_id,
+                'notes' => $validated['notes'] ?? null,
+            ];
+            // Submit meter reading (draft -> pending) and create billing
+            $result = $this->meterReadingService->submitMeterReadingToPending($meterReadingId, $requestData);
+
+            if (!$result) {
+                return $this->notFoundResponse('Meter reading tidak ditemukan');
+            }
+
+            return $this->successResponse($result['data'], $result['message']);
+        } catch (\Exception $e) {
+            Log::error('Error submitting meter reading to pending', [
+                'meter_reading_id' => $meterReadingId,
+                'user_id' => $user->id ?? null,
+            ]);
+
+            return $this->errorResponse('Terjadi kesalahan saat mengubah status meter reading', 500);
+        }
+    }
+
+    /**
+     * Delete meter reading
+     * 
+     * @param Request $request
+     * @param int $meterReadingId
+     * @return JsonResponse
+     */
+    public function destroy(Request $request, int $meterReadingId): JsonResponse
+    {
+        try {
+            // Check if user can access billing features
+            if (!RoleHelper::isAdminPam() && !RoleHelper::canAccessPam($request->user()->pam_id)) {
+                return $this->forbiddenResponse('Akses ditolak. Anda tidak memiliki izin untuk mengakses fitur meter reading.');
+            }
+
+            $user = $request->user();
+
+            // Delete meter reading using service
+            $deleted = $this->meterReadingService->deleteRecord($meterReadingId);
+
+            if (!$deleted) {
+                return $this->notFoundResponse('Meter reading tidak ditemukan atau tidak berstatus draft');
+            }
+
+            return $this->deletedResponse('Meter reading berhasil dihapus');
+        } catch (\Exception $e) {
+            Log::error('Error deleting meter reading', [
+                'meter_reading_id' => $meterReadingId,
+                'user_id' => $user->id ?? null,
+            ]);
+
+            return $this->errorResponse('Terjadi kesalahan saat menghapus meter reading', 500);
+        }
+    }
+
+    /**
      * Handle image upload for meter reading
      *
      * @param \Illuminate\Http\UploadedFile $file
@@ -443,75 +522,6 @@ class MeterReadingController extends Controller
             ]);
 
             return null;
-        }
-    }
-
-    /**
-     * Submit meter reading from draft to pending status and create billing
-     *
-     * @param Request $request
-     * @param int $meterReadingId
-     * @return JsonResponse
-     */
-    public function submitToPending(Request $request, int $meterReadingId): JsonResponse
-    {
-        try {
-            $user = $request->user();
-
-            // Validate request data (optional fields only)
-            $validated = $request->validate([
-                'notes' => 'nullable|string|max:1000',
-            ]);
-
-            // Prepare request data for service
-            $requestData = [
-                'user_id' => $user->id,
-                'pam_id' => $user->pam_id,
-                'notes' => $validated['notes'] ?? null,
-            ];
-            // Submit meter reading (draft -> pending) and create billing
-            $result = $this->meterReadingService->submitMeterReadingToPending($meterReadingId, $requestData);
-
-            if (!$result) {
-                return $this->notFoundResponse('Meter reading tidak ditemukan');
-            }
-
-            return $this->successResponse($result['data'], $result['message']);
-        } catch (\Exception $e) {
-            Log::error('Error submitting meter reading to pending', [
-                'meter_reading_id' => $meterReadingId,
-                'user_id' => $user->id ?? null,
-            ]);
-
-            return $this->errorResponse('Terjadi kesalahan saat mengubah status meter reading', 500);
-        }
-    }
-
-    public function destroy(Request $request, int $meterReadingId): JsonResponse
-    {
-        try {
-            // Check if user can access billing features
-            if (!RoleHelper::isAdminPam() && !RoleHelper::canAccessPam($request->user()->pam_id)) {
-                return $this->forbiddenResponse('Akses ditolak. Anda tidak memiliki izin untuk mengakses fitur meter reading.');
-            }
-
-            $user = $request->user();
-
-            // Delete meter reading using service
-            $deleted = $this->meterReadingService->deleteRecord($meterReadingId);
-
-            if (!$deleted) {
-                return $this->notFoundResponse('Meter reading tidak ditemukan atau tidak berstatus draft');
-            }
-
-            return $this->deletedResponse('Meter reading berhasil dihapus');
-        } catch (\Exception $e) {
-            Log::error('Error deleting meter reading', [
-                'meter_reading_id' => $meterReadingId,
-                'user_id' => $user->id ?? null,
-            ]);
-
-            return $this->errorResponse('Terjadi kesalahan saat menghapus meter reading', 500);
         }
     }
 }
