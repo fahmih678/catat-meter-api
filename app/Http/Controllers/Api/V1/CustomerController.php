@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Customer;
 use App\Models\RegisteredMonth;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class CustomerController extends Controller
 {
@@ -34,7 +35,6 @@ class CustomerController extends Controller
                 'area_id' => 'nullable|integer|exists:areas,id',
                 'search' => 'nullable|string|max:255',
                 'per_page' => 'nullable|integer|min:10|max:100',
-                'page' => 'nullable|integer|min:1',
                 'sort_by' => 'nullable|in:customer_name,customer_number,area_name,meter_number,created_at',
                 'sort_order' => 'nullable|in:asc,desc'
             ]);
@@ -142,21 +142,18 @@ class CustomerController extends Controller
 
             // Get summary statistics
             $summary = $this->getUnrecordedSummary($pamId, $validated['registered_month_id'], $validated['area_id'] ?? null);
-            $periodDate = Carbon::parse($registeredMonth->period)->format('Y-m');
-
+            $periodDate = Carbon::parse($registeredMonth->period)->format('M Y');
 
             return $this->successResponse([
-                'items' => $formattedData,
-                'registered_month_id' => $registeredMonth->id,
-                'month' => $periodDate,
+                'period' => $periodDate,
                 'pagination' => [
                     'total' => $customers->total(),
                     'has_more_pages' => $customers->hasMorePages(),
                 ],
-                'summary' => [
-                    'unrecorded' => $summary['unrecorded'],
-                ],
+                'items' => $formattedData,
             ], 'Pelanggan yang belum tercatat berhasil diambil');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             Log::error('Error fetching unrecorded customer list', [
                 'error_type' => get_class($e),
@@ -303,21 +300,22 @@ class CustomerController extends Controller
             // Format response data
             $formattedData = $bills->getCollection()->map(function ($bill) {
                 return [
+                    'bill_id' => $bill->id,
                     'customer_name' => $bill->customer_name,
                     'customer_number' => $bill->customer_number,
                     'meter_number' => $bill->meter_number,
                     'area' => $bill->area_name,
-                    'periode' => $bill->bill_period,
-                    'due_date' => Carbon::parse($bill->due_date)->format('Y-m-d'),
+                    'periode' => Carbon::parse($bill->bill_period)->format('M Y'),
+                    'due_date' => Carbon::parse($bill->due_date)->format('d M Y'),
                     'status' => $bill->status,
-                    'previous_reading' => (float) $bill->previous_reading,
-                    'current_reading' => (float) $bill->current_reading,
-                    'volume_usage' => (float) $bill->volume_usage,
+                    'previous_reading' => $bill->previous_reading,
+                    'current_reading' => $bill->current_reading,
+                    'volume_usage' => $bill->volume_usage,
                     'total_bill' => (float) $bill->total_bill,
                     'bill_number' => $bill->bill_number,
                     'payment_method' => $bill->payment_method ?: '-',
-                    'paid_at' => $bill->paid_at ? Carbon::parse($bill->paid_at)->format('Y-m-d H:i:s') : null,
-                    'issued_at' => $bill->issued_at ? Carbon::parse($bill->issued_at)->format('Y-m-d H:i:s') : null,
+                    'paid_at' => $bill->paid_at ? Carbon::parse($bill->paid_at)->format('d M Y') : null,
+                    'issued_at' => $bill->issued_at ? Carbon::parse($bill->issued_at)->format('d M Y') : null,
                 ];
             });
 
@@ -326,12 +324,12 @@ class CustomerController extends Controller
                 ->get(['id', 'name', 'customer_number']);
 
             return $this->successResponse([
-                'items' => $formattedData,
-                'customers' => $userCustomers,
                 'pagination' => [
                     'total' => $bills->total(),
                     'has_more_pages' => $bills->hasMorePages(),
                 ],
+                'customers' => $userCustomers,
+                'items' => $formattedData,
             ], 'Tagihan berhasil diambil');
         } catch (\Exception $e) {
             Log::error('Error fetching bills by user', [

@@ -29,9 +29,9 @@ class MeterReading extends Model
     ];
 
     protected $casts = [
-        'previous_reading' => 'decimal:2',
-        'current_reading' => 'decimal:2',
-        'volume_usage' => 'decimal:2',
+        'previous_reading' => 'decimal:1',
+        'current_reading' => 'decimal:1',
+        'volume_usage' => 'decimal:1',
     ];
 
     // Direct relationships

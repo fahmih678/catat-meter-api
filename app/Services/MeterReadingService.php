@@ -7,6 +7,7 @@ use App\Repositories\MeterReadingRepository;
 use App\Models\ActivityLog;
 use App\Models\Bill;
 use App\Models\Meter;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -341,7 +342,7 @@ class MeterReadingService
             // Create comprehensive tariff snapshot
             $tariffSnapshot = [
                 'tariff_name' => $tariffGroup ? $tariffGroup->name : null,
-                'created_at' => now()->toISOString(),
+                'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
                 'tariff_tiers' => [],
                 'fixed_fees' => [],
                 'total_fixed_fees' => 0,
@@ -395,7 +396,7 @@ class MeterReadingService
 
                         $tierDetails[] = [
                             'range' => "{$tierMin} - {$tierMax}",
-                            'rate' => $tier->amount,
+                            'rate' => (float) $tier->amount,
                             'volume_used' => $tierVolume,
                             'subtotal' => $tierAmount,
                         ];
@@ -431,7 +432,7 @@ class MeterReadingService
                     $tariffSnapshot['fixed_fees'] = $activeFees->map(function ($fee) {
                         return [
                             'fee_name' => $fee->name,
-                            'amount' => $fee->amount,
+                            'amount' => (float) $fee->amount,
                             'description' => $fee->description,
                         ];
                     })->values()->toArray();
@@ -493,14 +494,11 @@ class MeterReadingService
                 'success' => true,
                 'message' => 'Meter reading berhasil disubmit ke status pending dan billing telah dibuat.',
                 'data' => [
-                    'customer' => [
-                        'name' => $customer->name,
-                    ],
-                    'bill' => [
-                        'bill_number' => $bill->bill_number,
-                        'total_bill' => $bill->total_bill,
-                        'due_date' => $bill->due_date->format('Y-m-d'),
-                    ],
+                    'customer_name' => $customer->name,
+                    'bill_number' => $bill->bill_number,
+                    'total_bill' => (float) $bill->total_bill,
+                    'due_date' => Carbon::parse($bill->due_date)->format('d M Y'),
+                    'status' => $bill->status,
                 ],
             ];
         });

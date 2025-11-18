@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class ReportController extends Controller
 {
@@ -32,8 +33,12 @@ class ReportController extends Controller
     public function monthlyPaymentReport(Request $request): JsonResponse
     {
         try {
+            // Validate query parameters
+            $validated = $request->validate([
+                'period' => 'required|integer|exists:registered_months,id',
+            ]);
             // Get selected registered month ID from request, default to current month
-            $selectedRegisteredMonth = RegisteredMonth::findOrFail($request->input('period_id'));
+            $selectedRegisteredMonth = RegisteredMonth::findOrFail($validated['period']);
 
             // Get user's PAM ID from middleware
             $userPamId = $request->attributes->get('user_pam_id');
@@ -88,7 +93,6 @@ class ReportController extends Controller
                             'total_bill' => (float) $bill->total_bill,
                             'status' => $bill->status,
                             'payment_method' => $bill->payment_method ?? '-',
-                            'period' => Carbon::createFromFormat('Y-m', $selectedPeriod ?? '2024-01')->translatedFormat('M Y'),
                             'issued_at' => Carbon::parse($bill->issued_at)->translatedFormat('d M Y'),
                             'paid_at' => $bill->paid_at
                                 ? Carbon::parse($bill->paid_at)->translatedFormat('d M Y')
@@ -99,17 +103,19 @@ class ReportController extends Controller
 
                 // 🔥 Use summary from registered_months table (more efficient)
                 $summary = [
-                    'total_payments' => (int) $selectedRegisteredMonth->total_paid_customers,
-                    'total_amounts' => (float) $selectedRegisteredMonth->total_payment,
+                    'total_paid_customers' => (int) $selectedRegisteredMonth->total_paid_customers,
+                    'total_payment' => (float) $selectedRegisteredMonth->total_payment,
                 ];
             }
 
             return $this->successResponse([
-                'period' => Carbon::parse($selectedPeriod)->translatedFormat('d M Y'),
-                'payment_data' => $paymentData,
+                'period' => Carbon::parse($selectedPeriod)->translatedFormat('M Y'),
                 'summary' => $summary,
+                'payment_data' => $paymentData,
             ], 'Laporan pembayaran bulanan berhasil diambil');
-        } catch (\Throwable $e) {
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
             Log::error('Error in monthly payment report', [
                 'error_type' => get_class($e),
                 'registered_month_id' => $selectedRegisteredMonth->id ?? null,
@@ -127,8 +133,12 @@ class ReportController extends Controller
     public function downloadPaymentReport(Request $request): JsonResponse|\Illuminate\Http\Response
     {
         try {
+            // Validate query parameters
+            $validated = $request->validate([
+                'period' => 'required|integer|exists:registered_months,id',
+            ]);
             // Get selected period from request, default to current month
-            $selectedPeriod = $request->input('period_id');
+            $selectedPeriod = $request->input('period');
 
             // Get user's PAM ID from middleware
             $userPamId = $request->attributes->get('user_pam_id');
@@ -231,7 +241,9 @@ class ReportController extends Controller
                 'Cache-Control' => 'private, max-age=0, must-revalidate',
                 'Pragma' => 'public',
             ]);
-        } catch (\Throwable $e) {
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
+        } catch (\Exception $e) {
             Log::error('Error generating payment report PDF', [
                 'error_type' => get_class($e),
                 'period' => $selectedPeriod ?? null,
@@ -339,13 +351,11 @@ class ReportController extends Controller
             ]);
 
             return $this->successResponse([
-                'message' => 'Sinkronisasi data pembayaran periode ' . $registeredMonth->period . ' selesai',
-                'period' => $registeredMonth->period,
-                'pam_id' => $registeredMonth->pam_id,
+                'period' => Carbon::parse($registeredMonth->period)->translatedFormat('M Y'),
                 'summary' => [
                     'old_values' => [
                         'total_paid_customers' => $oldTotalPaidCustomers,
-                        'total_payment' => $oldTotalPayment,
+                        'total_payment' => (float) $oldTotalPayment,
                     ],
                     'new_values' => [
                         'total_paid_customers' => $actualTotalPaidCustomers,
@@ -365,6 +375,59 @@ class ReportController extends Controller
             ]);
 
             return $this->errorResponse('Terjadi kesalahan saat sinkronisasi data pembayaran periode', 500);
+        }
+    }
+
+    /**
+     * Get available registered months report
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getAvailableMonthsPayment(Request $request): JsonResponse
+    {
+        try {
+            // Get user's PAM ID from middleware
+            $userPamId = $request->attributes->get('user_pam_id');
+            $isSuperAdmin = $request->attributes->get('is_superadmin', false);
+            // Get available registered months for user's PAM with enhanced data
+            $availableMonthsQuery = RegisteredMonth::select(
+                'id',
+                'period',
+                'status',
+                'total_payment',
+                'total_paid_customers'
+            )
+                ->orderBy('period', 'desc');
+
+            // Apply PAM filtering (non-superadmin only)
+            if (!$isSuperAdmin && $userPamId) {
+                $availableMonthsQuery->where('pam_id', $userPamId);
+            }
+            $availableMonths = $availableMonthsQuery->get()
+                ->map(function ($month) {
+                    try {
+                        return [
+                            'id' => $month->id,
+                            'period' => Carbon::parse($month->period)->translatedFormat('M Y'),
+                            'status' => $month->status,
+                            'total_payment' => (float) $month->total_payment,
+                            'total_paid_customers' => (int) $month->total_paid_customers,
+                        ];
+                    } catch (\Exception $e) {
+                        return [
+                            'id' => $month->id,
+                            'period' => Carbon::parse($month->period)->translatedFormat('M Y'),
+                            'status' => $month->status,
+                            'total_payment' => (float) $month->total_payment,
+                            'total_paid_customers' => (int) $month->total_paid_customers,
+                        ];
+                    }
+                });
+
+            return $this->successResponse(['available_months' => $availableMonths], 'Available period of payment retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Terjadi kesalahan saat mengambil daftar bulan aktif', 500);
         }
     }
 }

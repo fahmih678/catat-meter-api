@@ -120,11 +120,11 @@ class UserController extends Controller
             });
 
             return $this->successResponse([
-                'items' => $transformedUsers,
                 'pagination' => [
                     'total' => $users->total(),
                     'has_more_pages' => $users->hasMorePages(),
-                ]
+                ],
+                'items' => $transformedUsers
             ], 'Users retrieved successfully');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);
@@ -303,8 +303,8 @@ class UserController extends Controller
 
             return $this->successResponse([
                 'user_id' => $user->id,
-                'role' => $request->role,
-                'roles' => $user->getRoleNames(),
+                'added_role' => $request->role,
+                'current_roles' => $user->getRoleNames(),
             ], 'Role assigned successfully');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('User not found', 404);

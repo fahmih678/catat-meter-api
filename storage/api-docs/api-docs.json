@@ -1,0 +1,2789 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Catat Meter API V1",
+        "description": "API documentation for Catat Meter - Water Utility Management System. This API provides endpoints for managing customers, meter readings, billing, and payments for water utility companies (PAM).",
+        "contact": {
+            "email": "support@catatmeter.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:8000",
+            "description": "Catat Meter API Development Server"
+        }
+    ],
+    "paths": {
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "User login",
+                "description": "Authenticate user and return access token",
+                "operationId": "login",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "admin@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    },
+                                    "device_name": {
+                                        "type": "string",
+                                        "example": "Mobile App"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login successful"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                         "email": {
+                                                            "type": "string",
+                                                            "example": "admin@example.com"
+                                                        },
+                                                        "phone": {
+                                                            "type": "string",
+                                                            "example": "089699077651"
+                                                        },
+                                                        "roles": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "example": [
+                                                                "admin"
+                                                            ]
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "example": "active"
+                                                        },
+                                                        "photo": {
+                                                            "type": "string",
+                                                            "example": "http://127.0.0.1:8000/storage/users/users_2_1763392608_BFza3Ft3rx.png"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "pam": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "PDAM Kota"
+                                                        },
+                                                        "logo": {
+                                                            "type": "string",
+                                                            "example": "http://127.0.0.1:8000/storage/logo/pam_2_1763392608_BFza3Ft3rx.png"
+                                                        }
+                                                    }
+                                                },
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "1|abc123def456..."
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login failed - Invalid credentials"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/api/v1/auth/profile": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get user profile",
+                "description": "Get authenticated user profile information",
+                "operationId": "getProfile",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                         "message": {
+                                            "type": "string",
+                                            "example": "Profile retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                         "email": {
+                                                            "type": "string",
+                                                            "example": "admin@example.com"
+                                                        },
+                                                        "phone": {
+                                                            "type": "string",
+                                                            "example": "089699077651"
+                                                        },
+                                                        "roles": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "example": [
+                                                                "admin"
+                                                            ]
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "example": "active"
+                                                        },
+                                                        "photo": {
+                                                            "type": "string",
+                                                            "example": "http://127.0.0.1:8000/storage/users/users_2_1763392608_BFza3Ft3rx.png"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "pam": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "PDAM Kota"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Update user profile",
+                "description": "Update authenticated user profile information",
+                "operationId": "updateProfile",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe Updated"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+628123456789"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Main St Updated"
+                                    },
+                                    "current_password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "currentpass123"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "newpass123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "newpass123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Profile updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "User logout",
+                "description": "Logout user and revoke access token",
+                "operationId": "logout",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Logout successful"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users": {
+            "get": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "Get users list",
+                "description": "Retrieve list of users with filtering and pagination",
+                "operationId": "getUsers",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by name or email",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "john"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "enum",
+                            "enum": [
+                                "active",
+                                "inactive"
+                            ],
+                            "example": "active"
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "enum",
+                            "enum": [
+                                "admin",
+                                "catat_meter",
+                                "loket",
+                                "customer"
+                            ],
+                            "example": "admin"
+                        }
+                    },
+                    {
+                        "name": "pam",
+                        "in": "query",
+                        "description": "Filter by pam only for superadmin",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Berhasil mengambil daftar users"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "pagination": {
+                                                    "properties": {
+                                                        "total": {
+                                                            "type": "integer",
+                                                            "example": 24
+                                                        },
+                                                        "has_more_pages": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        }
+                                                    }
+                                                },
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "user": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "John Doe"
+                                                                    },
+                                                                    "email": {
+                                                                        "type": "string",
+                                                                        "example": "admin@example.com"
+                                                                    },
+                                                                    "phone": {
+                                                                        "type": "string",
+                                                                        "example": "0896999070"
+                                                                    },
+                                                                    "roles": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "example": [
+                                                                            "admin", "loket"
+                                                                        ]
+                                                                    },
+                                                                    "status": {
+                                                                        "type": "string",
+                                                                        "example": "active"
+                                                                    },
+                                                                    "photo": {
+                                                                        "type": "string",
+                                                                        "example": null
+                                                                    }
+                                                                }
+                                                            },
+                                                            "pam": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "Sumber Waras"
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{id}": {
+            "get": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "Get user details",
+                "description": "Retrieve detailed information about a specific user",
+                "operationId": "getUser",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "User ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "admin@example.com"
+                                                        },
+                                                        "phone": {
+                                                            "type": "string",
+                                                            "example": "0896999070"
+                                                        },
+                                                        "roles": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "example": [
+                                                                "admin", "loket"
+                                                            ]
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "example": "active"
+                                                        },
+                                                        "photo": {
+                                                            "type": "string",
+                                                            "example": null
+                                                        }
+                                                    }
+                                                },
+                                                "pam": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Sumber Waras"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "Update user",
+                "description": "Update user information",
+                "operationId": "updateUser",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "User ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe Updated"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john.updated@example.com"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+628123456789"
+                                    },
+                                    "status": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "Delete user",
+                "description": "Delete a user (soft delete)",
+                "operationId": "deleteUser",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "User ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User deleted successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "customer"
+                                                },
+                                                "deleted_at": {
+                                                    "type": "string",
+                                                    "example": "2025-11-18 14:18:21"
+                                                }
+
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{id}/assign-role": {
+            "post": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "Assign role to user",
+                "description": "Assign a role to a user",
+                "operationId": "assignRole",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "User ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "role"
+                                ],
+                                "properties": {
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "superadmin",
+                                            "admin",
+                                            "catat_meter",
+                                            "loket",
+                                            "customer"
+                                        ],
+                                        "example": "admin"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Role assigned successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Role assigned successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "added_role": {
+                                                    "type": "string",
+                                                    "example": "customer"
+                                                },
+                                                "current_roles": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "example": [
+                                                        "customer"
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{id}/remove-role": {
+            "delete": {
+                "tags": [
+                    "User Management"
+                ],
+                "summary": "Remove role from user",
+                "description": "Remove a role from a user",
+                "operationId": "removeRole",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "User ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "role"
+                                ],
+                                "properties": {
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "superadmin",
+                                            "admin",
+                                            "catat_meter",
+                                            "loket",
+                                            "customer"
+                                        ],
+                                        "example": "admin"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Role removed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Role removed successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/pams": {
+            "get": {
+                "tags": [
+                    "PAM"
+                ],
+                "summary": "Get PAMs list",
+                "description": "Retrieve list of PAM (Water Utility Companies)",
+                "operationId": "getPams",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "PDAM Kota"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/me/bills": {
+            "get": {
+                "tags": [
+                    "Customer"
+                ],
+                "summary": "Get customer bills",
+                "description": "Retrieve bills for the authenticated customer",
+                "operationId": "getMyBills",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "query",
+                        "description": "Filter by customer ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by bill status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "paid"
+                            ],
+                            "example": "pending"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10,
+                            "maximum": 50,
+                            "minimum": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bills retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "pagination": {
+                                                    "properties": {
+                                                        "total": {
+                                                            "type": "integer",
+                                                            "example": 24
+                                                        },
+                                                        "has_more_pages": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        }
+                                                    }
+                                                },
+                                                "customers": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "John Doe"
+                                                            },
+                                                            "customer_number": {
+                                                                "type": "string",
+                                                                "example": "CUST001"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "bill_id": {
+                                                                "type": "integer",
+                                                                "example": 24
+                                                            },
+                                                            "customer_name": {
+                                                                "type": "string",
+                                                                "example": "John Doe"
+                                                            },
+                                                            "customer_number": {
+                                                                "type": "string",
+                                                                "example": "22090001"
+                                                            },
+                                                            "meter_number": {
+                                                                "type": "string",
+                                                                "example": "123"
+                                                            },
+                                                            "area": {
+                                                                "type": "string",
+                                                                "example": "RT 01"
+                                                            },
+                                                            "period": {
+                                                                "type": "string",
+                                                                "example": "Nov 2025"
+                                                            },
+                                                            "due_date": {
+                                                                "type": "string",
+                                                                "example": "10 Dec 2025"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "pending"
+                                                            },
+                                                            "previous_reading": {
+                                                                "type": "string",
+                                                                "example":"93.30"
+                                                            },
+                                                            "current_reading": {
+                                                                "type": "string",
+                                                                "example": "95.13"
+                                                            },
+                                                            "volume_usage": {
+                                                                "type": "string",
+                                                                "example": "1.8"
+                                                            },
+                                                            "total_bill": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 25000
+                                                            },
+                                                            "bill_number": {
+                                                                "type": "string",
+                                                                "example": "BILL-2024-001"
+                                                            },
+                                                            "payment_method": {
+                                                                "type": "string",
+                                                                "example": "cash"
+                                                            },
+                                                            "paid_at": {
+                                                                "type": "string",
+                                                                "example": null
+                                                            },
+                                                            "issued_at": {
+                                                                "type": "string",
+                                                                "example": "17 Nov 2025"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/registered-months/list/{year}": {
+            "get": {
+                "tags": [
+                    "Registered Month"
+                ],
+                "summary": "Get months list for a year",
+                "description": "Retrieve list of registered months for a specific year",
+                "operationId": "getMonthList",
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "path",
+                        "description": "Year (YYYY format)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2024
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Month list retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "year": {
+                                                    "type": "integer",
+                                                    "example": 2025
+                                                },
+                                                "available_years": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer"
+                                                    },
+                                                    "example": [
+                                                        2022,
+                                                        2023,
+                                                        2024
+                                                    ]
+                                                },
+                                                "months": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "month_name": {
+                                                                "type": "string",
+                                                                "example": "Januari"
+                                                            },
+                                                            "recorded_customers": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 123
+                                                            },
+                                                            "total_customers": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 125
+                                                            },
+                                                            "total_usage": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 1817.6
+                                                            },
+                                                            "total_bills": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 2465610
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "open"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/registered-months/store": {
+            "post": {
+                "tags": [
+                    "Registered Month"
+                ],
+                "summary": "Create new registered month",
+                "description": "Create a new registered month for billing period",
+                "operationId": "storeRegisteredMonth",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "pam_id",
+                                    "period"
+                                ],
+                                "properties": {
+                                    "pam_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "period": {
+                                        "type": "string",
+                                        "example": "2022-12-31"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Registered month created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Registered month created successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "month": {
+                                                    "type": "string",
+                                                    "example": "2024-01"
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/meter-readings/list": {
+            "get": {
+                "tags": [
+                    "Meter Reading"
+                ],
+                "summary": "Get meter readings list",
+                "description": "Retrieve list of meter readings with filtering options",
+                "operationId": "getMeterReadingList",
+                "parameters": [
+                    {
+                        "name": "registered_month_id",
+                        "in": "query",
+                        "description": "Filter by registered month ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by bill status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "pending",
+                                "paid"
+                            ],
+                            "example": "pending"
+                        }
+                    },
+                    {
+                        "name": "area_id",
+                        "in": "query",
+                        "description": "Filter by area ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by customer name, number, or meter number",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "John"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort By field(customer_name, customer_number, area_name, meter_number, created_at)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "customer_name"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort Order (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "asc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Data pencatatan meter berhasil diambil"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "pagination": {
+                                                    "properties": {
+                                                        "total": {
+                                                            "type": "integer",
+                                                            "example": 24
+                                                        },
+                                                        "has_more_pages": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        }
+                                                    }
+                                                },
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "period": {
+                                                                "type": "string",
+                                                                "example": "Nov 2025"
+                                                            },
+                                                            "customer": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "Fahmi"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string",
+                                                                        "example": "CUST001"
+                                                                    },
+                                                                    "area_name": {
+                                                                        "type": "string",
+                                                                        "example": "RT 01"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "meter_number": {
+                                                                "type": "string",
+                                                                "example": "M001"
+                                                            },
+                                                             "previous_reading": {
+                                                                "type": "string",
+                                                                "example": "5.5"
+                                                            },
+                                                            "current_reading": {
+                                                                "type": "string",
+                                                                "example": "6.4"
+                                                            },
+                                                            "volume_usage": {
+                                                                "type": "string",
+                                                                "example": "0.9"
+                                                            },
+                                                            "bill": {
+                                                                "properties": {
+                                                                    "total_bill": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 6350
+                                                                    },
+                                                                    "due_date": {
+                                                                        "type": "string",
+                                                                        "example": "15 Nov 2025"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "notes": {
+                                                                "type": "string",
+                                                                "example": ""
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "draft"
+                                                            },
+                                                            "reading_by": {
+                                                                "type": "string",
+                                                                "example": "Fahmi"
+                                                            },
+                                                            "reading_at": {
+                                                                "type": "string",
+                                                                "example": "05 Nov 2025"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/meter-readings/store": {
+            "post": {
+                "tags": [
+                    "Meter Reading"
+                ],
+                "summary": "Store new meter reading",
+                "description": "Record a new meter reading for a customer",
+                "operationId": "storeMeterReading",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "registered_month_id",
+                                    "current_reading"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "registered_month_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "current_reading": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 115.5
+                                    },
+                                    "photo": {
+                                        "description": "Meter reading photo (optional)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "notes": {
+                                        "description": "Additional notes (optional)",
+                                        "type": "string",
+                                        "example": "Meter shows normal reading"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Meter reading created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Meter reading recorded successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "current_reading": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 115.5
+                                                },
+                                                "volume_usage": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 15.5
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "draft"
+                                                },
+                                                "reading_at": {
+                                                    "type": "string",
+                                                    "example": "2025-11-18 11:01:30"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/meter-readings/{meterReadingId}/submit-to-pending": {
+            "put": {
+                "tags": [
+                    "Meter Reading"
+                ],
+                "summary": "Submit meter reading to pending",
+                "description": "Change meter reading status from draft to pending for billing",
+                "operationId": "submitToPending",
+                "parameters": [
+                    {
+                        "name": "meterReadingId",
+                        "in": "path",
+                        "description": "Meter reading ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Meter reading submitted to pending successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Meter reading submitted for billing"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "customer_name": {
+                                                    "type": "string",
+                                                    "example":"Bp Sutrisno"
+                                                },
+                                                "bill_number": {
+                                                    "type": "string",
+                                                    "example": "BILL-1-202511-0135"
+                                                },
+                                                "total_bill": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 6600
+                                                },
+                                                "due_date": {
+                                                    "type": "string",
+                                                    "example": "10 Dec 2025"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "pending"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/meter-readings/{meterReadingId}/destroy": {
+            "post": {
+                "tags": [
+                    "Meter Reading"
+                ],
+                "summary": "Delete meter reading",
+                "description": "Delete a meter reading (only if status is draft)",
+                "operationId": "postDeleteMeterReading",
+                "parameters": [
+                    {
+                        "name": "meterReadingId",
+                        "in": "path",
+                        "description": "Meter reading ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Meter reading deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Meter reading deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+            
+        },
+        "/api/v1/meter-readings/form": {
+            "get": {
+                "tags": [
+                    "Meter Reading"
+                ],
+                "summary": "Get meter reading form for customer",
+                "description": "Get form data and previous meter reading information for inputting new meter reading",
+                "operationId": "getMeterReadingForm",
+                "parameters": [
+                    {
+                        "name": "customer",
+                        "in": "query",
+                        "description": "Customer ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Data berhasil diambil"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "customer_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "customer_name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "customer_number": {
+                                                    "type": "string",
+                                                    "example": "123342"
+                                                },
+                                                "area_name": {
+                                                    "type": "string",
+                                                    "example": "RT 01"
+                                                },
+                                                "pam_name": {
+                                                    "type": "string",
+                                                    "example": "Sumber Waras"
+                                                },
+                                                "meter_number": {
+                                                    "type": "string",
+                                                    "example": "123"
+                                                },
+                                                "last_reading": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 100
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/customers/unrecorded": {
+            "get": {
+                "tags": [
+                    "Customer"
+                ],
+                "summary": "Get unrecorded customers list",
+                "description": "Retrieve customers who haven't had meter readings recorded for a specific month",
+                "operationId": "getUnrecordedCustomers",
+                "parameters": [
+                    {
+                        "name": "registered_month_id",
+                        "in": "query",
+                        "description": "ID of the registered month",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "area_id",
+                        "in": "query",
+                        "description": "Filter by area ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by customer name, number, or meter number",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "John"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "maximum": 100,
+                            "minimum": 10
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort By field(customer_name, customer_number, area_name, meter_number, created_at)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "customer_name"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort Order (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "asc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pelanggan yang belum tercatat berhasil diambil"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "period": {
+                                                    "type": "string",
+                                                    "example": "Dec 2025"
+                                                },
+                                                "pagination": {
+                                                    "properties": {
+                                                        "total": {
+                                                            "type": "integer",
+                                                            "example": 24
+                                                        },
+                                                        "has_more_pages": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        }
+                                                    }
+                                                },
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "customer_id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "John Doe"
+                                                            },
+                                                            "number": {
+                                                                "type": "string",
+                                                                "example": "CUST001"
+                                                            },
+                                                            "area_name": {
+                                                                "type": "string",
+                                                                "example": "Area 1"
+                                                            },
+                                                            "meter_number": {
+                                                                "type": "string",
+                                                                "example": "M001"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/customers/{customerId}/bills": {
+            "get": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Get customer bills",
+                "description": "Retrieve bills for a specific customer",
+                "operationId": "getCustomerBills",
+                "parameters": [
+                    {
+                        "name": "customerId",
+                        "in": "path",
+                        "description": "Customer ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bills retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "customer":{
+                                                                "properties":{
+                                                                    "id":{
+                                                                        "type":"integer",
+                                                                        "example":25
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "Fahmi"
+                                                                    },
+                                                                    "number": {
+                                                                        "type": "string",
+                                                                        "example": "CUST001"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "meter_number": {
+                                                                "type": "string",
+                                                                "example": "123"
+                                                            },
+                                                            "area": {
+                                                                "type": "string",
+                                                                "example": "RT 02"
+                                                            },
+                                                            "tagihan": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "bill_number": {
+                                                                        "type": "string",
+                                                                        "example": "BILL-1-202511-0135"
+                                                                    },
+                                                                    "period": {
+                                                                        "type": "string",
+                                                                        "example": "Nov 2025"
+                                                                    },
+                                                                    "due_date": {
+                                                                        "type": "string",
+                                                                        "example": "15 Nov 2025"
+                                                                    },
+                                                                    "volume_usage": {
+                                                                        "type": "string",
+                                                                        "example": "6213.2"
+                                                                    },
+                                                                    "total_bill": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 55000
+                                                                    },
+                                                                    "tariff_snapshoot": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "tariff_name": {
+                                                                                "type": "string",
+                                                                                "example": "rt"
+                                                                            },
+                                                                            "created_at": {
+                                                                                "type": "string",
+                                                                                "example": "2025-11-18 17:08:05"
+                                                                            },
+                                                                            "price": {
+                                                                                "type": "number",
+                                                                                "format": "float",
+                                                                                "example": 5000
+                                                                            },
+                                                                            "tariff_tiers": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "properties": {
+                                                                                        "range": {
+                                                                                            "type": "string",
+                                                                                            "example": "0.00 - 999.00"
+                                                                                        },
+                                                                                        "rate": {
+                                                                                            "type": "number",
+                                                                                            "format": "float",
+                                                                                            "example": 500
+                                                                                        },
+                                                                                        "volume_used": {
+                                                                                            "type": "number",
+                                                                                            "format": "float",
+                                                                                            "example": 999
+                                                                                        },
+                                                                                        "subtotal": {
+                                                                                            "type": "number",
+                                                                                            "format": "float",
+                                                                                            "example": 499999
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "fixed_fees": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "properties": {
+                                                                                        "fee_name": {
+                                                                                            "type": "string",
+                                                                                            "example": "Abunemen"
+                                                                                        },
+                                                                                        "amount": {
+                                                                                            "type": "number",
+                                                                                            "format": "float",
+                                                                                            "example": 500
+                                                                                        },
+                                                                                        "description": {
+                                                                                            "type": "string",
+                                                                                            "example": "Biaya abunemen bulanan"
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            },
+                                                                            "total_fixed_fees": {
+                                                                                "type": "number",
+                                                                                "format": "float",
+                                                                                "example": 500
+                                                                            },
+                                                                            "total_tier_charge": {
+                                                                                "type": "number",
+                                                                                "format": "float",
+                                                                                "example": 499999
+                                                                            },
+                                                                            "total_bill": {
+                                                                                "type": "number",
+                                                                                "format": "float",
+                                                                                "example": 500004
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/customers/{customerId}/bills/pay": {
+            "post": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Pay customer bills",
+                "description": "Process payment for one or more customer bills",
+                "operationId": "payBills",
+                "parameters": [
+                    {
+                        "name": "customerId",
+                        "in": "path",
+                        "description": "Customer ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "bill_ids",
+                                    "payment_method"
+                                ],
+                                "properties": {
+                                    "bill_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2
+                                        ]
+                                    },
+                                    "payment_method": {
+                                        "type": "string",
+                                        "enum": [
+                                            "cash",
+                                            "transfer",
+                                            "ewallet"
+                                        ],
+                                        "example": "cash"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment processed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "1 bills paid successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "customer_name": {
+                                                    "type": "string",
+                                                    "example": "Fahmi"
+                                                },
+                                                "total_payment": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 55000
+                                                },
+                                                "paid_at": {
+                                                    "type": "string",
+                                                    "example": "2025-11-18 17:58:00"
+                                                },
+                                                "updated_bills": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "bill_number": {
+                                                                "type": "string",
+                                                                "example":"BILL-1-202511-0135"
+                                                            },
+                                                            "total_bill": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 6600
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bills/{billId}": {
+            "delete": {
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Cancel bill payment",
+                "description": "Cancel or reverse a bill payment (admin only)",
+                "operationId": "destroyBill",
+                "parameters": [
+                    {
+                        "name": "billId",
+                        "in": "path",
+                        "description": "Bill ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bill payment cancelled successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Bill payment cancelled successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reports/available-months-payment": {
+            "get": {
+                "tags": [
+                    "Report"
+                ],
+                "summary": "Get available months for payment reports",
+                "description": "Retrieve list of available months that can be used for generating payment reports",
+                "operationId": "getAvailableMonthsPayment",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Available period of payment retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "available_months": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "period": {
+                                                                "type": "string",
+                                                                "example": "Dec 2025"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "open"
+                                                            },
+                                                            "total_payment": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 5471810
+                                                            },
+                                                            "total_paid_customers": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 126
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reports/monthly-payment-report": {
+            "get": {
+                "tags": [
+                    "Report"
+                ],
+                "summary": "Get monthly payment report",
+                "description": "Generate monthly payment report with detailed statistics",
+                "operationId": "getMonthlyPaymentReport",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "description": "ID of the registered month",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Laporan pembayaran bulanan berhasil diambil"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "period": {
+                                                    "type": "string",
+                                                    "example": "Jan 2024"
+                                                },
+                                                "summary": {
+                                                    "properties": {
+                                                        "total_paid_customers": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 120
+                                                        },
+                                                        "total_payment": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 30000000
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "payment_data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "bill_id": {
+                                                                "type": "integer",
+                                                                "example": 1500
+                                                            },
+                                                            "bill_number": {
+                                                                "type": "string",
+                                                                "example": "BILL-1-202511-0135"
+                                                            },
+                                                            "customer_name": {
+                                                                "type": "string",
+                                                                "example": "Bp Suripno"
+                                                            },
+                                                            "customer_number": {
+                                                                "type": "string",
+                                                                "example": "CUST001"
+                                                            },
+                                                            "total_bill": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 30000000
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "pending"
+                                                            },
+                                                            "payment_method": {
+                                                                "type": "string",
+                                                                "example": "cash"
+                                                            },
+                                                            "issued_at": {
+                                                                "type": "string",
+                                                                "example": "18 Nov 2025"
+                                                            },
+                                                            "paid_at": {
+                                                                "type": "string",
+                                                                "example": "18 Nov 2025"
+                                                            },
+                                                            "paid_by": {
+                                                                "type": "string",
+                                                                "example": "Fahmi Habibi"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reports/download-payment-report": {
+            "get": {
+                "tags": [
+                    "Report"
+                ],
+                "summary": "Download payment report",
+                "description": "Download payment report in Excel or PDF format",
+                "operationId": "downloadPaymentReport",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "description": "ID of the registered month",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File download successful",
+                        "headers": {
+                            "Content-Type": {
+                                "description": "File content type",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "pdf"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/sync/payment-summary/{registeredMonthId}": {
+            "post": {
+                "tags": [
+                    "Report"
+                ],
+                "summary": "Sync payment summary data",
+                "description": "Synchronize payment summary data for a specific month",
+                "operationId": "syncPaymentSummaryForMonth",
+                "parameters": [
+                    {
+                        "name": "registeredMonthId",
+                        "in": "path",
+                        "description": "Registered month ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment summary synchronized successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payment summary synchronized successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "period": {
+                                                    "type": "string",
+                                                    "example": "Nov 2025"
+                                                },
+                                                "summary": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "old_values": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "total_paid_customers": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 120
+                                                                },
+                                                                "total_payment": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 30000000
+                                                                }
+                                                            }
+                                                        },
+                                                        "new_values": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "total_paid_customers": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 120
+                                                                },
+                                                                "total_payment": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 30000000
+                                                                }
+                                                            }
+                                                        },
+                                                        "differences": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "customers_diff": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 120
+                                                                },
+                                                                "payment_diff": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 30000000
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "sanctum": {
+                "type": "apiKey",
+                "description": "Enter token in format (Bearer <token>)",
+                "name": "Authorization",
+                "in": "header"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "API endpoints for user authentication and profile management"
+        },
+        {
+            "name": "Customer",
+            "description": "API endpoints for customer management including unrecorded lists and bill information"
+        },
+        {
+            "name": "Meter Reading",
+            "description": "API endpoints for meter reading management and operations"
+        },
+        {
+            "name": "Payment",
+            "description": "API endpoints for bill payment operations and management"
+        },
+        {
+            "name": "User Management",
+            "description": "API endpoints for user management and role assignments (Admin/SuperAdmin only)"
+        },
+        {
+            "name": "PAM",
+            "description": "API endpoints for PAM (Water Utility Company) management"
+        },
+        {
+            "name": "Registered Month",
+            "description": "API endpoints for registered month management and reporting periods"
+        },
+        {
+            "name": "Report",
+            "description": "API endpoints for generating and downloading reports"
+        }
+    ],
+    "security": [
+        {
+            "sanctum": []
+        }
+    ]
+}

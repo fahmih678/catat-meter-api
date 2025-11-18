@@ -81,11 +81,10 @@ class RegisteredMonthController extends Controller
                 return [
                     'id' => $month->id,
                     'month_name' => $monthNames[$periodDate->month] ?? 'Unknown',
-                    'year' => $periodDate->year,
-                    'recorded_customers' => (int) $month->recorded_customers,
+                    'recorded_customers' => $month->recorded_customers,
                     'total_customers' => $month->total_customers,
-                    'total_usage' => $month->total_usage,
-                    'total_bills' => $month->total_bills,
+                    'total_usage' => (float) $month->total_usage,
+                    'total_bills' => (float) $month->total_bills,
                     'status' => $month->status,
                 ];
             });
@@ -93,7 +92,7 @@ class RegisteredMonthController extends Controller
             $data = [
                 'year' => (int) $year,
                 'available_years' => $registeredYears,
-                'items' => $monthlyData,
+                'months' => $monthlyData,
             ];
             return $this->successResponse($data, 'Month list retrieved successfully');
         } catch (\Exception $e) {
@@ -172,7 +171,10 @@ class RegisteredMonthController extends Controller
                 throw $e;
             }
 
-            return $this->createdResponse($month, 'Month created successfully');
+            return $this->createdResponse([
+                "period" => Carbon::parse($month->period)->format('F Y'),
+                "total_customers" => $month->total_customers,
+            ], 'Month created successfully');
         } catch (\Illuminate\Database\QueryException $e) {
             // Handle specific database errors
             if ($e->errorInfo[1] === 1062) {
@@ -183,59 +185,6 @@ class RegisteredMonthController extends Controller
             return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             return $this->errorResponse('Terjadi kesalahan saat membuat bulan registrasi', 500);
-        }
-    }
-
-    /**
-     * Get available registered months report
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function getAvailableMonthsReport(Request $request): JsonResponse
-    {
-        try {
-            // Get user's PAM ID from middleware
-            $userPamId = $request->attributes->get('user_pam_id');
-            $isSuperAdmin = $request->attributes->get('is_superadmin', false);
-            // Get available registered months for user's PAM with enhanced data
-            $availableMonthsQuery = RegisteredMonth::select(
-                'id',
-                'period',
-                'status',
-                'total_payment',
-                'total_paid_customers'
-            )
-                ->orderBy('period', 'desc');
-
-            // Apply PAM filtering (non-superadmin only)
-            if (!$isSuperAdmin && $userPamId) {
-                $availableMonthsQuery->where('pam_id', $userPamId);
-            }
-            $availableMonths = $availableMonthsQuery->get()
-                ->map(function ($month) {
-                    try {
-                        return [
-                            'id' => $month->id,
-                            'period' => Carbon::parse($month->period)->translatedFormat('F Y'),
-                            'status' => $month->status,
-                            'total_payment' => (float) $month->total_payment,
-                            'total_paid_customers' => (int) $month->total_paid_customers,
-                        ];
-                    } catch (\Exception) {
-                        return [
-                            'id' => $month->id,
-                            'period' => $month->period,
-                            'status' => $month->status,
-                            'total_payment' => (float) $month->total_payment,
-                            'total_paid_customers' => (int) $month->total_paid_customers,
-                        ];
-                    }
-                });
-
-            return $this->successResponse($availableMonths, 'Available registered months retrieved successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Terjadi kesalahan saat mengambil daftar bulan aktif', 500);
         }
     }
 

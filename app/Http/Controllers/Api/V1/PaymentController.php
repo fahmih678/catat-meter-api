@@ -69,10 +69,10 @@ class PaymentController extends Controller
                     return [
                         'id' => $bill->id,
                         'bill_number' => $bill->bill_number,
-                        'period' => $bill->meterReading ? $bill->meterReading->registeredMonth->period : null,
-                        'due_date' => $bill->due_date ? $bill->due_date->format('Y-m-d') : null,
+                        'period' => $bill->registeredMonth ? Carbon::parse($bill->due_date)->format('M Y') : null,
+                        'due_date' =>  Carbon::parse($bill->due_date)->format('d M Y'),
                         'volume_usage' => $bill->volume_usage,
-                        'total_bill' => $bill->total_bill,
+                        'total_bill' => (float) $bill->total_bill,
                         'tariff_snapshot' => json_decode($bill->tariff_snapshot, true),
                     ];
                 })
@@ -150,8 +150,9 @@ class PaymentController extends Controller
             }
 
             // Start database transaction for data consistency
-            return DB::transaction(function () use ($bills, $paymentTime, $registeredMonth, $paymentMethod, $request, $customerId) {
+            return DB::transaction(function () use ($bills, $paymentTime, $registeredMonth, $paymentMethod, $request, $customer) {
                 $updatedBills = [];
+                $totalPayment = 0;
                 $errors = [];
 
                 // Update each bill within transaction
@@ -159,7 +160,7 @@ class PaymentController extends Controller
                     try {
                         $bill->update([
                             'registered_month_id' => $registeredMonth->id,
-                            'paid_at' => $paymentTime->format('Y-m-d H:i:s'),
+                            'paid_at' => $paymentTime,
                             'status' => 'paid',
                             'paid_by' => $request->user()->id,
                             'payment_method' => $paymentMethod,
@@ -172,11 +173,10 @@ class PaymentController extends Controller
                         }
 
                         $updatedBills[] = [
-                            'id' => $bill->id,
                             'bill_number' => $bill->bill_number,
-                            'total_bill' => $bill->total_bill,
-                            'paid_at' => $bill->paid_at
+                            'total_bill' => (float) $bill->total_bill,
                         ];
+                        $totalPayment += (float) $bill->total_bill;
                     } catch (\Exception $e) {
                         $errors[] = [
                             'bill_id' => $bill->id,
@@ -203,8 +203,10 @@ class PaymentController extends Controller
                 }
 
                 return $this->successResponse([
+                    'customer_name' => $customer->name,
+                    'total_payment' => $totalPayment,
+                    'paid_at' => $paymentTime->format('Y-m-d H:i:s'),
                     'updated_bills' => $updatedBills,
-                    'customer_id' => $customerId
                 ], count($updatedBills) . ' bills paid successfully');
             });
         } catch (ModelNotFoundException $e) {

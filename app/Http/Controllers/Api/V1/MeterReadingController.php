@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Customer;
 use App\Models\MeterReading;
 use App\Services\MeterReadingService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Validator;
 
 class MeterReadingController extends Controller
 {
@@ -40,12 +43,11 @@ class MeterReadingController extends Controller
 
             // Validate query parameters
             $validated = $request->validate([
-                'registered_month_id' => 'nullable|integer|exists:registered_months,id',
+                'registered_month_id' => 'required|integer|exists:registered_months,id',
                 'search' => 'nullable|string|max:255',
                 'status' => 'nullable|in:draft,pending,paid',
                 'area_id' => 'nullable|integer|exists:areas,id',
                 'per_page' => 'nullable|integer|min:10|max:100',
-                'page' => 'nullable|integer|min:1',
                 'sort_by' => 'nullable|in:customer_id,status',
                 'sort_order' => 'nullable|in:asc,desc'
             ]);
@@ -77,7 +79,7 @@ class MeterReadingController extends Controller
                     'registered_months.period',
                     'users.name as reading_by_name',
                     // Bill fields
-                    'bills.id as bill_id',
+                    // 'bills.id as bill_id',
                     'bills.total_bill as bill_total',
                     'bills.due_date as bill_due_date'
                 ])
@@ -135,7 +137,7 @@ class MeterReadingController extends Controller
             $formattedData = $meterReadings->getCollection()->map(function ($reading) {
                 return [
                     'id' => $reading->id,
-                    'period' => $reading->period,
+                    'period' => Carbon::parse($reading->period)->format('M Y'),
                     'customer' => [
                         'id' => $reading->customer_id,
                         'name' => $reading->customer_name,
@@ -143,27 +145,29 @@ class MeterReadingController extends Controller
                         'area_name' => $reading->area_name,
                     ],
                     'meter_number' => $reading->meter_number,
-                    'current_reading' => (float) $reading->current_reading,
-                    'volume_usage' => (float) $reading->volume_usage,
+                    'previous_reading' => $reading->previous_reading,
+                    'current_reading' => $reading->current_reading,
+                    'volume_usage' => $reading->volume_usage,
                     'bill' => [
-                        'id' => $reading->bill_id,
-                        'total_bill' => $reading->bill_total,
-                        'due_date' => $reading->bill_due_date,
+                        'total_bill' => (float) $reading->bill_total,
+                        'due_date' =>  Carbon::parse($reading->bill_due_date)->format('d M Y'),
                     ],
-                    'notes' => $reading->notes,
+                    'notes' => $reading->notes ?? "",
                     'status' => $reading->status,
                     'reading_by' => $reading->reading_by_name,
-                    'reading_at' => $reading->reading_at,
+                    'reading_at' => Carbon::parse($reading->reading_at)->format('d M Y'),
                 ];
             });
 
             return $this->successResponse([
-                'items' => $formattedData,
                 'pagination' => [
                     'total' => $meterReadings->total(),
                     'has_more_pages' => $meterReadings->hasMorePages(),
-                ]
+                ],
+                'items' => $formattedData
             ], 'Data pencatatan meter berhasil diambil');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             Log::error('Error fetching meter reading list', [
                 'pam_id' => $user->pam_id ?? null,
@@ -181,10 +185,15 @@ class MeterReadingController extends Controller
      * @param int $customerId
      * @return JsonResponse
      */
-    public function getMeterReadingForm(Request $request, int $customerId): JsonResponse
+    public function getMeterReadingForm(Request $request): JsonResponse
     {
         try {
+            $validated = $request->validate([
+                'customer' => 'required|integer|exists:customers,id',
+            ]);
+
             $user = $request->user();
+            $customerId = $validated['customer'];
 
             // Single optimized query with all required relationships
             $customer = Customer::with([
@@ -227,25 +236,24 @@ class MeterReadingController extends Controller
             // Build response data
             $responseData = [
                 'customer_id' => $customer->id,
-                'name' => $customer->name,
-                'number' => $customer->customer_number,
+                'customer_name' => $customer->name,
+                'customer_number' => $customer->customer_number,
                 'area_name' => $customer->area->name,
                 'pam_name' => $customer->pam->name,
-                'meter' => [
-                    'id' => $customer->meter->id,
-                    'number' => $customer->meter->meter_number,
-                    'last_reading' => $lastReadingValue,
-                ],
+                'meter_number' => $customer->meter->meter_number,
+                'last_reading' => $lastReadingValue,
             ];
 
             return $this->successResponse($responseData, 'Data berhasil diambil');
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {
             Log::error('Error fetching meter input data', [
-                'customer_id' => $customerId,
+                'customer_id' => $request->customer,
                 'pam_id' => $user->pam_id ?? null,
             ]);
 
-            return $this->errorResponse('Terjadi kesalahan saat mengambil data meter input');
+            return $this->errorResponse('Terjadi kesalahan saat mengambil data meter input' . $e->getMessage(), 500);
         }
     }
 
@@ -263,7 +271,6 @@ class MeterReadingController extends Controller
                 'registered_month_id' => 'required|integer|exists:registered_months,id',
                 'current_reading' => 'required|decimal:2|min:0',
                 'notes' => 'nullable|string|max:1000',
-                'reading_by' => 'nullable|integer|exists:users,id',
                 'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
@@ -373,6 +380,7 @@ class MeterReadingController extends Controller
                 'id' => $record->id,
                 'current_reading' => $record->current_reading,
                 'volume_usage' => $record->volume_usage,
+                'status' => $record->status,
                 'reading_at' => $record->reading_at,
             ], 'Meter reading berhasil disimpan');
         } catch (\Illuminate\Database\QueryException $e) {

@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\ApiDocumentationController;
+use App\Http\Controllers\SwaggerUiController;
+
 // V1 API Controllers
 use App\Http\Controllers\Api\V1\{
     AuthController as V1AuthController,
@@ -13,6 +16,15 @@ use App\Http\Controllers\Api\V1\{
 };
 
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| API Documentation Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/docs', [ApiDocumentationController::class, 'apiDocs'])->name('api.docs');
+Route::get('/docs/ui', [SwaggerUiController::class, 'index'])->name('api.docs.ui');
 
 /*
 |--------------------------------------------------------------------------
@@ -45,7 +57,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
             // Meter Reading Operations
             Route::get('/customers/unrecorded', [V1CustomerController::class, 'unrecordedList'])->name('customers-unrecorded');
-            Route::get('/customers/{id}/meter-reading-form', [V1MeterReadingController::class, 'getMeterReadingForm'])->name('customers-meter-reading-form');
+            Route::get('/meter-readings/form', [V1MeterReadingController::class, 'getMeterReadingForm'])->name('meter-reading-form');
             Route::post('/meter-readings/store', [V1MeterReadingController::class, 'store'])->name('meter-reading-store');
             Route::post('/meter-readings/{meterReadingId}/destroy', [V1MeterReadingController::class, 'destroy'])->name('meter-reading-destroy');
 
@@ -56,7 +68,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::delete('/bills/{billId}', [V1PaymentController::class, 'destroy'])->name('bills.destroy');
 
             // Bill Monthly Reports
-            Route::get('/registered-months/available-months-report', [V1RegisteredMonthController::class, 'getAvailableMonthsReport'])->name('registered-month-list');
+            Route::get('/reports/available-months-payment', [V1ReportController::class, 'getAvailableMonthsPayment'])->name('available-months-payment');
             Route::get('/reports/monthly-payment-report', [V1ReportController::class, 'monthlyPaymentReport'])->name('monthly-payment-report');
             Route::get('/reports/download-payment-report', [V1ReportController::class, 'downloadPaymentReport'])->name('download-payment-report');
         });

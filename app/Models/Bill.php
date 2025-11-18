@@ -30,8 +30,8 @@ class Bill extends Model
     ];
 
     protected $casts = [
-        'volume_usage' => 'decimal:2',
-        'total_bill' => 'decimal:2',
+        'volume_usage' => 'decimal:1',
+        'total_bill' => 'decimal:0',
         'due_date' => 'date',
         'paid_at' => 'datetime',
     ];
