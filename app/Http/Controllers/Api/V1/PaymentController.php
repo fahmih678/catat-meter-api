@@ -65,11 +65,12 @@ class PaymentController extends Controller
                 ],
                 'meter_number' => $customer->meter ? $customer->meter->meter_number : null,
                 'area' => $customer->area ? $customer->area->name : null,
-                'tagihan' => $bills->map(function ($bill) use ($customer) {
+                'bill' => $bills->map(function ($bill) use ($customer) {
                     return [
                         'id' => $bill->id,
                         'bill_number' => $bill->bill_number,
-                        'period' => $bill->registeredMonth ? Carbon::parse($bill->due_date)->format('M Y') : null,
+                        'reading_period' => Carbon::parse($bill->meterReading->registeredMonth->period)->format('M Y'),
+                        'payment_period' => $bill->registeredMonth ? Carbon::parse($bill->due_date)->format('M Y') : null,
                         'due_date' =>  Carbon::parse($bill->due_date)->format('d M Y'),
                         'volume_usage' => $bill->volume_usage,
                         'total_bill' => (float) $bill->total_bill,
@@ -278,7 +279,8 @@ class PaymentController extends Controller
             }
 
             return $this->successResponse([
-                'bill_id' => $billId
+                'total_paid_customers' => $registeredMonth->total_paid_customers,
+                'total_payment' => (float) $registeredMonth->total_payment,
             ], 'Bill removed successfully, meter reading status updated to draft, and registered month totals updated');
         } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse('Bill not found');

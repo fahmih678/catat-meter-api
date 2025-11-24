@@ -9,7 +9,7 @@ This is the official API documentation for Catat Meter Application V1. The API p
 **Authentication:** Bearer Token (Laravel Sanctum)
 **Content-Type:** `application/json` (except for file uploads)
 
-**Available Endpoints:** 25 endpoints across 8 modules
+**Available Endpoints:** 27 endpoints across 8 modules
 
 ## Table of Contents
 
@@ -163,25 +163,31 @@ Update current user profile information.
 **Request Headers:**
 ```
 Authorization: Bearer {token}
-Content-Type: multipart/form-data
+Content-Type: application/json
 ```
 
-**Request Body (multipart/form-data):**
-```
-name: string|sometimes|max:50
-email: string|sometimes|email|max:150|unique:users,{id}
-phone: string|sometimes|max:20
-password: string|sometimes|min:6
-photo: file|sometimes|image|mimes:jpg,jpeg,png|max:5120
+**Request Body (JSON):**
+```json
+{
+  "name": "string|sometimes|max:50",
+  "phone": "string|sometimes|max:20",
+  "address": "string|sometimes|max:255",
+  "current_password": "string|required_with:password",
+  "password": "string|sometimes|min:6|confirmed",
+  "password_confirmation": "string|required_with:password"
+}
 ```
 
 **Example Request:**
 ```bash
 curl -X PUT http://localhost:8000/api/v1/auth/profile \
   -H "Authorization: Bearer {token}" \
-  -F "name=John Doe Updated" \
-  -F "phone=08123456789" \
-  -F "photo=@profile.jpg"
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe Updated",
+    "phone": "08123456789",
+    "address": "123 Main St Updated"
+  }'
 ```
 
 **Response (200):**
@@ -355,20 +361,20 @@ curl -X GET "http://localhost:8000/api/v1/customers/unrecorded?registered_month_
 ---
 
 ### Get Meter Reading Form
-**GET** `/customers/{id}/meter-reading-form`
+**GET** `/meter-readings/form`
 
-Get customer and meter data for meter reading input.
+Get form data and previous meter reading information for inputting new meter reading.
 
 **Access Roles:** `admin`, `catat_meter`, `loket` + PAM Scope
 
-**Path Parameters:**
+**Query Parameters:**
 ```
-id: integer|required - Customer ID
+customer: integer|required - Customer ID
 ```
 
 **Example Request:**
 ```bash
-curl -X GET "http://localhost:8000/api/v1/customers/1/meter-reading-form" \
+curl -X GET "http://localhost:8000/api/v1/meter-readings/form?customer=1" \
   -H "Authorization: Bearer {token}"
 ```
 
@@ -376,18 +382,24 @@ curl -X GET "http://localhost:8000/api/v1/customers/1/meter-reading-form" \
 ```json
 {
   "status": "success",
-  "message": "Data berhasil diambil",
+  "message": "Form data retrieved successfully",
   "data": {
-    "customer_id": 1,
-    "name": "Budi Santoso",
-    "number": "CUS001",
-    "area_name": "Area A",
-    "pam_name": "PDAM Kota",
+    "customer": {
+      "id": 1,
+      "name": "Budi Santoso",
+      "number": "CUS001",
+      "area_name": "Area A",
+      "pam_name": "PDAM Kota"
+    },
     "meter": {
       "id": 1,
       "number": "MTR001",
       "last_reading": 125.0
     },
+    "registered_month": {
+      "id": 1,
+      "period": "2024-01"
+    }
   }
 }
 ```
@@ -735,7 +747,56 @@ curl -X DELETE "http://localhost:8000/api/v1/bills/1" \
 
 The reports module provides financial and operational reporting capabilities with export functionality.
 
-**Available Endpoints:** 2 endpoints
+**Available Endpoints:** 4 endpoints
+
+### Get Available Months for Payment Report
+**GET** `/reports/available-months-payment`
+
+Get list of available months that have payment data for reporting.
+
+**Access Roles:** `admin`, `catat_meter`, `loket` + PAM Scope
+
+**Request Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Example Request:**
+```bash
+curl -X GET "http://localhost:8000/api/v1/reports/available-months-payment" \
+  -H "Authorization: Bearer {token}"
+```
+
+**Response (200):**
+```json
+{
+    "status": "success",
+    "message": "Available months retrieved successfully",
+    "data": {
+        "available_months": [
+            {
+                "id": 1,
+                "period": "2025-11-01",
+                "month_name": "November 2025",
+                "total_payments": 47,
+                "total_amount": 1350000,
+                "has_data": true
+            },
+            {
+                "id": 2,
+                "period": "2025-10-01",
+                "month_name": "October 2025",
+                "total_payments": 45,
+                "total_amount": 1250000,
+                "has_data": true
+            }
+        ]
+    }
+}
+```
+
+---
 
 ### Get Monthly Payment Report
 **GET** `/reports/monthly-payment-report`
@@ -822,6 +883,64 @@ Content-Length: 1234567
 
 **Error Responses:**
 - `404`: No payment data found for period
+
+---
+
+### Sync Payment Summary
+**POST** `/sync/payment-summary/{registeredMonthId}`
+
+Synchronize payment summary data for a specific month.
+
+**Access Roles:** `admin`, `catat_meter`, `loket` + PAM Scope
+
+**Path Parameters:**
+```
+registeredMonthId: integer|required - Registered month ID
+```
+
+**Request Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Example Request:**
+```bash
+curl -X POST "http://localhost:8000/api/v1/sync/payment-summary/1" \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json"
+```
+
+**Response (200):**
+```json
+{
+    "status": "success",
+    "message": "Payment summary synchronized successfully",
+    "data": {
+        "period": "Nov 2025",
+        "summary": {
+            "old_values": {
+                "total_paid_customers": 45,
+                "total_amount": 1250000,
+                "total_bills": 50
+            },
+            "new_values": {
+                "total_paid_customers": 47,
+                "total_amount": 1350000,
+                "total_bills": 50
+            },
+            "changes": {
+                "paid_customers": 2,
+                "amount": 100000
+            }
+        }
+    }
+}
+```
+
+**Error Responses:**
+- `404`: Registered month not found
+- `403`: Access denied to this PAM's data
 
 ---
 
@@ -1551,14 +1670,14 @@ See individual endpoint documentation for sample cURL commands.
 | Module | Endpoints | Total |
 |--------|-----------|-------|
 | **Authentication** | `POST /auth/login`, `GET /auth/profile`, `PUT /auth/profile`, `POST /auth/logout` | 4 |
-| **Meter Reading** | `GET /meter-readings/list`, `GET /customers/unrecorded`, `GET /customers/{id}/meter-reading-form`, `POST /meter-readings/store`, `PUT /meter-readings/{id}/submit-to-pending`, `POST /meter-readings/{id}/destroy` | 6 |
+| **Meter Reading** | `GET /meter-readings/list`, `GET /customers/unrecorded`, `GET /meter-readings/form`, `POST /meter-readings/store`, `PUT /meter-readings/{id}/submit-to-pending`, `POST /meter-readings/{id}/destroy` | 6 |
 | **Payment** | `GET /customers/{id}/bills`, `POST /customers/{id}/bills/pay`, `DELETE /bills/{id}` | 3 |
-| **Reports** | `GET /reports/monthly-payment-report`, `GET /reports/download-payment-report` | 2 |
+| **Reports** | `GET /reports/available-months-payment`, `GET /reports/monthly-payment-report`, `GET /reports/download-payment-report`, `POST /sync/payment-summary/{id}` | 4 |
 | **User Management** | `GET /users`, `GET /users/{id}`, `PUT /users/{id}`, `POST /users/{id}/assign-role`, `DELETE /users/{id}/remove-role`, `DELETE /users/{id}` | 6 |
 | **Customer** | `GET /me/bills` | 1 |
 | **PAM Management** | `GET /pams` | 1 |
 | **Registered Month** | `GET /registered-months/list/{year}`, `POST /registered-months/store` | 2 |
-| **TOTAL** | | **25 endpoints** |
+| **TOTAL** | | **27 endpoints** |
 
 ### Role-Based Access Matrix
 
@@ -1603,7 +1722,7 @@ For API support and questions:
 
 **Documentation Version:** 1.0.0
 **API Version:** v1
-**Total Endpoints:** 25
+**Total Endpoints:** 27
 **Last Review:** January 2024
 
 ---
@@ -1612,8 +1731,11 @@ For API support and questions:
 
 ### v1.0.0 (January 2024)
 - Initial API documentation
-- 25 endpoints across 8 modules
+- 27 endpoints across 8 modules
 - Complete authentication and authorization flow
 - Multi-tenant PAM security implementation
 - Comprehensive meter reading workflow
 - Payment processing and reporting system
+- Added payment summary synchronization endpoint
+- Updated meter reading form endpoint path
+- Enhanced profile update with JSON format

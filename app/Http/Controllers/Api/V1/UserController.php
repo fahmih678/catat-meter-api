@@ -112,10 +112,10 @@ class UserController extends Controller
                         'status' => $user->is_active ? 'active' : 'inactive',
                         'photo' => $user->photo_url ? asset($user->photo_url) : null,
                     ],
-                    'pam' => [
+                    'pam' => $user->pam != null ? [
                         'id' => $user->pam?->id,
                         'name' => $user->pam?->name,
-                    ],
+                    ] : null,
                 ];
             });
 
@@ -201,7 +201,7 @@ class UserController extends Controller
                     'max:150',
                     Rule::unique('users')->ignore($user->id),
                 ],
-                'phone' => 'sometimes|string|max:20',
+                'phone' => 'sometimes|nullable|string|max:20',
                 'status' => 'sometimes|boolean',
                 'password' => 'sometimes|string|min:6',
                 'pam_id' => 'sometimes|nullable|exists:pams,id',

@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -53,22 +55,22 @@ class User extends Authenticatable
         ];
     }
 
-    public function pam(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function pam(): BelongsTo
     {
         return $this->belongsTo(Pam::class);
     }
 
-    public function recordedMeterReadings(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function recordedMeterReadings(): HasMany
     {
         return $this->hasMany(MeterReading::class, 'recorded_by');
     }
 
-    public function registeredMonths(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function registeredMonths(): HasMany
     {
         return $this->hasMany(RegisteredMonth::class, 'generated_by');
     }
 
-    public function activityLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class);
     }

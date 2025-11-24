@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Helpers\RoleHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\HasPamFiltering;
+use App\Models\Area;
 use App\Models\Customer;
 use App\Models\RegisteredMonth;
 use Carbon\Carbon;
@@ -88,9 +89,11 @@ class RegisteredMonthController extends Controller
                     'status' => $month->status,
                 ];
             });
+            $firstArea = Area::select('id', 'name')->where('pam_id', $user->pam_id)->orderBy('id', 'asc')->pluck('id')->first();
 
             $data = [
                 'year' => (int) $year,
+                'first_area' => $firstArea,
                 'available_years' => $registeredYears,
                 'months' => $monthlyData,
             ];
@@ -117,7 +120,11 @@ class RegisteredMonthController extends Controller
             $user = $request->user();
             $validateData = $request->validate([
                 'pam_id' => 'required|integer|exists:pams,id',
-                'period' => 'required|date_format:Y-m-d',
+                'year' => 'required|integer',
+                'month' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12',
+            ], [
+                'pam_id.exists' => 'PAM tidak ditemukan',
+                'month.in' => 'Bulan tidak valid'
             ]);
 
             // Security: Multi-tenant access check
@@ -126,7 +133,7 @@ class RegisteredMonthController extends Controller
             }
 
             // Parse period once for efficiency
-            $periodDate = Carbon::parse($validateData['period']);
+            $periodDate = Carbon::parse($validateData['year'] . '-' . $validateData['month']);
 
             // Use transaction to prevent race conditions
             DB::beginTransaction();
@@ -151,7 +158,7 @@ class RegisteredMonthController extends Controller
                 // Prepare complete data for insertion
                 $monthData = [
                     'pam_id' => $validateData['pam_id'],
-                    'period' => $validateData['period'],
+                    'period' => $periodDate->format('Y-m-d'),
                     'total_customers' => $totalCustomers,
                     'total_usage' => 0,
                     'total_bills' => 0,

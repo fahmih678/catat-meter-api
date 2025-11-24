@@ -26,9 +26,11 @@ class AuthController extends Controller
         try {
             // Validate input
             $request->validate([
-                'email' => 'required|email|max:255',
+                'email' => 'required|email|max:255|exists:users,email',
                 'password' => 'required|string|min:1',
                 'device_name' => 'string|nullable|max:100'
+            ], [
+                'email.exists' => "Email atau password salah"
             ]);
 
             // Find user by email
@@ -66,11 +68,11 @@ class AuthController extends Controller
                     'status' => $user->is_active ? 'active' : 'inactive',
                     'photo' => $user->photo_url ? asset($user->photo_url) : null,
                 ],
-                'pam' => [
+                'pam' =>  $user->pam !== null ?  [
                     'id' => $user->pam?->id,
                     'name' => $user->pam?->name,
                     'logo' => $user->pam?->logo_url ? asset($user->pam?->logo_url) : null,
-                ],
+                ] : null,
                 'token' => $token,
                 'token_type' => 'Bearer',
             ], 'Login successful');

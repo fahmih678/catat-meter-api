@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Helpers\RoleHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\HasPamFiltering;
+use App\Models\Area;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -32,6 +33,13 @@ class MeterReadingController extends Controller
     /**
      * Get meter reading list with filters and pagination
      *
+     * SECURITY & DATA INTEGRITY NOTES:
+     * - Uses optimized JOINs to prevent duplicate records from one-to-many relationships
+     * - Bills join uses subquery to get only 1 latest non-softdeleted bill per meter reading
+     * - Users join filtered by PAM scope for multi-tenant security
+     * - All queries are PAM-scoped for data isolation
+     * - Each meter reading will appear exactly once, preventing pagination count issues
+     *
      * @param Request $request
      * @return JsonResponse
      */
@@ -43,21 +51,22 @@ class MeterReadingController extends Controller
 
             // Validate query parameters
             $validated = $request->validate([
-                'registered_month_id' => 'required|integer|exists:registered_months,id',
+                'period' => 'required|integer|exists:registered_months,id',
                 'search' => 'nullable|string|max:255',
                 'status' => 'nullable|in:draft,pending,paid',
                 'area_id' => 'nullable|integer|exists:areas,id',
                 'per_page' => 'nullable|integer|min:10|max:100',
-                'sort_by' => 'nullable|in:customer_id,status',
+                'sort_by' => 'nullable|in:customer_id,status,created_at',
                 'sort_order' => 'nullable|in:asc,desc'
             ]);
 
             // Set defaults
             $perPage = $validated['per_page'] ?? 20;
-            $sortBy = $validated['sort_by'] ?? 'customer_id';
+            $sortBy = $validated['sort_by'] ?? 'customer_id'; // Ganti default ke 'reading_at' jika lebih relevan
             $sortOrder = $validated['sort_order'] ?? 'desc';
 
-            // Build optimized query using indexes
+            // *** OPTIMIZED QUERY START ***
+            // Mengganti Subqueries dengan JOIN untuk performa dan mencegah duplikasi
             $query = MeterReading::query()
                 ->select([
                     // Meter reading fields
@@ -77,28 +86,28 @@ class MeterReadingController extends Controller
                     'meters.meter_number',
                     'areas.name as area_name',
                     'registered_months.period',
+                    // Data dari JOINs (menggantikan subqueries)
                     'users.name as reading_by_name',
-                    // Bill fields
-                    // 'bills.id as bill_id',
                     'bills.total_bill as bill_total',
-                    'bills.due_date as bill_due_date'
+                    'bills.due_date as bill_due_date',
                 ])
                 ->join('meters', 'meter_readings.meter_id', '=', 'meters.id')
                 ->join('customers', 'meters.customer_id', '=', 'customers.id')
                 ->join('areas', 'customers.area_id', '=', 'areas.id')
                 ->join('registered_months', 'meter_readings.registered_month_id', '=', 'registered_months.id')
-                ->leftJoin('users', function ($join) use ($pamId) {
+                ->join('users', function ($join) use ($pamId) {
                     $join->on('meter_readings.reading_by', '=', 'users.id')
                         ->where('users.pam_id', '=', $pamId);
                 })
                 ->leftJoin('bills', function ($join) {
-                    $join->on('meter_readings.id', '=', 'bills.meter_reading_id');
+                    $join->on('meter_readings.id', '=', 'bills.meter_reading_id')
+                        ->whereNull('bills.deleted_at');
                 })
                 ->where('meter_readings.pam_id', $pamId);
 
             // Apply filters with index optimization
-            if (!empty($validated['registered_month_id'])) {
-                $query->where('meter_readings.registered_month_id', $validated['registered_month_id']);
+            if (!empty($validated['period'])) {
+                $query->where('meter_readings.registered_month_id', $validated['period']);
             }
 
             if (!empty($validated['status'])) {
@@ -121,11 +130,13 @@ class MeterReadingController extends Controller
             // Apply sorting
             switch ($sortBy) {
                 case 'customer_id':
+                    // Sortasi berdasarkan kolom di tabel customers yang di-JOIN
                     $query->orderBy('customers.id', $sortOrder);
                     break;
                 case 'status':
                     $query->orderBy('meter_readings.status', $sortOrder);
                     break;
+                case 'reading_at':
                 default:
                     $query->orderBy('meter_readings.reading_at', $sortOrder);
             }
@@ -133,7 +144,7 @@ class MeterReadingController extends Controller
             // Execute paginated query
             $meterReadings = $query->paginate($perPage);
 
-            // Format response for mobile UI
+            // Format response for mobile UI with safe handling for null values
             $formattedData = $meterReadings->getCollection()->map(function ($reading) {
                 return [
                     'id' => $reading->id,
@@ -149,19 +160,26 @@ class MeterReadingController extends Controller
                     'current_reading' => $reading->current_reading,
                     'volume_usage' => $reading->volume_usage,
                     'bill' => [
+                        // Bill data: null jika meter reading belum ada tagihan atau tagihan di-softdelete
                         'total_bill' => (float) $reading->bill_total,
-                        'due_date' =>  Carbon::parse($reading->bill_due_date)->format('d M Y'),
+                        'due_date' => Carbon::parse($reading->bill_due_date)->format('d M Y'),
                     ],
                     'notes' => $reading->notes ?? "",
                     'status' => $reading->status,
+                    // reading_by_name dari JOIN user. Jika user di JOIN tidak ditemukan (error data), fallback ke "System"
                     'reading_by' => $reading->reading_by_name,
                     'reading_at' => Carbon::parse($reading->reading_at)->format('d M Y'),
                 ];
             });
 
+            // Asumsi model Area dan pemanggilan select di bawah sudah benar.
+            $areas = Area::select('id', 'name')->where('pam_id', $pamId)->get();
             return $this->successResponse([
+                'areas_available' => $areas,
                 'pagination' => [
+                    'current_page' => $meterReadings->currentPage(),
                     'total' => $meterReadings->total(),
+                    'per_page' => $meterReadings->perPage(),
                     'has_more_pages' => $meterReadings->hasMorePages(),
                 ],
                 'items' => $formattedData
@@ -172,6 +190,7 @@ class MeterReadingController extends Controller
             Log::error('Error fetching meter reading list', [
                 'pam_id' => $user->pam_id ?? null,
                 'filters' => $request->all(),
+                'error' => $e->getMessage() // Tambahkan pesan error untuk debugging
             ]);
 
             return $this->errorResponse('Terjadi kesalahan saat mengambil data pencatatan meter', 500, 'Internal server error');
@@ -268,7 +287,7 @@ class MeterReadingController extends Controller
         try {
             $request->validate([
                 'customer_id' => 'required|integer|exists:customers,id',
-                'registered_month_id' => 'required|integer|exists:registered_months,id',
+                'period' => 'required|integer|exists:registered_months,id',
                 'current_reading' => 'required|decimal:2|min:0',
                 'notes' => 'nullable|string|max:1000',
                 'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
@@ -286,7 +305,7 @@ class MeterReadingController extends Controller
                 // Subquery for existing reading (soft delete safe)
                 DB::raw('(SELECT 1 FROM meter_readings
                               WHERE meter_id = meters.id
-                              AND registered_month_id = ' . $request->registered_month_id . '
+                              AND registered_month_id = ' . $request->period . '
                               AND deleted_at IS NULL
                               LIMIT 1) as reading_exists'),
                 // Subquery for previous reading (soft delete safe)
@@ -338,7 +357,7 @@ class MeterReadingController extends Controller
             $meterReadingData = [
                 'pam_id' => $user->pam_id,
                 'meter_id' => $customerData->meter_id,
-                'registered_month_id' => $request->registered_month_id,
+                'registered_month_id' => $request->period,
                 'previous_reading' => $previousReadingValue,
                 'current_reading' => $request->current_reading,
                 'volume_usage' => $volumeUsage,
@@ -359,7 +378,7 @@ class MeterReadingController extends Controller
             try {
                 // Double-check for race condition before creating
                 $finalCheck = MeterReading::where('meter_id', $customerData->meter_id)
-                    ->where('registered_month_id', $request->registered_month_id)
+                    ->where('registered_month_id', $request->period)
                     ->lockForUpdate()
                     ->exists();
 

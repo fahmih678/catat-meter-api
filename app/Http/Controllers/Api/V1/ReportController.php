@@ -35,22 +35,26 @@ class ReportController extends Controller
         try {
             // Validate query parameters
             $validated = $request->validate([
-                'period' => 'required|integer|exists:registered_months,id',
+                'period' => ['required', 'string', 'regex:/^[A-Za-z]{3}\s(\d{2}|\d{4})$/'],
+                'page' => 'nullable|integer|min:1',
+                'per_page' => 'nullable|integer|min:1|max:100',
             ]);
-            // Get selected registered month ID from request, default to current month
-            $selectedRegisteredMonth = RegisteredMonth::findOrFail($validated['period']);
 
             // Get user's PAM ID from middleware
             $userPamId = $request->attributes->get('user_pam_id');
             $isSuperAdmin = $request->attributes->get('is_superadmin', false);
 
+            // Get selected registered month ID from request, default to current month
+            $periodData = Carbon::parse($validated['period']);
+            $selectedRegisteredMonth = RegisteredMonth::where('pam_id', $userPamId)
+                ->whereYear('period', $periodData->year)
+                ->whereMonth('period', $periodData->month)
+                ->first();
+
             // Initialize variables
             $selectedPeriod = null;
-            $paymentData = collect();
-            $summary = [
-                'total_payments' => 0,
-                'total_amounts' => 0,
-            ];
+            $paymentData = null;
+            $paginationData = null;
 
             // Get selected registered month and payment data
 
@@ -83,24 +87,73 @@ class ReportController extends Controller
                     $paymentDataQuery->where('bills.pam_id', $userPamId);
                 }
 
-                $paymentData = $paymentDataQuery->get()
-                    ->map(function ($bill) {
-                        return [
-                            'bill_id' => $bill->id,
-                            'bill_number' => $bill->bill_number,
-                            'customer_name' => $bill->customer_name,
-                            'customer_number' => $bill->customer_number,
-                            'total_bill' => (float) $bill->total_bill,
-                            'status' => $bill->status,
-                            'payment_method' => $bill->payment_method ?? '-',
-                            'issued_at' => Carbon::parse($bill->issued_at)->translatedFormat('d M Y'),
-                            'paid_at' => $bill->paid_at
-                                ? Carbon::parse($bill->paid_at)->translatedFormat('d M Y')
-                                : null,
-                            'paid_by' => $bill->paid_by_name,
-                        ];
-                    });
+                // Get pagination parameters with defaults
+                $page = $validated['page'] ?? 1;
+                $perPage = $validated['per_page'] ?? 10;
 
+                // Get paginated payment data
+                $paymentDataQuery = $paymentDataQuery->paginate($perPage, ['*'], 'page', $page);
+
+                // Transform the paginated data
+                $transformedData = $paymentDataQuery->getCollection()->map(function ($bill) {
+                    return [
+                        'bill_id' => $bill->id,
+                        'bill_number' => $bill->bill_number,
+                        'customer_name' => $bill->customer_name,
+                        'customer_number' => $bill->customer_number,
+                        'total_bill' => (float) $bill->total_bill,
+                        'status' => $bill->status,
+                        'payment_method' => $bill->payment_method ?? '-',
+                        'issued_at' => Carbon::parse($bill->issued_at)->translatedFormat('d M Y'),
+                        'paid_at' => $bill->paid_at
+                            ? Carbon::parse($bill->paid_at)->translatedFormat('d M Y')
+                            : null,
+                        'paid_by' => $bill->paid_by_name,
+                    ];
+                });
+
+                // Create pagination metadata
+                $paginationData = [
+                    'total' => $paymentDataQuery->total(),
+                    'has_more_pages' => $paymentDataQuery->hasMorePages(),
+                ];
+
+                // Replace the collection with transformed data
+                $paymentDataQuery->setCollection($transformedData);
+
+                // Assign the paginated result to paymentData variable
+                $paymentData = $paymentDataQuery;
+
+                $availableMonthsQuery = RegisteredMonth::select(
+                    'id',
+                    'period',
+                    'status',
+                    'total_payment',
+                    'total_paid_customers'
+                )
+                    ->orderBy('period', 'desc')
+                    ->where('pam_id', $userPamId);
+
+                $availableMonths = $availableMonthsQuery->get()
+                    ->map(function ($month) {
+                        try {
+                            return [
+                                'id' => $month->id,
+                                'period' => Carbon::parse($month->period)->translatedFormat('M Y'),
+                                'status' => $month->status,
+                                'total_payment' => (float) $month->total_payment,
+                                'total_paid_customers' => (int) $month->total_paid_customers,
+                            ];
+                        } catch (\Exception $e) {
+                            return [
+                                'id' => $month->id,
+                                'period' => Carbon::parse($month->period)->translatedFormat('M Y'),
+                                'status' => $month->status,
+                                'total_payment' => (float) $month->total_payment,
+                                'total_paid_customers' => (int) $month->total_paid_customers,
+                            ];
+                        }
+                    });
                 // 🔥 Use summary from registered_months table (more efficient)
                 $summary = [
                     'total_paid_customers' => (int) $selectedRegisteredMonth->total_paid_customers,
@@ -108,11 +161,15 @@ class ReportController extends Controller
                 ];
             }
 
-            return $this->successResponse([
-                'period' => Carbon::parse($selectedPeriod)->translatedFormat('M Y'),
+            $responseData = [
+                'period' => $selectedPeriod ? Carbon::parse($selectedPeriod)->translatedFormat('M Y') : null,
                 'summary' => $summary,
-                'payment_data' => $paymentData,
-            ], 'Laporan pembayaran bulanan berhasil diambil');
+                'pagination' => $paginationData,
+                'available_months' => $availableMonths,
+                'payment_data' => $paymentData ? $paymentData->items() : [],
+            ];
+
+            return $this->successResponse($responseData, 'Laporan pembayaran bulanan berhasil diambil');
         } catch (ValidationException $e) {
             return $this->validationErrorResponse($e->errors());
         } catch (\Exception $e) {

@@ -31,7 +31,7 @@ class CustomerController extends Controller
 
             // Validate query parameters
             $validated = $request->validate([
-                'registered_month_id' => 'required|integer|exists:registered_months,id',
+                'period' => 'required|integer|exists:registered_months,id',
                 'area_id' => 'nullable|integer|exists:areas,id',
                 'search' => 'nullable|string|max:255',
                 'per_page' => 'nullable|integer|min:10|max:100',
@@ -40,7 +40,7 @@ class CustomerController extends Controller
             ]);
 
             // Verify registered month belongs to user's PAM
-            $registeredMonth = RegisteredMonth::where('id', $validated['registered_month_id'])
+            $registeredMonth = RegisteredMonth::where('id', $validated['period'])
                 ->where('pam_id', $pamId)
                 ->first();
 
@@ -80,7 +80,7 @@ class CustomerController extends Controller
                     $subquery->select('id')
                         ->from('meter_readings')
                         ->whereColumn('meter_readings.meter_id', 'meters.id')
-                        ->where('meter_readings.registered_month_id', $validated['registered_month_id']);
+                        ->where('meter_readings.registered_month_id', $validated['period']);
                 });
 
             // Apply area filter if provided
@@ -93,9 +93,8 @@ class CustomerController extends Controller
                 $search = trim($validated['search']);
                 $query->where(function ($q) use ($search) {
                     // Use more selective search patterns
-                    $q->where('customers.name', 'LIKE', "{$search}%")  // Starts with search
-                        ->orWhere('customers.customer_number', 'LIKE', "{$search}%")
-                        ->orWhere('meters.meter_number', 'LIKE', "{$search}%");
+                    $q->where('customers.name', 'LIKE', "%{$search}%")
+                        ->orWhere('customer_number', 'LIKE', "%{$search}%");
                     // Avoid address search for performance unless specifically needed
                 });
             }
@@ -141,7 +140,6 @@ class CustomerController extends Controller
             });
 
             // Get summary statistics
-            $summary = $this->getUnrecordedSummary($pamId, $validated['registered_month_id'], $validated['area_id'] ?? null);
             $periodDate = Carbon::parse($registeredMonth->period)->format('M Y');
 
             return $this->successResponse([
