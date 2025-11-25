@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Helpers\RoleHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\HasPamFiltering;
 use App\Models\Bill;
@@ -10,12 +11,21 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Models\Customer;
 use App\Models\RegisteredMonth;
+use App\Services\CustomerService;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
 
 class CustomerController extends Controller
 {
     use HasPamFiltering;
+
+    private CustomerService $customerService;
+
+    public function __construct(CustomerService $customerService)
+    {
+        $this->customerService = $customerService;
+    }
+
     /**
      * Get unrecorded customer list
      *
@@ -272,6 +282,7 @@ class CustomerController extends Controller
                     'meters.meter_number',
                     'meter_readings.previous_reading',
                     'meter_readings.current_reading',
+                    'meter_readings.photo_url',
                     'registered_months.period as bill_period',
                 ])
                 ->join('customers', 'bills.customer_id', '=', 'customers.id')
@@ -314,6 +325,7 @@ class CustomerController extends Controller
                     'payment_method' => $bill->payment_method ?: '-',
                     'paid_at' => $bill->paid_at ? Carbon::parse($bill->paid_at)->format('d M Y') : null,
                     'issued_at' => $bill->issued_at ? Carbon::parse($bill->issued_at)->format('d M Y') : null,
+                    'photo' => $bill->photo_url,
                 ];
             });
 
@@ -338,5 +350,122 @@ class CustomerController extends Controller
 
             return $this->errorResponse('Terjadi kesalahan saat mengambil data tagihan', 500);
         }
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        try {
+            $pamId = $request['user_pam_id'] ?? $request['pam_id'];
+
+            // Validate query parameters
+            $validated = $request->validate([
+                'pam_id' => 'nullable|integer|exists:pams,id',
+                'search' => 'nullable|string|max:150',
+                'status' => 'nullable|in:active,inactive',
+                'area_id' => 'nullable|integer|exists:areas,id',
+                'per_page' => 'nullable|integer|min:10|max:100',
+                'sort_by' => 'nullable|in:customer_id,status,created_at',
+                'sort_order' => 'nullable|in:asc,desc'
+            ]);
+
+            // Set defaults
+            $perPage = $validated['per_page'] ?? 25;
+            $sortBy = $validated['sort_by'] ?? 'customer_id';
+            $sortOrder = $validated['sort_order'] ?? 'asc';
+
+            $query = Customer::query()
+                ->select([
+                    'customers.id',
+                    'customers.name',
+                    'customers.customer_number',
+                    'customers.address',
+                    'customers.is_active',
+                    'areas.code as area_code',
+                    'meters.meter_number',
+                    'tariff_groups.name as tariff_group_name',
+                ])
+                ->join('areas', 'customers.area_id', '=', 'areas.id')
+                ->join('tariff_groups', 'customers.tariff_group_id', '=', 'tariff_groups.id')
+                ->join('meters', 'customers.id', '=', 'meters.customer_id')
+                ->where('customers.pam_id', $pamId);
+
+            if (!empty($validated['status'])) {
+                $query->where('customers.is_active', $validated['status'] == 'active' ? true : false);
+            }
+
+            if (!empty($validated['area_id'])) {
+                $query->where('customers.area_id', $validated['area_id']);
+            }
+            // Search functionality - optimized with indexes
+            if (!empty($validated['search'])) {
+                $search = trim($validated['search']);
+                $query->where(function ($q) use ($search) {
+                    $q->where('customers.name', 'LIKE', "%{$search}%")
+                        ->orWhere('customers.customer_number', 'LIKE', "%{$search}%")
+                        ->orWhere('meters.meter_number', 'LIKE', "%{$search}%")
+                        ->orWhere('customers.address', 'LIKE', "%{$search}%");
+                });
+            }
+            // Apply sorting
+            switch ($sortBy) {
+                case 'customer_id':
+                    $query->orderBy('customers.id', $sortOrder);
+                    break;
+                case 'status':
+                    $query->orderBy('customers.is_active', $sortOrder);
+                    break;
+                case 'created_at':
+                    $query->orderBy('customers.created_at', $sortOrder);
+                default:
+                    $query->orderBy('customers.id', $sortOrder);
+            }
+
+            $customers = $query->paginate($perPage);
+
+            $formattedData = $customers->getCollection()->map(function ($customer) {
+                return [
+                    "id" => $customer->id,
+                    "customer_name" => $customer->name,
+                    "customer_number" => $customer->customer_number,
+                    "address" => $customer->address,
+                    "status" => $customer->is_active,
+                    "meter_number" => $customer->meter_number,
+                    "area_code" => $customer->area_code,
+                    "tariff_group" => $customer->tariff_group_name
+                ];
+            });
+
+            return $this->successResponse([
+                'pagination' => [
+                    'total' => $customers->total(),
+                    'has_more_pages' => $customers->hasMorePages()
+                ],
+                'customers' => $formattedData
+            ]);
+        } catch (ValidationException $e) {
+            return $this->validationErrorResponse($e->getMessage());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Error Get Customers');
+        }
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'pam_id' => 'required|integer|exists:pams,id',
+                'area_id' => 'required|integer|exists:areas,id',
+                'tariff_group_id' => 'required|integer|exists:tariff_groups,id',
+                'user_id' => 'nullable|integer|exists:users,id',
+                'customer_number' => 'required|string',
+                'name' => 'required|string',
+                'address' => 'nullable|string',
+                'phone' => 'required|string',
+                'status' => 'required|in:active,inactive'
+            ]);
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+        return $this->successResponse('success');
     }
 }

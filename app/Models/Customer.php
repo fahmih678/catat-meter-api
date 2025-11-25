@@ -20,7 +20,6 @@ class Customer extends Model
         'name',
         'address',
         'phone',
-        'status',
         'user_id',
         'is_active',
     ];
