@@ -46,10 +46,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::middleware('role:admin', 'pam.scope')->group(function () {
-            Route::get('customers', [V1CustomerController::class, 'index'])->name('customers');
-        });
-
         Route::middleware('role:admin,catat_meter,loket', 'pam.scope')->group(function () {
             // Route for catat meter : month -> list meter reading -> customer -> input meter
             // month
@@ -94,6 +90,13 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::middleware('role:customer')->group(function () {
             // Get Bills for User
             Route::get('/me/bills', [V1CustomerController::class, 'getMyBills'])->name('customers.my-bills');
+        });
+
+        Route::middleware('role:admin', 'pam.scope')->group(function () {
+            Route::get('customers', [V1CustomerController::class, 'index'])->name('customers');
+            Route::post('customers', [V1CustomerController::class, 'store'])->name('customers.store');
+            Route::get('customers/{customerId}', [V1CustomerController::class, 'show'])->name('customers.show');
+            Route::put('customers/{customerId}', [V1CustomerController::class, 'update'])->name('customers.update');
         });
     });
 });

@@ -24,6 +24,10 @@ class Customer extends Model
         'is_active',
     ];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

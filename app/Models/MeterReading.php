@@ -113,6 +113,6 @@ class MeterReading extends Model
         if (!$value) {
             return null;
         }
-        return url(Storage::url($value));
+        return Storage::url($value);
     }
 }

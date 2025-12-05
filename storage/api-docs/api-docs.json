@@ -996,6 +996,673 @@
                 ]
             }
         },
+        "/api/v1/customers": {
+            "get": {
+                "tags": [
+                    "Customer"
+                ],
+                "summary": "Get customers list",
+                "description": "Retrieve paginated list of customers with search, filtering, and sorting capabilities",
+                "operationId": "customersIndex",
+                "parameters": [
+                    {
+                        "name": "pam_id",
+                        "in": "query",
+                        "description": "PAM ID (required if user_pam_id not provided)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "user_pam_id",
+                        "in": "query",
+                        "description": "User PAM ID (required if pam_id not provided)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by customer name or customer number",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 150,
+                            "example": "John Doe"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by customer status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": ["active", "inactive"],
+                            "example": "active"
+                        }
+                    },
+                    {
+                        "name": "area_id",
+                        "in": "query",
+                        "description": "Filter by area ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "minimum": 10,
+                            "maximum": 100
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort field",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": ["customer_id", "created_at"],
+                            "default": "customer_id"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": ["asc", "desc"],
+                            "default": "asc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Customers retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "pagination": {
+                                                    "properties": {
+                                                        "total": {
+                                                            "type": "integer",
+                                                            "example": 150
+                                                        },
+                                                        "has_more_pages": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "areas": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Area 1"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "customers": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "customer_name": {
+                                                                "type": "string",
+                                                                "example": "John Doe"
+                                                            },
+                                                            "customer_number": {
+                                                                "type": "string",
+                                                                "example": "CUST001"
+                                                            },
+                                                            "address": {
+                                                                "type": "string",
+                                                                "example": "123 Main St"
+                                                            },
+                                                            "status": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            },
+                                                            "meter_number": {
+                                                                "type": "string",
+                                                                "example": "MTR001"
+                                                            },
+                                                            "area_name": {
+                                                                "type": "string",
+                                                                "example": "Area 1"
+                                                            },
+                                                            "tariff_group": {
+                                                                "type": "string",
+                                                                "example": "Residential"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden - Cannot access this PAM"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Customer"
+                ],
+                "summary": "Create new customer",
+                "description": "Create a new customer with associated meter",
+                "operationId": "customersStore",
+                "parameters": [
+                    {
+                        "name": "pam_id",
+                        "in": "query",
+                        "description": "PAM ID (required if user_pam_id not provided)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "user_pam_id",
+                        "in": "query",
+                        "description": "User PAM ID (required if pam_id not provided)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "area_id",
+                                    "tariff_group_id",
+                                    "customer_number",
+                                    "name",
+                                    "phone",
+                                    "meter_number",
+                                    "initial_installed_meter"
+                                ],
+                                "properties": {
+                                    "area_id": {
+                                        "type": "integer",
+                                        "description": "Area ID",
+                                        "example": 1
+                                    },
+                                    "tariff_group_id": {
+                                        "type": "integer",
+                                        "description": "Tariff group ID",
+                                        "example": 1
+                                    },
+                                    "user_id": {
+                                        "type": "integer",
+                                        "description": "User ID (optional)",
+                                        "example": 5,
+                                        "nullable": true
+                                    },
+                                    "customer_number": {
+                                        "type": "string",
+                                        "description": "Customer number",
+                                        "example": "CUST001"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "description": "Customer name",
+                                        "example": "John Doe"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "description": "Customer address",
+                                        "example": "123 Main St",
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "description": "Phone number",
+                                        "example": "+62812345678"
+                                    },
+                                    "meter_number": {
+                                        "type": "integer",
+                                        "description": "Meter number",
+                                        "example": 12345
+                                    },
+                                    "initial_installed_meter": {
+                                        "type": "number",
+                                        "format": "decimal",
+                                        "description": "Initial installed meter reading",
+                                        "example": 100.50
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "description": "Meter installation notes",
+                                        "example": "Installation notes",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Customer created successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden - Cannot access this PAM"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Duplicate entry error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/customers/{customerId}": {
+            "get": {
+                "tags": [
+                    "Customer"
+                ],
+                "summary": "Get customer details",
+                "description": "Retrieve detailed information about a specific customer",
+                "operationId": "customersShow",
+                "parameters": [
+                    {
+                        "name": "customerId",
+                        "in": "path",
+                        "description": "Customer ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "pam_id",
+                        "in": "query",
+                        "description": "PAM ID (required if user_pam_id not provided)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "user_pam_id",
+                        "in": "query",
+                        "description": "User PAM ID (required if pam_id not provided)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Customer retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "customer_number": {
+                                                    "type": "string",
+                                                    "example": "CUST001"
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "address": {
+                                                    "type": "string",
+                                                    "example": "123 Main St"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+62812345678"
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "area_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "area_name": {
+                                                    "type": "string",
+                                                    "example": "Area 1"
+                                                },
+                                                "tariff_group_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "tariff_group_name": {
+                                                    "type": "string",
+                                                    "example": "Residential"
+                                                },
+                                                "meter_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "meter_number": {
+                                                    "type": "string",
+                                                    "example": "MTR001"
+                                                },
+                                                "initial_installed_meter": {
+                                                    "type": "number",
+                                                    "format": "decimal",
+                                                    "example": 100.50
+                                                },
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 5,
+                                                    "nullable": true
+                                                },
+                                                "user_name": {
+                                                    "type": "string",
+                                                    "example": "John User",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden - Cannot access this PAM"
+                    },
+                    "404": {
+                        "description": "Customer not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Customer"
+                ],
+                "summary": "Update customer",
+                "description": "Update customer information and/or meter details",
+                "operationId": "customersUpdate",
+                "parameters": [
+                    {
+                        "name": "customerId",
+                        "in": "path",
+                        "description": "Customer ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "pam_id",
+                        "in": "query",
+                        "description": "PAM ID (required if user_pam_id not provided)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "user_pam_id",
+                        "in": "query",
+                        "description": "User PAM ID (required if pam_id not provided)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "area_id": {
+                                        "type": "integer",
+                                        "description": "Area ID",
+                                        "example": 1
+                                    },
+                                    "tariff_group_id": {
+                                        "type": "integer",
+                                        "description": "Tariff group ID",
+                                        "example": 1
+                                    },
+                                    "user_id": {
+                                        "type": "integer",
+                                        "description": "User ID",
+                                        "example": 5,
+                                        "nullable": true
+                                    },
+                                    "customer_number": {
+                                        "type": "string",
+                                        "description": "Customer number",
+                                        "example": "CUST001"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "description": "Customer name",
+                                        "example": "John Doe"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "description": "Customer address",
+                                        "example": "123 Main St"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "description": "Phone number",
+                                        "minLength": 10,
+                                        "example": "+62812345678"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "description": "Customer active status",
+                                        "example": true
+                                    },
+                                    "new_meter_number": {
+                                        "type": "integer",
+                                        "description": "New meter number (creates new meter record)",
+                                        "example": 12346
+                                    },
+                                    "new_initial_installed_meter": {
+                                        "type": "number",
+                                        "format": "decimal",
+                                        "description": "New initial installed meter reading",
+                                        "example": 150.75
+                                    },
+                                    "new_notes": {
+                                        "type": "string",
+                                        "description": "New meter installation notes",
+                                        "example": "Meter replacement notes",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success updated customer"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "updated_fields": {
+                                                    "type": "object",
+                                                    "example": {
+                                                        "name": "John Doe Updated",
+                                                        "phone": "+62812345679",
+                                                        "new_meter_number": 12346
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden - Cannot access this PAM"
+                    },
+                    "404": {
+                        "description": "Customer not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Duplicate entry error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/me/bills": {
             "get": {
                 "tags": [
@@ -1008,7 +1675,7 @@
                     {
                         "name": "customer_id",
                         "in": "query",
-                        "description": "Filter by customer ID",
+                        "description": "Filter by customer ID (must exist in customers table)",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -1055,7 +1722,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Bills retrieved successfully"
+                                            "example": "Tagihan berhasil diambil"
                                         },
                                         "data": {
                                             "properties": {
@@ -1115,7 +1782,7 @@
                                                                 "type": "string",
                                                                 "example": "RT 01"
                                                             },
-                                                            "period": {
+                                                            "periode": {
                                                                 "type": "string",
                                                                 "example": "Nov 2025"
                                                             },
@@ -1128,16 +1795,23 @@
                                                                 "example": "pending"
                                                             },
                                                             "previous_reading": {
-                                                                "type": "string",
-                                                                "example":"93.30"
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 93.30
                                                             },
                                                             "current_reading": {
-                                                                "type": "string",
-                                                                "example": "95.13"
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 95.13
                                                             },
                                                             "volume_usage": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 1.8
+                                                            },
+                                                            "photo": {
                                                                 "type": "string",
-                                                                "example": "1.8"
+                                                                "example": "http://example.com/storage/meter-reading/2025/01/01/123456.jpg"
                                                             },
                                                             "total_bill": {
                                                                 "type": "number",
@@ -1892,7 +2566,7 @@
                 "operationId": "getUnrecordedCustomers",
                 "parameters": [
                     {
-                        "name": "registered_month_id",
+                        "name": "period",
                         "in": "query",
                         "description": "ID of the registered month",
                         "required": true,

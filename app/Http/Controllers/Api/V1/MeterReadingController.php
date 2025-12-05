@@ -166,6 +166,7 @@ class MeterReadingController extends Controller
                     ],
                     'notes' => $reading->notes ?? "",
                     'status' => $reading->status,
+                    'photo' => url($reading->photo_url),
                     // reading_by_name dari JOIN user. Jika user di JOIN tidak ditemukan (error data), fallback ke "System"
                     'reading_by' => $reading->reading_by_name,
                     'reading_at' => Carbon::parse($reading->reading_at)->format('d M Y'),
@@ -288,7 +289,7 @@ class MeterReadingController extends Controller
             $request->validate([
                 'customer_id' => 'required|integer|exists:customers,id',
                 'period' => 'required|integer|exists:registered_months,id',
-                'current_reading' => 'required|decimal:2|min:0',
+                'current_reading' => 'required|numeric|min:0',
                 'notes' => 'nullable|string|max:1000',
                 'photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
