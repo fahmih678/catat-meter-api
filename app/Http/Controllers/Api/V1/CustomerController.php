@@ -152,8 +152,9 @@ class CustomerController extends Controller
             });
 
             // Get summary statistics
-            $periodDate = Carbon::parse($registeredMonth->period)->format('M Y');
-
+            $periodDate = Carbon::parse($registeredMonth->period)
+                ->locale('id')
+                ->translatedFormat('F Y');
             return $this->successResponse([
                 'period' => $periodDate,
                 'pagination' => [
